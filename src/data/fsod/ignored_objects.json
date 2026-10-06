@@ -1,0 +1,1715 @@
+{
+  "records": [
+    {
+      "reason": "missing Class",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 2999
+      },
+      "xml": {
+        "attributes": {
+          "id": "FERAL Controller",
+          "type": "0x0891"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "File",
+                "tail": "\n         ",
+                "text": "invisible"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Index",
+                "tail": "\n      ",
+                "text": "0"
+              }
+            ],
+            "tag": "Texture",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "NoMiniMap",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{madLab.FERAL_Controller}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "missing Class",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3280
+      },
+      "xml": {
+        "attributes": {
+          "id": "Larva Puke",
+          "type": "0x706b"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "File",
+                "tail": "\n         ",
+                "text": "lofiObj3"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Index",
+                "tail": "\n      ",
+                "text": "0x3fe"
+              }
+            ],
+            "tag": "Texture",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "NoMiniMap",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{epicforestMaze.Larva_Puke}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "missing Class",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3546
+      },
+      "xml": {
+        "attributes": {
+          "id": "CloseRangeAttack",
+          "type": "0x8300"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetProjectile",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "ObjectId",
+                "tail": "\n         ",
+                "text": "Pet Bullet 3"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "MinDamage",
+                "tail": "\n         ",
+                "text": "7"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "MaxDamage",
+                "tail": "\n         ",
+                "text": "200"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Speed",
+                "tail": "\n         ",
+                "text": "100"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "LifetimeMS",
+                "tail": "\n         ",
+                "text": "400"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Size",
+                "tail": "\n      ",
+                "text": "80"
+              }
+            ],
+            "tag": "Projectile",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.CloseRangeAttack}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "missing Class",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3547
+      },
+      "xml": {
+        "attributes": {
+          "id": "MidRangeAttack",
+          "type": "0x8301"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetProjectile",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "ObjectId",
+                "tail": "\n         ",
+                "text": "Pet Bullet 3"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "MinDamage",
+                "tail": "\n         ",
+                "text": "5"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "MaxDamage",
+                "tail": "\n         ",
+                "text": "150"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Speed",
+                "tail": "\n         ",
+                "text": "100"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "LifetimeMS",
+                "tail": "\n         ",
+                "text": "650"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Size",
+                "tail": "\n      ",
+                "text": "80"
+              }
+            ],
+            "tag": "Projectile",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.MidRangeAttack}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "missing Class",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3548
+      },
+      "xml": {
+        "attributes": {
+          "id": "FarRangeAttack",
+          "type": "0x8302"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetProjectile",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "ObjectId",
+                "tail": "\n         ",
+                "text": "Pet Bullet 3"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "MinDamage",
+                "tail": "\n         ",
+                "text": "3"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "MaxDamage",
+                "tail": "\n         ",
+                "text": "100"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Speed",
+                "tail": "\n         ",
+                "text": "100"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "LifetimeMS",
+                "tail": "\n         ",
+                "text": "900"
+              },
+              {
+                "attributes": {},
+                "children": [],
+                "tag": "Size",
+                "tail": "\n      ",
+                "text": "80"
+              }
+            ],
+            "tag": "Projectile",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.FarRangeAttack}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3549
+      },
+      "xml": {
+        "attributes": {
+          "id": "Heal",
+          "type": "0x164"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetHeal"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "curve": "exp_incr",
+                  "max": "90",
+                  "min": "10"
+                },
+                "children": [],
+                "tag": "MaxHeal",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "dim_returns",
+                  "max": "1",
+                  "min": "10"
+                },
+                "children": [],
+                "tag": "Cooldown",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Heal}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3550
+      },
+      "xml": {
+        "attributes": {
+          "id": "MagicHeal",
+          "type": "0x170"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetMagicHeal"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "curve": "exp_incr",
+                  "max": "45",
+                  "min": "1"
+                },
+                "children": [],
+                "tag": "MaxHeal",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "dim_returns",
+                  "max": "1",
+                  "min": "10"
+                },
+                "children": [],
+                "tag": "Cooldown",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.MagicHeal}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3551
+      },
+      "xml": {
+        "attributes": {
+          "id": "AttackClose",
+          "type": "0x17f"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetShoot"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "value": "CloseRangeAttack"
+                },
+                "children": [],
+                "tag": "ProjectileId",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "exp_incr"
+                },
+                "children": [],
+                "tag": "DamageCurve",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "4.5"
+                },
+                "children": [],
+                "tag": "ThreatRange",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_decr",
+                  "max": ".2",
+                  "min": "5"
+                },
+                "children": [],
+                "tag": "Delay",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "Targeted"
+                },
+                "children": [],
+                "tag": "AimType",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.AttackClose}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3552
+      },
+      "xml": {
+        "attributes": {
+          "id": "AttackMid",
+          "type": "0x180"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetShoot"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "value": "MidRangeAttack"
+                },
+                "children": [],
+                "tag": "ProjectileId",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "exp_incr"
+                },
+                "children": [],
+                "tag": "DamageCurve",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "6.75"
+                },
+                "children": [],
+                "tag": "ThreatRange",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_decr",
+                  "max": ".2",
+                  "min": "5"
+                },
+                "children": [],
+                "tag": "Delay",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "Targeted"
+                },
+                "children": [],
+                "tag": "AimType",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.AttackMid}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3553
+      },
+      "xml": {
+        "attributes": {
+          "id": "AttackFar",
+          "type": "0x181"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetShoot"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "value": "FarRangeAttack"
+                },
+                "children": [],
+                "tag": "ProjectileId",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "exp_incr"
+                },
+                "children": [],
+                "tag": "DamageCurve",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "9"
+                },
+                "children": [],
+                "tag": "ThreatRange",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_decr",
+                  "max": ".2",
+                  "min": "5"
+                },
+                "children": [],
+                "tag": "Delay",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "value": "Targeted"
+                },
+                "children": [],
+                "tag": "AimType",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.AttackFar}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3554
+      },
+      "xml": {
+        "attributes": {
+          "id": "ElectricZap",
+          "type": "0x182"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetZap"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "value": "0xffffff"
+                },
+                "children": [],
+                "tag": "Color",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_incr",
+                  "max": "300",
+                  "min": "5"
+                },
+                "children": [],
+                "tag": "Damage",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "linear",
+                  "max": "50",
+                  "min": "5"
+                },
+                "children": [],
+                "tag": "DamageRange",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "dim_returns",
+                  "max": "0",
+                  "min": "1"
+                },
+                "children": [],
+                "tag": "Delay",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "linear",
+                  "max": "2",
+                  "min": "0.35"
+                },
+                "children": [],
+                "tag": "ThreatRange",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {},
+                "children": [
+                  {
+                    "attributes": {
+                      "value": "Paralyzed"
+                    },
+                    "children": [],
+                    "tag": "Type",
+                    "tail": "\n            ",
+                    "text": ""
+                  },
+                  {
+                    "attributes": {
+                      "curve": "linear",
+                      "max": ".2",
+                      "min": "0"
+                    },
+                    "children": [],
+                    "tag": "Probability",
+                    "tail": "\n            ",
+                    "text": ""
+                  },
+                  {
+                    "attributes": {
+                      "curve": "dim_returns",
+                      "max": "4",
+                      "min": ".4"
+                    },
+                    "children": [],
+                    "tag": "Duration",
+                    "tail": "\n         ",
+                    "text": ""
+                  }
+                ],
+                "tag": "Effect",
+                "tail": "\n      ",
+                "text": "\n            "
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.ElectricZap}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3555
+      },
+      "xml": {
+        "attributes": {
+          "id": "PetSavage",
+          "type": "0x183"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetSavage"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "curve": "dim_returns",
+                  "max": "8",
+                  "min": "2.5"
+                },
+                "children": [],
+                "tag": "Tiles",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_incr",
+                  "max": ".8",
+                  "min": "8"
+                },
+                "children": [],
+                "tag": "Frequency",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.PetSavage}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3556
+      },
+      "xml": {
+        "attributes": {
+          "id": "PetDecoy",
+          "type": "0x184"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetDecoy"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "curve": "dim_returns",
+                  "max": "12",
+                  "min": "3"
+                },
+                "children": [],
+                "tag": "Radius",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_incr",
+                  "max": "8",
+                  "min": "3"
+                },
+                "children": [],
+                "tag": "Duration",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_decr",
+                  "max": "3",
+                  "min": "10"
+                },
+                "children": [],
+                "tag": "Cooldown",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.PetDecoy}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetBehavior",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3557
+      },
+      "xml": {
+        "attributes": {
+          "id": "PetRisingFury",
+          "type": "0x185"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetBehavior"
+          },
+          {
+            "attributes": {
+              "id": "PetRisingFury"
+            },
+            "children": [],
+            "tag": "BaseBehavior",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [
+              {
+                "attributes": {
+                  "curve": "linear",
+                  "max": "2",
+                  "min": "5"
+                },
+                "children": [],
+                "tag": "MaxChargeTime",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_incr",
+                  "max": "1500",
+                  "min": "100"
+                },
+                "children": [],
+                "tag": "MaxDamage",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_decr",
+                  "max": "0.2",
+                  "min": "3.6"
+                },
+                "children": [],
+                "tag": "Cooldown",
+                "tail": "\n         ",
+                "text": ""
+              },
+              {
+                "attributes": {
+                  "curve": "exp_incr",
+                  "max": "8",
+                  "min": "3"
+                },
+                "children": [],
+                "tag": "Radius",
+                "tail": "\n      ",
+                "text": ""
+              }
+            ],
+            "tag": "Parameters",
+            "tail": "\n      ",
+            "text": "\n         "
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.PetRisingFury}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3558
+      },
+      "xml": {
+        "attributes": {
+          "id": "Attack Close",
+          "type": "0x192"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "Shoot Attack"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Shoots_at_any_close-range_enemies_and_deals_heavy_damage.\\n\\}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Attack_Close}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3559
+      },
+      "xml": {
+        "attributes": {
+          "id": "Attack Mid",
+          "type": "0x194"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "Shoot Attack"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Shoots_at_any_mid-range_enemies_and_deals_medium_damage.\\n\\n}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Attack_Mid}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3560
+      },
+      "xml": {
+        "attributes": {
+          "id": "Attack Far",
+          "type": "0x195"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "Shoot Attack"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Shoots_at_any_nearby_far-range_enemies_and_deals_light_damag}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Attack_Far}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3561
+      },
+      "xml": {
+        "attributes": {
+          "id": "Electric",
+          "type": "0x196"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "AOE Attack"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Zaps_any_enemy_foolish_enough_to_touch_your_pet._This_attack}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Electric}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3562
+      },
+      "xml": {
+        "attributes": {
+          "id": "Heal",
+          "type": "0x197"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "Heal"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Heals_you_periodically.\\n\\nLevel_this_ability_up_to_increase}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Heal}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3563
+      },
+      "xml": {
+        "attributes": {
+          "id": "Magic Heal",
+          "type": "0x198"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "Magic Heal"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Restores_your_Magic_Points_periodically.\\n\\nLevel_this_abili}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Magic_Heal}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3564
+      },
+      "xml": {
+        "attributes": {
+          "id": "Savage",
+          "type": "0x199"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "Savage"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Your_pet_will_run_towards_nearby_enemies.\\n\\nLevel_this_abil}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Savage}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3565
+      },
+      "xml": {
+        "attributes": {
+          "id": "Decoy",
+          "type": "0x19a"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "Decoy"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Distracts_enemies_for_a_short_while.\\n\\nLevel_this_ability_u}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Decoy}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n   ",
+        "text": "\n      "
+      }
+    },
+    {
+      "reason": "PetAbility",
+      "source": {
+        "file": "dat1.xml",
+        "ordinal": 3566
+      },
+      "xml": {
+        "attributes": {
+          "id": "Rising Fury",
+          "type": "0x19b"
+        },
+        "children": [
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "PetAbility",
+            "tail": "\n      ",
+            "text": ""
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Class",
+            "tail": "\n      ",
+            "text": "PetAbility"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Group",
+            "tail": "\n      ",
+            "text": "RisingFury"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "Description",
+            "tail": "\n      ",
+            "text": "{pets.Standing_still_will_charge_this_attack._Begin_moving_to_rele}"
+          },
+          {
+            "attributes": {},
+            "children": [],
+            "tag": "DisplayId",
+            "tail": "\n   ",
+            "text": "{pets.Rising_Fury}"
+          }
+        ],
+        "tag": "Object",
+        "tail": "\n\n\n\n\n\n   ",
+        "text": "\n      "
+      }
+    }
+  ]
+}
