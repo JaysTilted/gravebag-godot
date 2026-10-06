@@ -1,0 +1,582 @@
+--- a/wServer/networking/Client.cs
++++ b/wServer/networking/Client.cs
+@@ -29,6 +29,16 @@
+     {
+         public const string SERVER_VERSION = "27.3.2";
+         private bool disposed;
++        // One persistence barrier owns departure. Public Dispose requests it;
++        // only its completion may release account/character/player references.
++        private readonly object lifecycleLock = new object();
++        private Task saveTask = Task.FromResult(0);
++        private Task disconnectTask;
++        private bool disconnectQueued;
++        private bool persistenceSealed;
++        private bool reconnecting;
++        private bool ownsAccount;
++        private Account savedAccount;
+ 
+         private static readonly ILog log = LogManager.GetLogger(typeof (Client));
+ 
+@@ -92,90 +102,236 @@
+ 
+         internal void ProcessPacket(Packet pkt)
+         {
++            lock (lifecycleLock)
++            {
++                if (disconnectQueued || reconnecting || disposed) return;
++                try
++                {
++                    log.Logger.Log(typeof (Client), Level.Verbose,
++                       $"Handling packet '{pkt}'...", null);
++                    if (pkt.ID == (PacketID) 255) return;
++                    IPacketHandler handler;
++                    if (!PacketHandlers.Handlers.TryGetValue(pkt.ID, out handler))
++                        log.Warn($"Unhandled packet '{pkt.ID}'.");
++                    else
++                        handler.Handle(this, (ClientPacket) pkt);
++                }
++                catch (Exception e)
++                {
++                    log.Error($"Error when handling packet '{pkt}'...", e);
++                    Disconnect();
++                }
++            }
++        }
++
++        public void Disconnect()
++        {
++            lock (lifecycleLock)
++            {
++                if (disposed || disconnectQueued) return;
++                disconnectQueued = true;
++                CloseTransport();
++                var manager = Manager;
++                manager.Logic.AddPendingAction(t => manager.Disconnect(this), PendingPriority.Destruction);
++            }
++        }
++
++        private void CloseTransport()
++        {
++            Stage = ProtocalStage.Disconnected;
++            try { Socket?.Close(); }
++            catch (Exception ex) { log.Error("CloseTransport", ex); }
++        }
++
++        public Task Save()
++        {
++            lock (lifecycleLock)
++            {
++                if (disposed || persistenceSealed) return saveTask;
++                return QueueSave(false);
++            }
++        }
++
++        // Snapshot original Player -> Char fields on the requesting tick
++        // before any asynchronous DB work or public Dispose can clear them.
++        private Task QueueSave(bool unlock)
++        {
++            var manager = Manager;
++            var account = ownsAccount ? savedAccount : null;
++            var character = Character;
++            string world = null;
++            bool arena = false;
++            if (Player != null)
++            {
++                Player.SaveToCharacter();
++                if (Player.Owner != null)
++                {
++                    arena = Player.Owner.Id == -6;
++                    world = Player.Owner.Name;
++                }
++            }
++            return saveTask = Persist(saveTask, manager, account, character, world, arena, unlock);
++        }
++
++        private async Task Persist(Task previous, RealmManager manager, Account account,
++            Char character, string world, bool arena, bool unlock)
++        {
+             try
+             {
+-                log.Logger.Log(typeof (Client), Level.Verbose,
+-                   $"Handling packet '{pkt}'...", null);
+-                if (pkt.ID == (PacketID) 255) return;
+-                IPacketHandler handler;
+-                if (!PacketHandlers.Handlers.TryGetValue(pkt.ID, out handler))
+-                    log.Warn($"Unhandled packet '{pkt.ID}'.");
+-                else
+-                    handler.Handle(this, (ClientPacket) pkt);
+-            }
+-            catch (Exception e)
+-            {
+-                log.Error($"Error when handling packet '{pkt}'...", e);
+-                Disconnect();
+-            }
+-        }
+-
+-        public void Disconnect()
++                await previous.ConfigureAwait(false);
++                if (account == null) return; // unauthenticated transport
++                Exception failure = null;
++                await manager.Database.DoActionAsync(db =>
++                {
++                    // DatabaseTicker logs/swallow callbacks; convey failure to
++                    // the lifecycle barrier instead of unlocking a failed save.
++                    try
++                    {
++                        if (!arena && character != null)
++                        {
++                            if (world != null) db.UpdateLastSeen(account.AccountId, character.CharacterId, world);
++                            db.SaveCharacter(account, character);
++                        }
++                        if (unlock) db.UnlockAccount(account);
++                    }
++                    catch (Exception ex) { failure = ex; }
++                }).ConfigureAwait(false);
++                if (failure != null) throw new InvalidOperationException("Persistence barrier failed", failure);
++            }
++            catch (Exception ex)
++            {
++                log.Fatal("SaveException", ex);
++                throw;
++            }
++        }
++
++        private Task SaveForDeparture()
++        {
++            if (!persistenceSealed)
++            {
++                persistenceSealed = true;
++                try { QueueSave(true); }
++                catch (Exception ex)
++                {
++                    log.Fatal("Save snapshot failed", ex);
++                    var failed = new TaskCompletionSource<int>();
++                    failed.SetException(ex);
++                    saveTask = failed.Task;
++                }
++            }
++            return saveTask;
++        }
++
++        internal Task RunSessionAction(Action<db.Database> callback)
++        {
++            lock (lifecycleLock)
++            {
++                if (disposed || persistenceSealed || disconnectQueued) return saveTask;
++                return saveTask = RunSessionActionCore(saveTask, Manager, callback);
++            }
++        }
++
++        private async Task RunSessionActionCore(Task previous, RealmManager manager, Action<db.Database> callback)
++        {
++            await previous.ConfigureAwait(false);
++            await manager.Database.DoActionAsync(callback).ConfigureAwait(false);
++        }
++
++        internal bool RegisterAccount(RealmManager manager)
++        {
++            lock (lifecycleLock)
++            {
++                if (disposed || disconnectQueued || reconnecting || Account == null) return false;
++                if (!manager.Clients.TryAdd(Account.AccountId, this)) return false;
++                savedAccount = Account;
++                ownsAccount = true;
++                return true;
++            }
++        }
++
++        internal bool CanReplaceAfterReconnect
++        {
++            get
++            {
++                lock (lifecycleLock)
++                    return !disposed && ownsAccount && reconnecting && persistenceSealed &&
++                        saveTask.Status == TaskStatus.RanToCompletion;
++            }
++        }
++
++        internal Task CompleteDisconnect(RealmManager manager)
++        {
++            lock (lifecycleLock)
++            {
++                if (disconnectTask != null) return disconnectTask;
++                if (disposed) return Task.FromResult(0);
++                disconnectQueued = true;
++                CloseTransport();
++                var accountId = ownsAccount ? savedAccount?.AccountId : null;
++                Task persistence;
++                try { persistence = SaveForDeparture(); }
++                catch (Exception ex)
++                {
++                    log.Fatal("Save snapshot failed", ex);
++                    var failed = new TaskCompletionSource<int>();
++                    failed.SetException(ex);
++                    persistence = failed.Task;
++                }
++                return disconnectTask = FinishDisconnect(manager, accountId, persistence);
++            }
++        }
++
++        private async Task FinishDisconnect(RealmManager manager, string accountId, Task persistence)
++        {
++            try { await persistence.ConfigureAwait(false); }
++            catch (Exception ex) { log.Error("Disconnect persistence failed; account remains locked", ex); }
++            var completion = new TaskCompletionSource<int>();
++            manager.Logic.AddPendingAction(t =>
++            {
++                try
++                {
++                    manager.RemoveClient(accountId, this);
++                    DisposeCore();
++                }
++                catch (Exception ex) { log.Error("Disconnect cleanup failed", ex); }
++                finally { completion.SetResult(0); }
++            }, PendingPriority.Destruction);
++            await completion.Task.ConfigureAwait(false);
++        }
++
++        public void Reconnect(ReconnectPacket pkt)
++        {
++            lock (lifecycleLock)
++            {
++                if (disposed || disconnectQueued || reconnecting) return;
++                reconnecting = true;
++                var manager = Manager;
++                manager.Logic.AddPendingAction(t => BeginReconnect(manager, pkt), PendingPriority.Destruction);
++            }
++        }
++
++        private void BeginReconnect(RealmManager manager, ReconnectPacket pkt)
++        {
++            lock (lifecycleLock)
++            {
++                if (disconnectQueued || disposed) return;
++                try { FinishReconnect(manager, pkt, SaveForDeparture()); }
++                catch (Exception ex) { log.Error("Reconnect snapshot failed", ex); Disconnect(); }
++            }
++        }
++
++        private async Task FinishReconnect(RealmManager manager, ReconnectPacket pkt, Task persistence)
+         {
+             try
+             {
+-                if (Stage == ProtocalStage.Disconnected) return;
+-                Stage = ProtocalStage.Disconnected;
+-                if (Account != null)
+-                    DisconnectFromRealm();
+-
+-                Socket.Close();
+-            }
+-            catch (Exception e)
+-            {
+-                log.Error(e);
+-            }
+-        }
+-
+-        public Task Save()
+-        {
+-            return Manager.Database.DoActionAsync(db =>
+-            {
+-                try
+-                {
+-                    string w = null;
+-                    if (Player != null)
+-                    {
+-                        Player.SaveToCharacter();
+-                        if (Player.Owner != null)
+-                        {
+-                            if (Player.Owner.Id == -6) return;
+-                            w = Player.Owner.Name;
+-                        }
+-                    }
+-
+-                    if (Character != null)
+-                    {
+-                        if (w != null) db.UpdateLastSeen(Account.AccountId, Character.CharacterId, w);
+-                        db.SaveCharacter(Account, Character);
+-                    }
+-
+-                    db.UnlockAccount(Account);
+-                }
+-                catch (Exception ex)
+-                {
+-                    log.Fatal("SaveException", ex);
+-                }
+-            });
+-        }
+-
+-        //Following must execute, network loop will discard disconnected client, so logic loop
+-        private void DisconnectFromRealm()
+-        {
+-            Manager.Logic.AddPendingAction(t =>
+-            {
+-                Save();
+-                Manager.Disconnect(this);
+-            }, PendingPriority.Destruction);
+-        }
+-
+-        public void Reconnect(ReconnectPacket pkt)
+-        {
+-            Manager.Logic.AddPendingAction(t =>
+-            {
+-                Save();
+-                SendPacket(pkt);
+-            }, PendingPriority.Destruction);
++                await persistence.ConfigureAwait(false);
++                manager.Logic.AddPendingAction(t =>
++                {
++                    lock (lifecycleLock)
++                        if (!disconnectQueued && !disposed) SendPacket(pkt);
++                }, PendingPriority.Destruction);
++            }
++            catch (Exception ex) { log.Error("Reconnect persistence failed", ex); Disconnect(); }
+         }
+ 
+         public void GiftCodeReceived(string type)
+@@ -212,20 +368,35 @@
+ 
+         public void Dispose()
+         {
+-            if (disposed) return;
+-            handler?.Dispose();
+-            handler = null;
+-            ReceiveKey = null;
+-            SendKey = null;
+-            Manager = null;
+-            Socket = null;
+-            Character = null;
+-            Account = null;
+-            Player?.Dispose();
+-            Player = null;
+-            Random = null;
+-            ConnectedBuild = null;
+-            disposed = true;
++            Disconnect();
++        }
++
++        private void DisposeCore()
++        {
++            lock (lifecycleLock)
++            {
++                if (disposed) return;
++                // Remove the old world entity before clearing its Client fields.
++                try { if (Player != null && Player.Owner != null) Player.Owner.LeaveWorld(Player); }
++                catch (Exception ex) { log.Error("World detach failed", ex); }
++                try { Player?.Dispose(); }
++                catch (Exception ex) { log.Error("Player cleanup failed", ex); }
++                try { handler?.Dispose(); }
++                catch (Exception ex) { log.Error("Transport cleanup failed", ex); }
++                handler = null;
++                ReceiveKey = null;
++                SendKey = null;
++                Manager = null;
++                Socket = null;
++                Character = null;
++                Account = null;
++                Player = null;
++                Random = null;
++                ConnectedBuild = null;
++                savedAccount = null;
++                ownsAccount = false;
++                disposed = true;
++            }
+         }
+     }
+ }--- a/wServer/realm/RealmManager.cs
++++ b/wServer/realm/RealmManager.cs
+@@ -142,6 +142,7 @@
+         public DatabaseTicker Database { get; private set; }
+ 
+         public bool Terminating { get; private set; }
++        private bool stopping;
+ 
+         public int TPS { get; private set; }
+ 
+@@ -172,14 +173,18 @@
+             Monitor.WorldRemoved(world);
+         }
+ 
+-        public async void Disconnect(Client client)
+-        {
+-            if (client == null) return;
+-            Client dummy;
+-            client.Disconnect();
+-            await client.Save();
+-            while (!Clients.TryRemove(client.Account.AccountId, out dummy) && Clients.ContainsKey(client.Account.AccountId));
+-            client.Dispose();
++        public Task Disconnect(Client client)
++        {
++            return client == null ? Task.FromResult(0) : client.CompleteDisconnect(this);
++        }
++
++        internal bool RemoveClient(string accountId, Client client)
++        {
++            if (accountId == null) return false;
++            // ConcurrentDictionary's pair removal is atomic compare-and-remove,
++            // unlike a key-only removal after a reconnect has replaced the value.
++            return ((ICollection<KeyValuePair<string, Client>>)Clients).Remove(
++                new KeyValuePair<string, Client>(accountId, client));
+         }
+ 
+         public Player FindPlayer(string name)
+@@ -305,21 +310,37 @@
+         {
+             log.Info("Stopping Realm Manager...");
+ 
++            if (stopping) return;
++            stopping = true;
++            var departures = Clients.Values.ToArray().Select(client =>
++            {
++                var completion = new TaskCompletionSource<int>();
++                Logic.AddPendingAction(t =>
++                {
++                    try
++                    {
++                        Disconnect(client).ContinueWith(done =>
++                        {
++                            if (done.IsFaulted) completion.TrySetException(done.Exception);
++                            else completion.TrySetResult(0);
++                        }, TaskScheduler.Default);
++                    }
++                    catch (Exception ex) { completion.TrySetException(ex); }
++                }, PendingPriority.Destruction);
++                return completion.Task;
++            }).ToArray();
++            // Keep the logic loop alive until save + ordered disposal finishes.
++            // Bounded shutdown failure is logged, never a premature DB unlock.
++            try
++            {
++                if (!Task.WaitAll(departures, TimeSpan.FromSeconds(15)))
++                    log.Error("Shutdown persistence deadline reached; incomplete accounts remain locked");
++            }
++            catch (AggregateException ex) { log.Error("Shutdown persistence failed", ex); }
+             Terminating = true;
+-            List<Client> saveAccountUnlock = new List<Client>();
+-            foreach (Client c in Clients.Values)
+-            {
+-                saveAccountUnlock.Add(c);
+-                c.Disconnect();
+-            }
+-            //To prevent a buggy Account in use.
+-            using(var db = new Database())
+-                foreach (Client c in saveAccountUnlock)
+-                    db.UnlockAccount(c.Account);
+-
+-            GameData.Dispose();
+             logic.Join();
+             network.Join();
++            GameData.Dispose();
+ 
+             log.Info("Realm Manager stopped.");
+         }
+@@ -327,16 +348,23 @@
+         public bool TryConnect(Client psr)
+         {
+             Account acc = psr.Account;
++            if (stopping || Terminating || acc == null || psr.Stage == ProtocalStage.Disconnected)
++                return false;
+             if (Clients.Count >= MaxClients)
+                 return false;
+             if (acc.Banned)
+                 return false;
+             psr.Id = Interlocked.Increment(ref nextClientId);
+-            Client dummy;
+-            if (Clients.ContainsKey(acc.AccountId))
+-                if (!Clients[acc.AccountId].Socket.Connected)
+-                    Clients.TryRemove(acc.AccountId, out dummy);
+-            bool ret = Clients.TryAdd(psr.Account.AccountId, psr);
++            Client previous;
++            if (Clients.TryGetValue(acc.AccountId, out previous))
++            {
++                // A closed socket is NOT proof that its save/unlock completed.
++                // Only a completed reconnect persistence barrier may hand off.
++                if (!previous.CanReplaceAfterReconnect) return false;
++                if (!RemoveClient(acc.AccountId, previous)) return false;
++                previous.Disconnect();
++            }
++            bool ret = psr.RegisterAccount(this);
+             return ret;
+         }
+ 
+--- a/wServer/networking/Server.cs
++++ b/wServer/networking/Server.cs
+@@ -53,15 +53,14 @@
+                 new Client(Manager, skt);
+         }
+ 
+-        public async void Stop()
++        public void Stop()
+         {
+             log.Info("Stoping server...");
++            // Stop accepting synchronously. RealmManager.Stop owns the bounded
++            // save/unlock/dispose drain, not an unobservable async-void tail.
++            Socket.Close();
+             foreach (Client i in Manager.Clients.Values.ToArray())
+-            {
+-                await i.Save();
+                 i.Disconnect();
+-            }
+-            Socket.Close();
+         }
+     }
+ }--- a/wServer/realm/NetworkTicker.cs
++++ b/wServer/realm/NetworkTicker.cs
+@@ -52,10 +52,8 @@
+                             if (Manager.Terminating) return;
+                             if (work.Item1.Stage == ProtocalStage.Disconnected)
+                             {
+-                                Client client;
+-                                var accId = work.Item1?.Account?.AccountId;
+-                                if(accId != null)
+-                                Manager.Clients.TryRemove(accId, out client);
++                                // Lifecycle owner keeps registration until persistence
++                                // completes, then compare-removes this exact client.
+                                 continue;
+                             }
+                             try
+--- a/wServer/realm/entities/player/Player.cs
++++ b/wServer/realm/entities/player/Player.cs
+@@ -753,7 +753,7 @@
+                         Owner.LeaveWorld(this);
+                     else
+                         WorldInstance.LeaveWorld(this);
+-                    Manager.Database.DoActionAsync(db => db.UnlockAccount(Client.Account));
++                    Client.Disconnect();
+                     return;
+                 }
+                 if (Client.Stage == ProtocalStage.Disconnected || (!Client.Account.VerifiedEmail && Program.Verify))
+@@ -762,7 +762,7 @@
+                         Owner.LeaveWorld(this);
+                     else
+                         WorldInstance.LeaveWorld(this);
+-                    Manager.Database.DoActionAsync(db => db.UnlockAccount(Client.Account));
++                    Client.Disconnect();
+                     return;
+                 }
+             }
+--- a/wServer/networking/handlers/HelloHandler.cs
++++ b/wServer/networking/handlers/HelloHandler.cs
+@@ -38,9 +38,12 @@
+                 client.Disconnect();
+                 return;
+             }
+-            client.Manager.Database.DoActionAsync(db =>
++            // Capture the actual packet's manager, not PacketHandlerBase's
++            // mutable singleton client context. Keep teardown behind this task.
++            var manager = client.Manager;
++            client.RunSessionAction(db =>
+             {
+-                if ((client.Account = db.Verify(packet.GUID, packet.Password, Manager.GameData)) == null)
++                if ((client.Account = db.Verify(packet.GUID, packet.Password, manager.GameData)) == null)
+                 {
+                     log.Info(@"Account not verified.");
+                     client.Account = Database.CreateGuestAccount(packet.GUID);
+@@ -166,7 +169,7 @@
+                         AllowTeleport = world.AllowTeleport,
+                         ShowDisplays = world.ShowDisplays,
+                         ClientXML = world.ClientXml,
+-                        ExtraXML = Manager.GameData.AdditionXml
++                        ExtraXML = manager.GameData.AdditionXml
+                     });
+                     client.Stage = ProtocalStage.Handshaked;
+                 }
