@@ -1,0 +1,657 @@
+{
+  "32768": {
+    "DisplayId": "{pets.Black_Cat_Skin}",
+    "ObjectId": "Black Cat Skin",
+    "ObjectType": 32768
+  },
+  "32769": {
+    "DisplayId": "{pets.Grey_Cat_Skin}",
+    "ObjectId": "Grey Cat Skin",
+    "ObjectType": 32769
+  },
+  "32770": {
+    "DisplayId": "{pets.Orange_Cat_Skin}",
+    "ObjectId": "Orange Cat Skin",
+    "ObjectType": 32770
+  },
+  "32771": {
+    "DisplayId": "{pets.Tan_Cat_Skin}",
+    "ObjectId": "Tan Cat Skin",
+    "ObjectType": 32771
+  },
+  "32772": {
+    "DisplayId": "{pets.Yellow_Cat_Skin}",
+    "ObjectId": "Yellow Cat Skin",
+    "ObjectType": 32772
+  },
+  "32773": {
+    "DisplayId": "{pets.White_Cat_Skin}",
+    "ObjectId": "White Cat Skin",
+    "ObjectType": 32773
+  },
+  "32774": {
+    "DisplayId": "{pets.Brown_Pup_Skin}",
+    "ObjectId": "Brown Pup Skin",
+    "ObjectType": 32774
+  },
+  "32775": {
+    "DisplayId": "{pets.Grey_Pup_Skin}",
+    "ObjectId": "Grey Pup Skin",
+    "ObjectType": 32775
+  },
+  "32776": {
+    "DisplayId": "{pets.Golden_Pup_Skin}",
+    "ObjectId": "Golden Pup Skin",
+    "ObjectType": 32776
+  },
+  "32777": {
+    "DisplayId": "{pets.Grey_Wolf_Skin}",
+    "ObjectId": "Grey Wolf Skin",
+    "ObjectType": 32777
+  },
+  "32778": {
+    "DisplayId": "{pets.Brown_Fox_Skin}",
+    "ObjectId": "Brown Fox Skin",
+    "ObjectType": 32778
+  },
+  "32779": {
+    "DisplayId": "{pets.Sheepdog_Skin}",
+    "ObjectId": "Sheepdog Skin",
+    "ObjectType": 32779
+  },
+  "32780": {
+    "DisplayId": "{pets.Grey_Fox_Skin}",
+    "ObjectId": "Grey Fox Skin",
+    "ObjectType": 32780
+  },
+  "32781": {
+    "DisplayId": "{pets.Blue_Parrot_Skin}",
+    "ObjectId": "Blue Parrot Skin",
+    "ObjectType": 32781
+  },
+  "32782": {
+    "DisplayId": "{pets.Oriole_Skin}",
+    "ObjectId": "Oriole Skin",
+    "ObjectType": 32782
+  },
+  "32783": {
+    "DisplayId": "{pets.Goldfinch_Skin}",
+    "ObjectId": "Goldfinch Skin",
+    "ObjectType": 32783
+  },
+  "32784": {
+    "DisplayId": "{pets.Bluebird_Skin}",
+    "ObjectId": "Bluebird Skin",
+    "ObjectType": 32784
+  },
+  "32785": {
+    "DisplayId": "{pets.Cardinal_Skin}",
+    "ObjectId": "Cardinal Skin",
+    "ObjectType": 32785
+  },
+  "32786": {
+    "DisplayId": "{pets.Elephant_Skin}",
+    "ObjectId": "Elephant Skin",
+    "ObjectType": 32786
+  },
+  "32787": {
+    "DisplayId": "{pets.Koala_Skin}",
+    "ObjectId": "Koala Skin",
+    "ObjectType": 32787
+  },
+  "32788": {
+    "DisplayId": "{pets.Monkey_Skin}",
+    "ObjectId": "Monkey Skin",
+    "ObjectType": 32788
+  },
+  "32789": {
+    "DisplayId": "{pets.Chick_Skin}",
+    "ObjectId": "Chick Skin",
+    "ObjectType": 32789
+  },
+  "32790": {
+    "DisplayId": "{pets.Pig_Skin}",
+    "ObjectId": "Pig Skin",
+    "ObjectType": 32790
+  },
+  "32791": {
+    "DisplayId": "{pets.Duck_Skin}",
+    "ObjectId": "Duck Skin",
+    "ObjectType": 32791
+  },
+  "32792": {
+    "DisplayId": "{pets.Squirrel_Skin}",
+    "ObjectId": "Squirrel Skin",
+    "ObjectType": 32792
+  },
+  "32793": {
+    "DisplayId": "{pets.Hamster_Skin}",
+    "ObjectId": "Hamster Skin",
+    "ObjectType": 32793
+  },
+  "32794": {
+    "DisplayId": "{pets.Raccoon_Skin}",
+    "ObjectId": "Raccoon Skin",
+    "ObjectType": 32794
+  },
+  "32795": {
+    "DisplayId": "{pets.Dino_Skin}",
+    "ObjectId": "Dino Skin",
+    "ObjectType": 32795
+  },
+  "32796": {
+    "DisplayId": "{pets.Tomb_Snake_Skin}",
+    "ObjectId": "Tomb Snake Skin",
+    "ObjectType": 32796
+  },
+  "32797": {
+    "DisplayId": "{pets.Chameleon_Skin}",
+    "ObjectId": "Chameleon Skin",
+    "ObjectType": 32797
+  },
+  "32798": {
+    "DisplayId": "{pets.Dragonfly_Skin}",
+    "ObjectId": "Dragonfly Skin",
+    "ObjectType": 32798
+  },
+  "32799": {
+    "DisplayId": "{pets.Black_Ant_Skin}",
+    "ObjectId": "Black Ant Skin",
+    "ObjectType": 32799
+  },
+  "32800": {
+    "DisplayId": "{pets.Blue_Ant_Skin}",
+    "ObjectId": "Blue Ant Skin",
+    "ObjectType": 32800
+  },
+  "32801": {
+    "DisplayId": "{pets.Green_Ant_Skin}",
+    "ObjectId": "Green Ant Skin",
+    "ObjectType": 32801
+  },
+  "32802": {
+    "DisplayId": "{pets.Red_Ant_Skin}",
+    "ObjectId": "Red Ant Skin",
+    "ObjectType": 32802
+  },
+  "32803": {
+    "DisplayId": "{pets.Purple_Ant_Skin}",
+    "ObjectId": "Purple Ant Skin",
+    "ObjectType": 32803
+  },
+  "32804": {
+    "DisplayId": "{pets.Penguin_Skin}",
+    "ObjectId": "Penguin Skin",
+    "ObjectType": 32804
+  },
+  "32805": {
+    "DisplayId": "{pets.Green_Penguin_Skin}",
+    "ObjectId": "Green Penguin Skin",
+    "ObjectType": 32805
+  },
+  "32806": {
+    "DisplayId": "{pets.Grape_Penguin_Skin}",
+    "ObjectId": "Grape Penguin Skin",
+    "ObjectType": 32806
+  },
+  "32807": {
+    "DisplayId": "{pets.Grass_Penguin_Skin}",
+    "ObjectId": "Grass Penguin Skin",
+    "ObjectType": 32807
+  },
+  "32808": {
+    "DisplayId": "{pets.Blue_Snail_Skin}",
+    "ObjectId": "Blue Snail Skin",
+    "ObjectType": 32808
+  },
+  "32809": {
+    "DisplayId": "{pets.Green_Frog_Skin}",
+    "ObjectId": "Green Frog Skin",
+    "ObjectType": 32809
+  },
+  "32810": {
+    "DisplayId": "{pets.Purple_Snail_Skin}",
+    "ObjectId": "Purple Snail Skin",
+    "ObjectType": 32810
+  },
+  "32811": {
+    "DisplayId": "{pets.Purple_Frog_Skin}",
+    "ObjectId": "Purple Frog Skin",
+    "ObjectType": 32811
+  },
+  "32812": {
+    "DisplayId": "{pets.Sea_Slurp_Skin}",
+    "ObjectId": "Sea Slurp Skin",
+    "ObjectType": 32812
+  },
+  "32813": {
+    "DisplayId": "{pets.Turtle_Skin}",
+    "ObjectId": "Turtle Skin",
+    "ObjectType": 32813
+  },
+  "32814": {
+    "DisplayId": "{pets.Crab_Skin}",
+    "ObjectId": "Crab Skin",
+    "ObjectType": 32814
+  },
+  "32816": {
+    "DisplayId": "{pets.Bat_Skin}",
+    "ObjectId": "Bat Skin",
+    "ObjectType": 32816
+  },
+  "32817": {
+    "DisplayId": "{pets.LilAPOS_Ghost_Skin}",
+    "ObjectId": "Lil' Ghost Skin",
+    "ObjectType": 32817
+  },
+  "32818": {
+    "DisplayId": "{pets.Spirit_Skin}",
+    "ObjectId": "Spirit Skin",
+    "ObjectType": 32818
+  },
+  "32819": {
+    "DisplayId": "{pets.Baby_Skin}",
+    "ObjectId": "Baby Skin",
+    "ObjectType": 32819
+  },
+  "32821": {
+    "DisplayId": "{pets.Dreidel_Skin}",
+    "ObjectId": "Dreidel Skin",
+    "ObjectType": 32821
+  },
+  "32822": {
+    "DisplayId": "{pets.Sprite_Star_Skin}",
+    "ObjectId": "Sprite Star Skin",
+    "ObjectType": 32822
+  },
+  "32823": {
+    "DisplayId": "{pets.Blue_Thing_Skin}",
+    "ObjectId": "Blue Thing Skin",
+    "ObjectType": 32823
+  },
+  "32824": {
+    "DisplayId": "{pets.Robobuddy_Skin}",
+    "ObjectId": "Robobuddy Skin",
+    "ObjectType": 32824
+  },
+  "32825": {
+    "DisplayId": "{pets.Helmbot_Skin}",
+    "ObjectId": "Helmbot Skin",
+    "ObjectType": 32825
+  },
+  "32826": {
+    "DisplayId": "{pets.Lion_Skin}",
+    "ObjectId": "Lion Skin",
+    "ObjectType": 32826
+  },
+  "32827": {
+    "DisplayId": "{pets.White_Lion_Skin}",
+    "ObjectId": "White Lion Skin",
+    "ObjectType": 32827
+  },
+  "32828": {
+    "DisplayId": "{pets.Ninja_Cat_Skin}",
+    "ObjectId": "Ninja Cat Skin",
+    "ObjectType": 32828
+  },
+  "32829": {
+    "DisplayId": "{pets.Golden_Sheepdog_Skin}",
+    "ObjectId": "Golden Sheepdog Skin",
+    "ObjectType": 32829
+  },
+  "32830": {
+    "DisplayId": "{pets.Black_Wolf_Skin}",
+    "ObjectId": "Black Wolf Skin",
+    "ObjectType": 32830
+  },
+  "32831": {
+    "DisplayId": "{pets.Gold_Bulldog_Skin}",
+    "ObjectId": "Gold Bulldog Skin",
+    "ObjectType": 32831
+  },
+  "32832": {
+    "DisplayId": "{pets.Eagle_Skin}",
+    "ObjectId": "Eagle Skin",
+    "ObjectType": 32832
+  },
+  "32833": {
+    "DisplayId": "{pets.Raven_Skin}",
+    "ObjectId": "Raven Skin",
+    "ObjectType": 32833
+  },
+  "32834": {
+    "DisplayId": "{pets.USA_Eagle_Skin}",
+    "ObjectId": "USA Eagle Skin",
+    "ObjectType": 32834
+  },
+  "32835": {
+    "DisplayId": "{pets.Pigeon_Skin}",
+    "ObjectId": "Pigeon Skin",
+    "ObjectType": 32835
+  },
+  "32836": {
+    "DisplayId": "{pets.Panda_Skin}",
+    "ObjectId": "Panda Skin",
+    "ObjectType": 32836
+  },
+  "32837": {
+    "DisplayId": "{pets.Toucan_Skin}",
+    "ObjectId": "Toucan Skin",
+    "ObjectType": 32837
+  },
+  "32838": {
+    "DisplayId": "{pets.Orangutan_Skin}",
+    "ObjectId": "Orangutan Skin",
+    "ObjectType": 32838
+  },
+  "32839": {
+    "DisplayId": "{pets.Mallard_Skin}",
+    "ObjectId": "Mallard Skin",
+    "ObjectType": 32839
+  },
+  "32840": {
+    "DisplayId": "{pets.Turkey_Skin}",
+    "ObjectId": "Turkey Skin",
+    "ObjectType": 32840
+  },
+  "32841": {
+    "DisplayId": "{pets.Skunk_Skin}",
+    "ObjectId": "Skunk Skin",
+    "ObjectType": 32841
+  },
+  "32842": {
+    "DisplayId": "{pets.Snowy_Owl_Skin}",
+    "ObjectId": "Snowy Owl Skin",
+    "ObjectType": 32842
+  },
+  "32843": {
+    "DisplayId": "{pets.Reindeer_Skin}",
+    "ObjectId": "Reindeer Skin",
+    "ObjectType": 32843
+  },
+  "32844": {
+    "DisplayId": "{pets.Baby_Dragon_Skin}",
+    "ObjectId": "Baby Dragon Skin",
+    "ObjectType": 32844
+  },
+  "32846": {
+    "DisplayId": "{pets.Bee_Skin}",
+    "ObjectId": "Bee Skin",
+    "ObjectType": 32846
+  },
+  "32847": {
+    "DisplayId": "{pets.Praying_Mantis_Skin}",
+    "ObjectId": "Praying Mantis Skin",
+    "ObjectType": 32847
+  },
+  "32848": {
+    "DisplayId": "{pets.Karate_Red_Skin}",
+    "ObjectId": "Karate Red Skin",
+    "ObjectType": 32848
+  },
+  "32849": {
+    "DisplayId": "{pets.Karate_Blue_Skin}",
+    "ObjectId": "Karate Blue Skin",
+    "ObjectType": 32849
+  },
+  "32850": {
+    "DisplayId": "{pets.Karate_Yellow_Skin}",
+    "ObjectId": "Karate Yellow Skin",
+    "ObjectType": 32850
+  },
+  "32851": {
+    "DisplayId": "{pets.Karate_Purple_Skin}",
+    "ObjectId": "Karate Purple Skin",
+    "ObjectType": 32851
+  },
+  "32852": {
+    "DisplayId": "{pets.Demon_Frog_Skin}",
+    "ObjectId": "Demon Frog Skin",
+    "ObjectType": 32852
+  },
+  "32853": {
+    "DisplayId": "{pets.Peppermint_Snail_Skin}",
+    "ObjectId": "Peppermint Snail Skin",
+    "ObjectType": 32853
+  },
+  "32854": {
+    "DisplayId": "{pets.Gargoyle_Skin}",
+    "ObjectId": "Gargoyle Skin",
+    "ObjectType": 32854
+  },
+  "32855": {
+    "DisplayId": "{pets.LilAPOS_Cyclops_Skin}",
+    "ObjectId": "Lil' Cyclops Skin",
+    "ObjectType": 32855
+  },
+  "32856": {
+    "DisplayId": "{pets.Werewolf_Cub_Skin}",
+    "ObjectId": "Werewolf Cub Skin",
+    "ObjectType": 32856
+  },
+  "32857": {
+    "DisplayId": "{pets.Monster_Eye_Skin}",
+    "ObjectId": "Monster Eye Skin",
+    "ObjectType": 32857
+  },
+  "32858": {
+    "DisplayId": "{pets.Skull_Skin}",
+    "ObjectId": "Skull Skin",
+    "ObjectType": 32858
+  },
+  "32859": {
+    "DisplayId": "{pets.Leprechaun_Skin}",
+    "ObjectId": "Leprechaun Skin",
+    "ObjectType": 32859
+  },
+  "32860": {
+    "DisplayId": "{pets.Elf_Skin}",
+    "ObjectId": "Elf Skin",
+    "ObjectType": 32860
+  },
+  "32861": {
+    "DisplayId": "{pets.Mermaid_Skin}",
+    "ObjectId": "Mermaid Skin",
+    "ObjectType": 32861
+  },
+  "32862": {
+    "DisplayId": "{pets.Jelly_Skin}",
+    "ObjectId": "Jelly Skin",
+    "ObjectType": 32862
+  },
+  "32863": {
+    "DisplayId": "{pets.Gummy_Bear_Skin}",
+    "ObjectId": "Gummy Bear Skin",
+    "ObjectType": 32863
+  },
+  "32864": {
+    "DisplayId": "{pets.Snowman_Skin}",
+    "ObjectId": "Snowman Skin",
+    "ObjectType": 32864
+  },
+  "32865": {
+    "DisplayId": "{pets.Jalapeno_Skin}",
+    "ObjectId": "Jalapeno Skin",
+    "ObjectType": 32865
+  },
+  "32866": {
+    "DisplayId": "{pets.Redbot_Skin}",
+    "ObjectId": "Redbot Skin",
+    "ObjectType": 32866
+  },
+  "32867": {
+    "DisplayId": "{pets.Funkatron_Skin}",
+    "ObjectId": "Funkatron Skin",
+    "ObjectType": 32867
+  },
+  "32868": {
+    "DisplayId": "{pets.Tiger_Skin}",
+    "ObjectId": "Tiger Skin",
+    "ObjectType": 32868
+  },
+  "32869": {
+    "DisplayId": "{pets.Pink_Lion_Skin}",
+    "ObjectId": "Pink Lion Skin",
+    "ObjectType": 32869
+  },
+  "32870": {
+    "DisplayId": "{pets.Midnight_Wolf_Skin}",
+    "ObjectId": "Midnight Wolf Skin",
+    "ObjectType": 32870
+  },
+  "32871": {
+    "DisplayId": "{pets.Golden_Hyena_Skin}",
+    "ObjectId": "Golden Hyena Skin",
+    "ObjectType": 32871
+  },
+  "32872": {
+    "DisplayId": "{pets.Phoenix_Skin}",
+    "ObjectId": "Phoenix Skin",
+    "ObjectType": 32872
+  },
+  "32873": {
+    "DisplayId": "{pets.Griffin_Skin}",
+    "ObjectId": "Griffin Skin",
+    "ObjectType": 32873
+  },
+  "32874": {
+    "DisplayId": "{pets.War_Elephant_Skin}",
+    "ObjectId": "War Elephant Skin",
+    "ObjectType": 32874
+  },
+  "32875": {
+    "DisplayId": "{pets.King_Gorilla_Skin}",
+    "ObjectId": "King Gorilla Skin",
+    "ObjectType": 32875
+  },
+  "32876": {
+    "DisplayId": "{pets.Enraged_Yack_Skin}",
+    "ObjectId": "Enraged Yack Skin",
+    "ObjectType": 32876
+  },
+  "32877": {
+    "DisplayId": "{pets.Night_Mare_Skin}",
+    "ObjectId": "Night Mare Skin",
+    "ObjectType": 32877
+  },
+  "32878": {
+    "DisplayId": "{pets.Silver_Doe_Skin}",
+    "ObjectId": "Silver Doe Skin",
+    "ObjectType": 32878
+  },
+  "32879": {
+    "DisplayId": "{pets.Solar_Owl_Skin}",
+    "ObjectId": "Solar Owl Skin",
+    "ObjectType": 32879
+  },
+  "32880": {
+    "DisplayId": "{pets.Tandem_Cobra_Skin}",
+    "ObjectId": "Tandem Cobra Skin",
+    "ObjectType": 32880
+  },
+  "32881": {
+    "DisplayId": "{pets.Poison_Drake_Skin}",
+    "ObjectId": "Poison Drake Skin",
+    "ObjectType": 32881
+  },
+  "32882": {
+    "DisplayId": "{pets.Beetleman_Skin}",
+    "ObjectId": "Beetleman Skin",
+    "ObjectType": 32882
+  },
+  "32883": {
+    "DisplayId": "{pets.Ultrawasp_Skin}",
+    "ObjectId": "Ultrawasp Skin",
+    "ObjectType": 32883
+  },
+  "32884": {
+    "DisplayId": "{pets.Battle_Penguin_Skin}",
+    "ObjectId": "Battle Penguin Skin",
+    "ObjectType": 32884
+  },
+  "32885": {
+    "DisplayId": "{pets.Tank_Penguin_Skin}",
+    "ObjectId": "Tank Penguin Skin",
+    "ObjectType": 32885
+  },
+  "32886": {
+    "DisplayId": "{pets.Golden_Crab_Skin}",
+    "ObjectId": "Golden Crab Skin",
+    "ObjectType": 32886
+  },
+  "32887": {
+    "DisplayId": "{pets.Great_Shark_Skin}",
+    "ObjectId": "Great Shark Skin",
+    "ObjectType": 32887
+  },
+  "32888": {
+    "DisplayId": "{pets.Blue_Landfish_Skin}",
+    "ObjectId": "Blue Landfish Skin",
+    "ObjectType": 32888
+  },
+  "32889": {
+    "DisplayId": "{pets.Glowing_Skull_Skin}",
+    "ObjectId": "Glowing Skull Skin",
+    "ObjectType": 32889
+  },
+  "32890": {
+    "DisplayId": "{pets.Monkey_Head_Skin}",
+    "ObjectId": "Monkey Head Skin",
+    "ObjectType": 32890
+  },
+  "32891": {
+    "DisplayId": "{pets.Reaper_Skin}",
+    "ObjectId": "Reaper Skin",
+    "ObjectType": 32891
+  },
+  "32892": {
+    "DisplayId": "{pets.Battle_God_Skin}",
+    "ObjectId": "Battle God Skin",
+    "ObjectType": 32892
+  },
+  "32893": {
+    "DisplayId": "{pets.Centaur_Skin}",
+    "ObjectId": "Centaur Skin",
+    "ObjectType": 32893
+  },
+  "32894": {
+    "DisplayId": "{pets.Forest_Fairy_Skin}",
+    "ObjectId": "Forest Fairy Skin",
+    "ObjectType": 32894
+  },
+  "32895": {
+    "DisplayId": "{pets.Shroom_Skin}",
+    "ObjectId": "Shroom Skin",
+    "ObjectType": 32895
+  },
+  "32896": {
+    "DisplayId": "{pets.Great_Jelly_Skin}",
+    "ObjectId": "Great Jelly Skin",
+    "ObjectType": 32896
+  },
+  "32897": {
+    "DisplayId": "{pets.Spiderbot_Skin}",
+    "ObjectId": "Spiderbot Skin",
+    "ObjectType": 32897
+  },
+  "32898": {
+    "DisplayId": "{pets.Cylindron_Skin}",
+    "ObjectId": "Cylindron Skin",
+    "ObjectType": 32898
+  },
+  "32899": {
+    "DisplayId": "{pets.Gutsbot_Skin}",
+    "ObjectId": "Gutsbot Skin",
+    "ObjectType": 32899
+  },
+  "32900": {
+    "DisplayId": "{pets.LilAPOS_Oryx_Skin}",
+    "ObjectId": "Lil' Oryx Skin",
+    "ObjectType": 32900
+  },
+  "32912": {
+    "DisplayId": "{pets.Disabled_Pet_Skin}",
+    "ObjectId": "Disabled Pet Skin",
+    "ObjectType": 32912
+  }
+}

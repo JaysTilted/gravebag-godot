@@ -1,0 +1,1765 @@
+{
+  "768": {
+    "Equipment": [
+      2580,
+      2646,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Rogue",
+    "ObjectType": 768,
+    "SlotTypes": [
+      2,
+      13,
+      6,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 10,
+        "max": 50
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 15,
+        "max": 75
+      },
+      "HpRegen": {
+        "initial": 15,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 150,
+        "max": 720
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 10,
+        "max": 50
+      },
+      "Speed": {
+        "initial": 15,
+        "max": 75
+      }
+    },
+    "UnlockCost": 199,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "5",
+          "type": "0x0307"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Archer"
+      }
+    ]
+  },
+  "775": {
+    "Equipment": [
+      2586,
+      2657,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Archer",
+    "ObjectType": 775,
+    "SlotTypes": [
+      3,
+      15,
+      6,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 12,
+        "max": 75
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 12,
+        "max": 50
+      },
+      "HpRegen": {
+        "initial": 12,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 130,
+        "max": 700
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 10,
+        "max": 50
+      },
+      "Speed": {
+        "initial": 12,
+        "max": 50
+      }
+    },
+    "UnlockCost": 199,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "5",
+          "type": "0x0310"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Priest"
+      }
+    ]
+  },
+  "782": {
+    "Equipment": [
+      2711,
+      2606,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 15,
+        "min": 5,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Wizard",
+    "ObjectType": 782,
+    "SlotTypes": [
+      17,
+      11,
+      14,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 12,
+        "max": 75
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 15,
+        "max": 75
+      },
+      "HpRegen": {
+        "initial": 12,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 100,
+        "max": 670
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 385
+      },
+      "MpRegen": {
+        "initial": 12,
+        "max": 60
+      },
+      "Speed": {
+        "initial": 10,
+        "max": 50
+      }
+    },
+    "UnlockCost": 0,
+    "UnlockLevel": []
+  },
+  "784": {
+    "Equipment": [
+      2564,
+      2609,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 15,
+        "min": 5,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Priest",
+    "ObjectType": 784,
+    "SlotTypes": [
+      8,
+      4,
+      14,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 12,
+        "max": 50
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 12,
+        "max": 55
+      },
+      "HpRegen": {
+        "initial": 10,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 100,
+        "max": 670
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 385
+      },
+      "MpRegen": {
+        "initial": 15,
+        "max": 75
+      },
+      "Speed": {
+        "initial": 12,
+        "max": 55
+      }
+    },
+    "UnlockCost": 50,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "5",
+          "type": "0x030e"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Wizard"
+      }
+    ]
+  },
+  "797": {
+    "Equipment": [
+      2560,
+      2662,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Warrior",
+    "ObjectType": 797,
+    "SlotTypes": [
+      1,
+      16,
+      7,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 15,
+        "max": 75
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 10,
+        "max": 50
+      },
+      "HpRegen": {
+        "initial": 10,
+        "max": 75
+      },
+      "MaxHitPoints": {
+        "initial": 200,
+        "max": 770
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 10,
+        "max": 50
+      },
+      "Speed": {
+        "initial": 7,
+        "max": 50
+      }
+    },
+    "UnlockCost": 199,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "5",
+          "type": "0x0300"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Rogue"
+      }
+    ]
+  },
+  "798": {
+    "Equipment": [
+      2560,
+      2568,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Knight",
+    "ObjectType": 798,
+    "SlotTypes": [
+      1,
+      5,
+      7,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 15,
+        "max": 50
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 40
+      },
+      "Dexterity": {
+        "initial": 10,
+        "max": 50
+      },
+      "HpRegen": {
+        "initial": 10,
+        "max": 75
+      },
+      "MaxHitPoints": {
+        "initial": 200,
+        "max": 770
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 10,
+        "max": 50
+      },
+      "Speed": {
+        "initial": 7,
+        "max": 50
+      }
+    },
+    "UnlockCost": 499,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x031d"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Warrior"
+      }
+    ]
+  },
+  "799": {
+    "Equipment": [
+      2560,
+      2642,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Paladin",
+    "ObjectType": 799,
+    "SlotTypes": [
+      1,
+      12,
+      7,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 12,
+        "max": 50
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 30
+      },
+      "Dexterity": {
+        "initial": 10,
+        "max": 45
+      },
+      "HpRegen": {
+        "initial": 10,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 200,
+        "max": 770
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 10,
+        "max": 75
+      },
+      "Speed": {
+        "initial": 12,
+        "max": 55
+      }
+    },
+    "UnlockCost": 499,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x031e"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Knight"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0310"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Priest"
+      }
+    ]
+  },
+  "800": {
+    "Equipment": [
+      2580,
+      2723,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Assassin",
+    "ObjectType": 800,
+    "SlotTypes": [
+      2,
+      18,
+      6,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 12,
+        "max": 60
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 15,
+        "max": 75
+      },
+      "HpRegen": {
+        "initial": 15,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 150,
+        "max": 720
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 10,
+        "max": 60
+      },
+      "Speed": {
+        "initial": 15,
+        "max": 75
+      }
+    },
+    "UnlockCost": 499,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0300"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Rogue"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x030e"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Wizard"
+      }
+    ]
+  },
+  "801": {
+    "Equipment": [
+      2711,
+      2730,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 15,
+        "min": 5,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Necromancer",
+    "ObjectType": 801,
+    "SlotTypes": [
+      17,
+      19,
+      14,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 12,
+        "max": 60
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 15,
+        "max": 60
+      },
+      "HpRegen": {
+        "initial": 10,
+        "max": 30
+      },
+      "MaxHitPoints": {
+        "initial": 100,
+        "max": 670
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 385
+      },
+      "MpRegen": {
+        "initial": 12,
+        "max": 75
+      },
+      "Speed": {
+        "initial": 10,
+        "max": 50
+      }
+    },
+    "UnlockCost": 499,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x030e"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Wizard"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0310"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Priest"
+      }
+    ]
+  },
+  "802": {
+    "Equipment": [
+      2586,
+      2737,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Huntress",
+    "ObjectType": 802,
+    "SlotTypes": [
+      3,
+      20,
+      6,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 12,
+        "max": 75
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 12,
+        "max": 50
+      },
+      "HpRegen": {
+        "initial": 12,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 130,
+        "max": 700
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 10,
+        "max": 50
+      },
+      "Speed": {
+        "initial": 12,
+        "max": 50
+      }
+    },
+    "UnlockCost": 499,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0300"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Rogue"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0307"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Archer"
+      }
+    ]
+  },
+  "803": {
+    "Equipment": [
+      2711,
+      2788,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 15,
+        "min": 5,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Mystic",
+    "ObjectType": 803,
+    "SlotTypes": [
+      17,
+      21,
+      14,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 10,
+        "max": 60
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 10,
+        "max": 55
+      },
+      "HpRegen": {
+        "initial": 15,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 100,
+        "max": 670
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 385
+      },
+      "MpRegen": {
+        "initial": 15,
+        "max": 75
+      },
+      "Speed": {
+        "initial": 12,
+        "max": 60
+      }
+    },
+    "UnlockCost": 999,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0322"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Huntress"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0321"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Necromancer"
+      }
+    ]
+  },
+  "804": {
+    "Equipment": [
+      2580,
+      2787,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Trickster",
+    "ObjectType": 804,
+    "SlotTypes": [
+      2,
+      22,
+      6,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 10,
+        "max": 65
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 15,
+        "max": 75
+      },
+      "HpRegen": {
+        "initial": 12,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 150,
+        "max": 720
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 12,
+        "max": 60
+      },
+      "Speed": {
+        "initial": 12,
+        "max": 75
+      }
+    },
+    "UnlockCost": 999,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0320"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Assassin"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x031f"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Paladin"
+      }
+    ]
+  },
+  "805": {
+    "Equipment": [
+      2564,
+      2789,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 15,
+        "min": 5,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Sorcerer",
+    "ObjectType": 805,
+    "SlotTypes": [
+      8,
+      23,
+      14,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 10,
+        "max": 60
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 12,
+        "max": 60
+      },
+      "HpRegen": {
+        "initial": 10,
+        "max": 75
+      },
+      "MaxHitPoints": {
+        "initial": 100,
+        "max": 670
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 385
+      },
+      "MpRegen": {
+        "initial": 15,
+        "max": 60
+      },
+      "Speed": {
+        "initial": 12,
+        "max": 60
+      }
+    },
+    "UnlockCost": 999,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0321"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Necromancer"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0320"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Assassin"
+      }
+    ]
+  },
+  "806": {
+    "Equipment": [
+      3140,
+      3155,
+      -1,
+      -1,
+      2594,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "LevelIncrease": [
+      {
+        "max": 30,
+        "min": 20,
+        "stat": "MaxHitPoints"
+      },
+      {
+        "max": 8,
+        "min": 2,
+        "stat": "MaxMagicPoints"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Attack"
+      },
+      {
+        "max": 0,
+        "min": 0,
+        "stat": "Defense"
+      },
+      {
+        "max": 2,
+        "min": 0,
+        "stat": "Speed"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "Dexterity"
+      },
+      {
+        "max": 1,
+        "min": 0,
+        "stat": "HpRegen"
+      },
+      {
+        "max": 2,
+        "min": 1,
+        "stat": "MpRegen"
+      }
+    ],
+    "ObjectId": "Ninja",
+    "ObjectType": 806,
+    "SlotTypes": [
+      24,
+      25,
+      6,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Stats": {
+      "Attack": {
+        "initial": 15,
+        "max": 70
+      },
+      "Defense": {
+        "initial": 0,
+        "max": 25
+      },
+      "Dexterity": {
+        "initial": 12,
+        "max": 70
+      },
+      "HpRegen": {
+        "initial": 10,
+        "max": 40
+      },
+      "MaxHitPoints": {
+        "initial": 150,
+        "max": 720
+      },
+      "MaxMagicPoints": {
+        "initial": 100,
+        "max": 252
+      },
+      "MpRegen": {
+        "initial": 12,
+        "max": 70
+      },
+      "Speed": {
+        "initial": 10,
+        "max": 60
+      }
+    },
+    "UnlockCost": 999,
+    "UnlockLevel": [
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x0300"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Rogue"
+      },
+      {
+        "attributes": {
+          "level": "20",
+          "type": "0x031d"
+        },
+        "children": [],
+        "tag": "UnlockLevel",
+        "tail": "\n      ",
+        "text": "Warrior"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1302 @@
+{
+  "32517": {
+    "DefaultSkin": "Black Cat Skin",
+    "DisplayId": "{pets.Black_Cat}",
+    "FirstAbility": 405,
+    "ObjectId": "Black Cat",
+    "ObjectType": 32517,
+    "PetFamily": 6,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32518": {
+    "DefaultSkin": "Grey Cat Skin",
+    "DisplayId": "{pets.Grey_Cat}",
+    "FirstAbility": 404,
+    "ObjectId": "Grey Cat",
+    "ObjectType": 32518,
+    "PetFamily": 6,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32519": {
+    "DefaultSkin": "Orange Cat Skin",
+    "DisplayId": "{pets.Orange_Cat}",
+    "FirstAbility": 404,
+    "ObjectId": "Orange Cat",
+    "ObjectType": 32519,
+    "PetFamily": 6,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32520": {
+    "DefaultSkin": "Tan Cat Skin",
+    "DisplayId": "{pets.Tan_Cat}",
+    "FirstAbility": 402,
+    "ObjectId": "Tan Cat",
+    "ObjectType": 32520,
+    "PetFamily": 6,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32521": {
+    "DefaultSkin": "Yellow Cat Skin",
+    "DisplayId": "{pets.Yellow_Cat}",
+    "FirstAbility": 407,
+    "ObjectId": "Yellow Cat",
+    "ObjectType": 32521,
+    "PetFamily": 6,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32522": {
+    "DefaultSkin": "White Cat Skin",
+    "DisplayId": "{pets.White_Cat}",
+    "FirstAbility": 408,
+    "ObjectId": "White Cat",
+    "ObjectType": 32522,
+    "PetFamily": 6,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32523": {
+    "DefaultSkin": "Brown Pup Skin",
+    "DisplayId": "{pets.Brown_Pup}",
+    "FirstAbility": 407,
+    "ObjectId": "Brown Pup",
+    "ObjectType": 32523,
+    "PetFamily": 3,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32524": {
+    "DefaultSkin": "Grey Pup Skin",
+    "DisplayId": "{pets.Grey_Pup}",
+    "FirstAbility": 402,
+    "ObjectId": "Grey Pup",
+    "ObjectType": 32524,
+    "PetFamily": 3,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32525": {
+    "DefaultSkin": "Golden Pup Skin",
+    "DisplayId": "{pets.Golden_Pup}",
+    "FirstAbility": 406,
+    "ObjectId": "Golden Pup",
+    "ObjectType": 32525,
+    "PetFamily": 3,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32526": {
+    "DefaultSkin": "Grey Wolf Skin",
+    "DisplayId": "{pets.Grey_Wolf}",
+    "FirstAbility": 404,
+    "ObjectId": "Grey Wolf",
+    "ObjectType": 32526,
+    "PetFamily": 3,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32527": {
+    "DefaultSkin": "Brown Fox Skin",
+    "DisplayId": "{pets.Brown_Fox}",
+    "FirstAbility": 405,
+    "ObjectId": "Brown Fox",
+    "ObjectType": 32527,
+    "PetFamily": 3,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32528": {
+    "DefaultSkin": "Sheepdog Skin",
+    "DisplayId": "{pets.Sheepdog}",
+    "FirstAbility": 410,
+    "ObjectId": "Sheepdog",
+    "ObjectType": 32528,
+    "PetFamily": 3,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32529": {
+    "DefaultSkin": "Grey Fox Skin",
+    "DisplayId": "{pets.Grey_Fox}",
+    "FirstAbility": 402,
+    "ObjectId": "Grey Fox",
+    "ObjectType": 32529,
+    "PetFamily": 3,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32530": {
+    "DefaultSkin": "Blue Parrot Skin",
+    "DisplayId": "{pets.Blue_Parrot}",
+    "FirstAbility": 408,
+    "ObjectId": "Blue Parrot",
+    "ObjectType": 32530,
+    "PetFamily": 2,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32531": {
+    "DefaultSkin": "Oriole Skin",
+    "DisplayId": "{pets.Oriole}",
+    "FirstAbility": 405,
+    "ObjectId": "Oriole",
+    "ObjectType": 32531,
+    "PetFamily": 2,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32532": {
+    "DefaultSkin": "Goldfinch Skin",
+    "DisplayId": "{pets.Goldfinch}",
+    "FirstAbility": 410,
+    "ObjectId": "Goldfinch",
+    "ObjectType": 32532,
+    "PetFamily": 2,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32533": {
+    "DefaultSkin": "Bluebird Skin",
+    "DisplayId": "{pets.Bluebird}",
+    "FirstAbility": 407,
+    "ObjectId": "Bluebird",
+    "ObjectType": 32533,
+    "PetFamily": 2,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32534": {
+    "DefaultSkin": "Cardinal Skin",
+    "DisplayId": "{pets.Cardinal}",
+    "FirstAbility": 402,
+    "ObjectId": "Cardinal",
+    "ObjectType": 32534,
+    "PetFamily": 2,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32535": {
+    "DefaultSkin": "Elephant Skin",
+    "DisplayId": "{pets.Elephant}",
+    "FirstAbility": 411,
+    "ObjectId": "Elephant",
+    "ObjectType": 32535,
+    "PetFamily": 4,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32536": {
+    "DefaultSkin": "Koala Skin",
+    "DisplayId": "{pets.Koala}",
+    "FirstAbility": 408,
+    "ObjectId": "Koala",
+    "ObjectType": 32536,
+    "PetFamily": 4,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32537": {
+    "DefaultSkin": "Monkey Skin",
+    "DisplayId": "{pets.Monkey}",
+    "FirstAbility": 406,
+    "ObjectId": "Monkey",
+    "ObjectType": 32537,
+    "PetFamily": 4,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32538": {
+    "DefaultSkin": "Chick Skin",
+    "DisplayId": "{pets.Chick}",
+    "FirstAbility": 407,
+    "ObjectId": "Chick",
+    "ObjectType": 32538,
+    "PetFamily": 5,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32539": {
+    "DefaultSkin": "Pig Skin",
+    "DisplayId": "{pets.Pig}",
+    "FirstAbility": 405,
+    "ObjectId": "Pig",
+    "ObjectType": 32539,
+    "PetFamily": 5,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32540": {
+    "DefaultSkin": "Duck Skin",
+    "DisplayId": "{pets.Duck}",
+    "FirstAbility": 408,
+    "ObjectId": "Duck",
+    "ObjectType": 32540,
+    "PetFamily": 5,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32541": {
+    "DefaultSkin": "Hamster Skin",
+    "DisplayId": "{pets.Hamster}",
+    "FirstAbility": 406,
+    "ObjectId": "Hamster",
+    "ObjectType": 32541,
+    "PetFamily": 13,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32542": {
+    "DefaultSkin": "Raccoon Skin",
+    "DisplayId": "{pets.Raccoon}",
+    "FirstAbility": 408,
+    "ObjectId": "Raccoon",
+    "ObjectType": 32542,
+    "PetFamily": 13,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32543": {
+    "DefaultSkin": "Dino Skin",
+    "DisplayId": "{pets.Dino}",
+    "FirstAbility": 411,
+    "ObjectId": "Dino",
+    "ObjectType": 32543,
+    "PetFamily": 10,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32544": {
+    "DefaultSkin": "Tomb Snake Skin",
+    "DisplayId": "{pets.Tomb_Snake}",
+    "FirstAbility": 404,
+    "ObjectId": "Tomb Snake",
+    "ObjectType": 32544,
+    "PetFamily": 10,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32545": {
+    "DefaultSkin": "Chameleon Skin",
+    "DisplayId": "{pets.Chameleon}",
+    "FirstAbility": 407,
+    "ObjectId": "Chameleon",
+    "ObjectType": 32545,
+    "PetFamily": 10,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32547": {
+    "DefaultSkin": "Black Ant Skin",
+    "DisplayId": "{pets.Black_Ant}",
+    "FirstAbility": 411,
+    "ObjectId": "Black Ant",
+    "ObjectType": 32547,
+    "PetFamily": 8,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32548": {
+    "DefaultSkin": "Blue Ant Skin",
+    "DisplayId": "{pets.Blue_Ant}",
+    "FirstAbility": 410,
+    "ObjectId": "Blue Ant",
+    "ObjectType": 32548,
+    "PetFamily": 8,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32549": {
+    "DefaultSkin": "Green Ant Skin",
+    "DisplayId": "{pets.Green_Ant}",
+    "FirstAbility": 402,
+    "ObjectId": "Green Ant",
+    "ObjectType": 32549,
+    "PetFamily": 8,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32550": {
+    "DefaultSkin": "Red Ant Skin",
+    "DisplayId": "{pets.Red_Ant}",
+    "FirstAbility": 402,
+    "ObjectId": "Red Ant",
+    "ObjectType": 32550,
+    "PetFamily": 8,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32551": {
+    "DefaultSkin": "Purple Ant Skin",
+    "DisplayId": "{pets.Purple_Ant}",
+    "FirstAbility": 402,
+    "ObjectId": "Purple Ant",
+    "ObjectType": 32551,
+    "PetFamily": 8,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32552": {
+    "DefaultSkin": "Penguin Skin",
+    "DisplayId": "{pets.Penguin}",
+    "FirstAbility": 405,
+    "ObjectId": "Penguin",
+    "ObjectType": 32552,
+    "PetFamily": 9,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32553": {
+    "DefaultSkin": "Green Penguin Skin",
+    "DisplayId": "{pets.Green_Penguin}",
+    "FirstAbility": 405,
+    "ObjectId": "Green Penguin",
+    "ObjectType": 32553,
+    "PetFamily": 9,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32554": {
+    "DefaultSkin": "Grape Penguin Skin",
+    "DisplayId": "{pets.Grape_Penguin}",
+    "FirstAbility": 408,
+    "ObjectId": "Grape Penguin",
+    "ObjectType": 32554,
+    "PetFamily": 9,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32555": {
+    "DefaultSkin": "Grass Penguin Skin",
+    "DisplayId": "{pets.Grass_Penguin}",
+    "FirstAbility": 407,
+    "ObjectId": "Grass Penguin",
+    "ObjectType": 32555,
+    "PetFamily": 9,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32556": {
+    "DefaultSkin": "Blue Snail Skin",
+    "DisplayId": "{pets.Blue_Snail}",
+    "FirstAbility": 404,
+    "ObjectId": "Blue Snail",
+    "ObjectType": 32556,
+    "PetFamily": 0,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32557": {
+    "DefaultSkin": "Green Frog Skin",
+    "DisplayId": "{pets.Green_Frog}",
+    "FirstAbility": 405,
+    "ObjectId": "Green Frog",
+    "ObjectType": 32557,
+    "PetFamily": 0,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32558": {
+    "DefaultSkin": "Purple Snail Skin",
+    "DisplayId": "{pets.Purple_Snail}",
+    "FirstAbility": 404,
+    "ObjectId": "Purple Snail",
+    "ObjectType": 32558,
+    "PetFamily": 0,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32559": {
+    "DefaultSkin": "Purple Frog Skin",
+    "DisplayId": "{pets.Purple_Frog}",
+    "FirstAbility": 410,
+    "ObjectId": "Purple Frog",
+    "ObjectType": 32559,
+    "PetFamily": 0,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32560": {
+    "DefaultSkin": "Sea Slurp Skin",
+    "DisplayId": "{pets.Sea_Slurp}",
+    "FirstAbility": 406,
+    "ObjectId": "Sea Slurp",
+    "ObjectType": 32560,
+    "PetFamily": 0,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32561": {
+    "DefaultSkin": "Turtle Skin",
+    "DisplayId": "{pets.Turtle}",
+    "FirstAbility": 407,
+    "ObjectId": "Turtle",
+    "ObjectType": 32561,
+    "PetFamily": 0,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32562": {
+    "DefaultSkin": "Crab Skin",
+    "DisplayId": "{pets.Crab}",
+    "FirstAbility": 402,
+    "ObjectId": "Crab",
+    "ObjectType": 32562,
+    "PetFamily": 0,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32564": {
+    "DefaultSkin": "Bat Skin",
+    "DisplayId": "{pets.Bat}",
+    "FirstAbility": 402,
+    "ObjectId": "Bat",
+    "ObjectType": 32564,
+    "PetFamily": 11,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32565": {
+    "DefaultSkin": "Lil' Ghost Skin",
+    "DisplayId": "{pets.LilAPOS_Ghost}",
+    "FirstAbility": 411,
+    "ObjectId": "Lil' Ghost",
+    "ObjectType": 32565,
+    "PetFamily": 11,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32566": {
+    "DefaultSkin": "Spirit Skin",
+    "DisplayId": "{pets.Spirit}",
+    "FirstAbility": 404,
+    "ObjectId": "Spirit",
+    "ObjectType": 32566,
+    "PetFamily": 11,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32567": {
+    "DefaultSkin": "Baby Skin",
+    "DisplayId": "{pets.Baby}",
+    "FirstAbility": 407,
+    "ObjectId": "Baby",
+    "ObjectType": 32567,
+    "PetFamily": 7,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32569": {
+    "DefaultSkin": "Dreidel Skin",
+    "DisplayId": "{pets.Dreidel}",
+    "FirstAbility": 410,
+    "ObjectId": "Dreidel",
+    "ObjectType": 32569,
+    "PetFamily": 12,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32570": {
+    "DefaultSkin": "Sprite Star Skin",
+    "DisplayId": "{pets.Sprite_Star}",
+    "FirstAbility": 406,
+    "ObjectId": "Sprite Star",
+    "ObjectType": 32570,
+    "PetFamily": 12,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32571": {
+    "DefaultSkin": "Blue Thing Skin",
+    "DisplayId": "{pets.Blue_Thing}",
+    "FirstAbility": 408,
+    "ObjectId": "Blue Thing",
+    "ObjectType": 32571,
+    "PetFamily": 12,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32572": {
+    "DefaultSkin": "Robobuddy Skin",
+    "DisplayId": "{pets.Robobuddy}",
+    "FirstAbility": 406,
+    "ObjectId": "Robobuddy",
+    "ObjectType": 32572,
+    "PetFamily": 1,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32573": {
+    "DefaultSkin": "Helmbot Skin",
+    "DisplayId": "{pets.Helmbot}",
+    "FirstAbility": 406,
+    "ObjectId": "Helmbot",
+    "ObjectType": 32573,
+    "PetFamily": 1,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32574": {
+    "DefaultSkin": "Lion Skin",
+    "DisplayId": "{pets.Lion}",
+    "FirstAbility": null,
+    "ObjectId": "Lion",
+    "ObjectType": 32574,
+    "PetFamily": 6,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32575": {
+    "DefaultSkin": "White Lion Skin",
+    "DisplayId": "{pets.White_Lion}",
+    "FirstAbility": null,
+    "ObjectId": "White Lion",
+    "ObjectType": 32575,
+    "PetFamily": 6,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32576": {
+    "DefaultSkin": "Ninja Cat Skin",
+    "DisplayId": "{pets.Ninja_Cat}",
+    "FirstAbility": null,
+    "ObjectId": "Ninja Cat",
+    "ObjectType": 32576,
+    "PetFamily": 6,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32577": {
+    "DefaultSkin": "Golden Sheepdog Skin",
+    "DisplayId": "{pets.Golden_Sheepdog}",
+    "FirstAbility": null,
+    "ObjectId": "Golden Sheepdog",
+    "ObjectType": 32577,
+    "PetFamily": 3,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32578": {
+    "DefaultSkin": "Black Wolf Skin",
+    "DisplayId": "{pets.Black_Wolf}",
+    "FirstAbility": null,
+    "ObjectId": "Black Wolf",
+    "ObjectType": 32578,
+    "PetFamily": 3,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32579": {
+    "DefaultSkin": "Gold Bulldog Skin",
+    "DisplayId": "{pets.Gold_Bulldog}",
+    "FirstAbility": null,
+    "ObjectId": "Gold Bulldog",
+    "ObjectType": 32579,
+    "PetFamily": 3,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32580": {
+    "DefaultSkin": "Eagle Skin",
+    "DisplayId": "{pets.Eagle}",
+    "FirstAbility": null,
+    "ObjectId": "Eagle",
+    "ObjectType": 32580,
+    "PetFamily": 2,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32581": {
+    "DefaultSkin": "Raven Skin",
+    "DisplayId": "{pets.Raven}",
+    "FirstAbility": null,
+    "ObjectId": "Raven",
+    "ObjectType": 32581,
+    "PetFamily": 2,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32582": {
+    "DefaultSkin": "USA Eagle Skin",
+    "DisplayId": "{pets.USA_Eagle}",
+    "FirstAbility": null,
+    "ObjectId": "USA Eagle",
+    "ObjectType": 32582,
+    "PetFamily": 2,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32583": {
+    "DefaultSkin": "Pigeon Skin",
+    "DisplayId": "{pets.Pigeon}",
+    "FirstAbility": null,
+    "ObjectId": "Pigeon",
+    "ObjectType": 32583,
+    "PetFamily": 2,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32584": {
+    "DefaultSkin": "Panda Skin",
+    "DisplayId": "{pets.Panda}",
+    "FirstAbility": null,
+    "ObjectId": "Panda",
+    "ObjectType": 32584,
+    "PetFamily": 4,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32585": {
+    "DefaultSkin": "Toucan Skin",
+    "DisplayId": "{pets.Toucan}",
+    "FirstAbility": null,
+    "ObjectId": "Toucan",
+    "ObjectType": 32585,
+    "PetFamily": 4,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32586": {
+    "DefaultSkin": "Orangutan Skin",
+    "DisplayId": "{pets.Orangutan}",
+    "FirstAbility": null,
+    "ObjectId": "Orangutan",
+    "ObjectType": 32586,
+    "PetFamily": 4,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32587": {
+    "DefaultSkin": "Mallard Skin",
+    "DisplayId": "{pets.Mallard}",
+    "FirstAbility": null,
+    "ObjectId": "Mallard",
+    "ObjectType": 32587,
+    "PetFamily": 5,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32588": {
+    "DefaultSkin": "Turkey Skin",
+    "DisplayId": "{pets.Turkey}",
+    "FirstAbility": null,
+    "ObjectId": "Turkey",
+    "ObjectType": 32588,
+    "PetFamily": 5,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32589": {
+    "DefaultSkin": "Skunk Skin",
+    "DisplayId": "{pets.Skunk}",
+    "FirstAbility": null,
+    "ObjectId": "Skunk",
+    "ObjectType": 32589,
+    "PetFamily": 13,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32590": {
+    "DefaultSkin": "Snowy Owl Skin",
+    "DisplayId": "{pets.Snowy_Owl}",
+    "FirstAbility": null,
+    "ObjectId": "Snowy Owl",
+    "ObjectType": 32590,
+    "PetFamily": 13,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32591": {
+    "DefaultSkin": "Reindeer Skin",
+    "DisplayId": "{pets.Reindeer}",
+    "FirstAbility": null,
+    "ObjectId": "Reindeer",
+    "ObjectType": 32591,
+    "PetFamily": 13,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32592": {
+    "DefaultSkin": "Baby Dragon Skin",
+    "DisplayId": "{pets.Baby_Dragon}",
+    "FirstAbility": null,
+    "ObjectId": "Baby Dragon",
+    "ObjectType": 32592,
+    "PetFamily": 10,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32594": {
+    "DefaultSkin": "Bee Skin",
+    "DisplayId": "{pets.Bee}",
+    "FirstAbility": null,
+    "ObjectId": "Bee",
+    "ObjectType": 32594,
+    "PetFamily": 8,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32595": {
+    "DefaultSkin": "Praying Mantis Skin",
+    "DisplayId": "{pets.Praying_Mantis}",
+    "FirstAbility": null,
+    "ObjectId": "Praying Mantis",
+    "ObjectType": 32595,
+    "PetFamily": 8,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32596": {
+    "DefaultSkin": "Karate Red Skin",
+    "DisplayId": "{pets.Karate_Red}",
+    "FirstAbility": null,
+    "ObjectId": "Karate Red",
+    "ObjectType": 32596,
+    "PetFamily": 9,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32597": {
+    "DefaultSkin": "Karate Blue Skin",
+    "DisplayId": "{pets.Karate_Blue}",
+    "FirstAbility": null,
+    "ObjectId": "Karate Blue",
+    "ObjectType": 32597,
+    "PetFamily": 9,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32598": {
+    "DefaultSkin": "Karate Yellow Skin",
+    "DisplayId": "{pets.Karate_Yellow}",
+    "FirstAbility": null,
+    "ObjectId": "Karate Yellow",
+    "ObjectType": 32598,
+    "PetFamily": 9,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32599": {
+    "DefaultSkin": "Karate Purple Skin",
+    "DisplayId": "{pets.Karate_Purple}",
+    "FirstAbility": null,
+    "ObjectId": "Karate Purple",
+    "ObjectType": 32599,
+    "PetFamily": 9,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32600": {
+    "DefaultSkin": "Demon Frog Skin",
+    "DisplayId": "{pets.Demon_Frog}",
+    "FirstAbility": null,
+    "ObjectId": "Demon Frog",
+    "ObjectType": 32600,
+    "PetFamily": 0,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32601": {
+    "DefaultSkin": "Peppermint Snail Skin",
+    "DisplayId": "{pets.Peppermint_Snail}",
+    "FirstAbility": null,
+    "ObjectId": "Peppermint Snail",
+    "ObjectType": 32601,
+    "PetFamily": 0,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32602": {
+    "DefaultSkin": "Gargoylel Skin",
+    "DisplayId": "{pets.Gargoyle}",
+    "FirstAbility": null,
+    "ObjectId": "Gargoyle",
+    "ObjectType": 32602,
+    "PetFamily": 11,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32603": {
+    "DefaultSkin": "Lil' Cyclops Skin",
+    "DisplayId": "{pets.LilAPOS_Cyclops}",
+    "FirstAbility": null,
+    "ObjectId": "Lil' Cyclops",
+    "ObjectType": 32603,
+    "PetFamily": 11,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32604": {
+    "DefaultSkin": "Werewolf Cub Skin",
+    "DisplayId": "{pets.Werewolf_Cub}",
+    "FirstAbility": null,
+    "ObjectId": "Werewolf Cub",
+    "ObjectType": 32604,
+    "PetFamily": 11,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32605": {
+    "DefaultSkin": "Monster Eye Skin",
+    "DisplayId": "{pets.Monster_Eye}",
+    "FirstAbility": null,
+    "ObjectId": "Monster Eye",
+    "ObjectType": 32605,
+    "PetFamily": 11,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32606": {
+    "DefaultSkin": "Skull Skin",
+    "DisplayId": "{pets.Skull}",
+    "FirstAbility": null,
+    "ObjectId": "Skull",
+    "ObjectType": 32606,
+    "PetFamily": 11,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32607": {
+    "DefaultSkin": "Leprechaun Skin",
+    "DisplayId": "{pets.Leprechaun}",
+    "FirstAbility": null,
+    "ObjectId": "Leprechaun",
+    "ObjectType": 32607,
+    "PetFamily": 7,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32608": {
+    "DefaultSkin": "Elf Skin",
+    "DisplayId": "{pets.Elf}",
+    "FirstAbility": null,
+    "ObjectId": "Elf",
+    "ObjectType": 32608,
+    "PetFamily": 7,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32609": {
+    "DefaultSkin": "Mermaid Skin",
+    "DisplayId": "{pets.Mermaid}",
+    "FirstAbility": null,
+    "ObjectId": "Mermaid",
+    "ObjectType": 32609,
+    "PetFamily": 7,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32610": {
+    "DefaultSkin": "Jelly Skin",
+    "DisplayId": "{pets.Jelly}",
+    "FirstAbility": null,
+    "ObjectId": "Jelly",
+    "ObjectType": 32610,
+    "PetFamily": 12,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32611": {
+    "DefaultSkin": "Gummy Bear Skin",
+    "DisplayId": "{pets.Gummy_Bear}",
+    "FirstAbility": null,
+    "ObjectId": "Gummy Bear",
+    "ObjectType": 32611,
+    "PetFamily": 12,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32612": {
+    "DefaultSkin": "Snowman Skin",
+    "DisplayId": "{pets.Snowman}",
+    "FirstAbility": null,
+    "ObjectId": "Snowman",
+    "ObjectType": 32612,
+    "PetFamily": 12,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32613": {
+    "DefaultSkin": "Jalapeno Skin",
+    "DisplayId": "{pets.Jalapeno}",
+    "FirstAbility": null,
+    "ObjectId": "Jalapeno",
+    "ObjectType": 32613,
+    "PetFamily": 12,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32614": {
+    "DefaultSkin": "Redbot Skin",
+    "DisplayId": "{pets.Redbot}",
+    "FirstAbility": null,
+    "ObjectId": "Redbot",
+    "ObjectType": 32614,
+    "PetFamily": 1,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32615": {
+    "DefaultSkin": "Funkatron Skin",
+    "DisplayId": "{pets.Funkatron}",
+    "FirstAbility": null,
+    "ObjectId": "Funkatron",
+    "ObjectType": 32615,
+    "PetFamily": 1,
+    "PetRarity": 2,
+    "Size": 80
+  },
+  "32616": {
+    "DefaultSkin": "Tiger Skin",
+    "DisplayId": "{pets.Tiger}",
+    "FirstAbility": null,
+    "ObjectId": "Tiger",
+    "ObjectType": 32616,
+    "PetFamily": 6,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32617": {
+    "DefaultSkin": "Pink Lion Skin",
+    "DisplayId": "{pets.Pink_Lion}",
+    "FirstAbility": null,
+    "ObjectId": "Pink Lion",
+    "ObjectType": 32617,
+    "PetFamily": 6,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32618": {
+    "DefaultSkin": "Midnight Wolf Skin",
+    "DisplayId": "{pets.Midnight_Wolf}",
+    "FirstAbility": null,
+    "ObjectId": "Midnight Wolf",
+    "ObjectType": 32618,
+    "PetFamily": 3,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32619": {
+    "DefaultSkin": "Golden Hyena Skin",
+    "DisplayId": "{pets.Golden_Hyena}",
+    "FirstAbility": null,
+    "ObjectId": "Golden Hyena",
+    "ObjectType": 32619,
+    "PetFamily": 3,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32620": {
+    "DefaultSkin": "Phoenix Skin",
+    "DisplayId": "{pets.Phoenix}",
+    "FirstAbility": null,
+    "ObjectId": "Phoenix",
+    "ObjectType": 32620,
+    "PetFamily": 2,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32621": {
+    "DefaultSkin": "Griffin Skin",
+    "DisplayId": "{pets.Griffin}",
+    "FirstAbility": null,
+    "ObjectId": "Griffin",
+    "ObjectType": 32621,
+    "PetFamily": 2,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32622": {
+    "DefaultSkin": "War Elephant Skin",
+    "DisplayId": "{pets.War_Elephant}",
+    "FirstAbility": null,
+    "ObjectId": "War Elephant",
+    "ObjectType": 32622,
+    "PetFamily": 4,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32623": {
+    "DefaultSkin": "King Gorilla Skin",
+    "DisplayId": "{pets.King_Gorilla}",
+    "FirstAbility": null,
+    "ObjectId": "King Gorilla",
+    "ObjectType": 32623,
+    "PetFamily": 4,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32624": {
+    "DefaultSkin": "Enraged Yack Skin",
+    "DisplayId": "{pets.Enraged_Yack}",
+    "FirstAbility": null,
+    "ObjectId": "Enraged Yack",
+    "ObjectType": 32624,
+    "PetFamily": 5,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32625": {
+    "DefaultSkin": "Night Mare Skin",
+    "DisplayId": "{pets.Night_Mare}",
+    "FirstAbility": null,
+    "ObjectId": "Night Mare",
+    "ObjectType": 32625,
+    "PetFamily": 5,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32626": {
+    "DefaultSkin": "Silver Doe Skin",
+    "DisplayId": "{pets.Silver_Doe}",
+    "FirstAbility": null,
+    "ObjectId": "Silver Doe",
+    "ObjectType": 32626,
+    "PetFamily": 13,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32627": {
+    "DefaultSkin": "Solar Owl Skin",
+    "DisplayId": "{pets.Solar_Owl}",
+    "FirstAbility": null,
+    "ObjectId": "Solar Owl",
+    "ObjectType": 32627,
+    "PetFamily": 13,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32628": {
+    "DefaultSkin": "Tandem Cobra Skin",
+    "DisplayId": "{pets.Tandem_Cobra}",
+    "FirstAbility": null,
+    "ObjectId": "Tandem Cobra",
+    "ObjectType": 32628,
+    "PetFamily": 10,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32629": {
+    "DefaultSkin": "Poison Drake Skin",
+    "DisplayId": "{pets.Poison_Drake}",
+    "FirstAbility": null,
+    "ObjectId": "Poison Drake",
+    "ObjectType": 32629,
+    "PetFamily": 10,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32630": {
+    "DefaultSkin": "Beetleman Skin",
+    "DisplayId": "{pets.Beetleman}",
+    "FirstAbility": null,
+    "ObjectId": "Beetleman",
+    "ObjectType": 32630,
+    "PetFamily": 8,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32631": {
+    "DefaultSkin": "Ultrawasp Skin",
+    "DisplayId": "{pets.Ultrawasp}",
+    "FirstAbility": null,
+    "ObjectId": "Ultrawasp",
+    "ObjectType": 32631,
+    "PetFamily": 8,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32632": {
+    "DefaultSkin": "Battle Penguin Skin",
+    "DisplayId": "{pets.Battle_Penguin}",
+    "FirstAbility": null,
+    "ObjectId": "Battle Penguin",
+    "ObjectType": 32632,
+    "PetFamily": 9,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32633": {
+    "DefaultSkin": "Tank Penguin Skin",
+    "DisplayId": "{pets.Tank_Penguin}",
+    "FirstAbility": null,
+    "ObjectId": "Tank Penguin",
+    "ObjectType": 32633,
+    "PetFamily": 9,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32634": {
+    "DefaultSkin": "Golden Crab Skin",
+    "DisplayId": "{pets.Golden_Crab}",
+    "FirstAbility": null,
+    "ObjectId": "Golden Crab",
+    "ObjectType": 32634,
+    "PetFamily": 0,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32635": {
+    "DefaultSkin": "Great Shark Skin",
+    "DisplayId": "{pets.Great_Shark}",
+    "FirstAbility": null,
+    "ObjectId": "Great Shark",
+    "ObjectType": 32635,
+    "PetFamily": 0,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32636": {
+    "DefaultSkin": "Blue Landfish Skin",
+    "DisplayId": "{pets.Blue_Landfish}",
+    "FirstAbility": null,
+    "ObjectId": "Blue Landfish",
+    "ObjectType": 32636,
+    "PetFamily": 0,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32637": {
+    "DefaultSkin": "Glowing Skull Skin",
+    "DisplayId": "{pets.Glowing_Skull}",
+    "FirstAbility": null,
+    "ObjectId": "Glowing Skull",
+    "ObjectType": 32637,
+    "PetFamily": 11,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32638": {
+    "DefaultSkin": "Monkey Head Skin",
+    "DisplayId": "{pets.Monkey_Head}",
+    "FirstAbility": null,
+    "ObjectId": "Monkey Head",
+    "ObjectType": 32638,
+    "PetFamily": 11,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32639": {
+    "DefaultSkin": "Reaper Skin",
+    "DisplayId": "{pets.Reaper}",
+    "FirstAbility": null,
+    "ObjectId": "Reaper",
+    "ObjectType": 32639,
+    "PetFamily": 11,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32640": {
+    "DefaultSkin": "Battle God Skin",
+    "DisplayId": "{pets.Battle_God}",
+    "FirstAbility": null,
+    "ObjectId": "Battle God",
+    "ObjectType": 32640,
+    "PetFamily": 7,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32641": {
+    "DefaultSkin": "Centaur Skin",
+    "DisplayId": "{pets.Centaur}",
+    "FirstAbility": null,
+    "ObjectId": "Centaur",
+    "ObjectType": 32641,
+    "PetFamily": 7,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32642": {
+    "DefaultSkin": "Forest Fairy Skin",
+    "DisplayId": "{pets.Forest_Fairy}",
+    "FirstAbility": null,
+    "ObjectId": "Forest Fairy",
+    "ObjectType": 32642,
+    "PetFamily": 7,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32643": {
+    "DefaultSkin": "Lil' Oryx Skin",
+    "DisplayId": "{pets.LilAPOS_Oryx}",
+    "FirstAbility": null,
+    "ObjectId": "Lil' Oryx",
+    "ObjectType": 32643,
+    "PetFamily": 12,
+    "PetRarity": 4,
+    "Size": 60
+  },
+  "32644": {
+    "DefaultSkin": "Shroom Skin",
+    "DisplayId": "{pets.Shroom}",
+    "FirstAbility": null,
+    "ObjectId": "Shroom",
+    "ObjectType": 32644,
+    "PetFamily": 12,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32645": {
+    "DefaultSkin": "Great Jelly Skin",
+    "DisplayId": "{pets.Great_Jelly}",
+    "FirstAbility": null,
+    "ObjectId": "Great Jelly",
+    "ObjectType": 32645,
+    "PetFamily": 12,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32646": {
+    "DefaultSkin": "Spiderbot Skin",
+    "DisplayId": "{pets.Spiderbot}",
+    "FirstAbility": null,
+    "ObjectId": "Spiderbot",
+    "ObjectType": 32646,
+    "PetFamily": 1,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32647": {
+    "DefaultSkin": "Cylindron Skin",
+    "DisplayId": "{pets.Cylindron}",
+    "FirstAbility": null,
+    "ObjectId": "Cylindron",
+    "ObjectType": 32647,
+    "PetFamily": 1,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32648": {
+    "DefaultSkin": "Gutsbot Skin",
+    "DisplayId": "{pets.Gutsbot}",
+    "FirstAbility": null,
+    "ObjectId": "Gutsbot",
+    "ObjectType": 32648,
+    "PetFamily": 1,
+    "PetRarity": 4,
+    "Size": 80
+  },
+  "32649": {
+    "DefaultSkin": "Squirrel Skin",
+    "DisplayId": "{pets.Squirrel}",
+    "FirstAbility": 404,
+    "ObjectId": "Squirrel",
+    "ObjectType": 32649,
+    "PetFamily": 13,
+    "PetRarity": 0,
+    "Size": 60
+  },
+  "32650": {
+    "DefaultSkin": "Dragonfly Skin",
+    "DisplayId": "{pets.Dragonfly}",
+    "FirstAbility": 405,
+    "ObjectId": "Dragonfly",
+    "ObjectType": 32650,
+    "PetFamily": 8,
+    "PetRarity": 0,
+    "Size": 60
+  }
+}
