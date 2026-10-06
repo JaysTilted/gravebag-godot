@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-test('FSoD account parsing, loopback HTTP fixtures, safe CLI and public RSA', { timeout: 60000 }, (t) => {
+test('FSoD account parsing, loopback HTTP, safe CLI, public RSA and private profiles', { timeout: 60000 }, (t) => {
   const home = mkdtempSync(join(tmpdir(), 'fsod-account-home-'));
   try {
     const result = spawnSync('python3', ['-B', 'scripts/fsod_account/test_bridge.py'], {

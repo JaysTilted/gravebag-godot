@@ -1,0 +1,2 @@
+# Private reusable login ciphertext; never commit profiles.
+/.private/

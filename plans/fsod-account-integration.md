@@ -11,6 +11,8 @@ helpers, not an auth replacement or a backend installer:
   for the original **HELLO.Read** format. Uses the actual upstream **public** key
   and the `cryptography` library; no raw-RSA fallback, private PEM, account token,
   server config secret or RC4 key is copied into the helper.
+- `scripts/fsod_account/login_profile.py`: private ignored developer login
+  profiles for the parent's Godot client launcher; no plaintext credentials.
 - `tests/fsod-account.test.mjs`: verifier-compatible Node adapter that runs the
   real Python fixtures under isolated HOME; fixtures own/close ephemeral loopback
   HTTP servers. Python bytecode caching is disabled.
@@ -148,7 +150,7 @@ is MAX(charId)+1, and only nondead characters are listed (`619–665`). Therefor
 a minimal handcrafted accounts table is insufficient.
 
 Two concrete **upstream prerequisites**, not silently repaired by the client:
-- `Database.cs:301` inserts stats without fortuneTokens/totalFortuneTokens, while
+- `Database.cs:303` inserts stats without fortuneTokens/totalFortuneTokens, while
   dump `rotmgprod.sql:338–339` declares both NOT NULL with no default. Strict
   modern MySQL rejects that insert. Runtime/backend owner should add deliberate
   zero defaults/migration or fix the owning insert; do not globally turn strict
@@ -178,8 +180,8 @@ HELLO/map/ACK lifecycle, movement and hit reporting remain the Godot transport
 owner's work. A create-body success is not a created character.
 
 `HelloPacket.cs:30–46` reads BuildVersion, GameId, RSA-encrypted UTF guid, Int32,
-RSA-encrypted UTF password, Secret, KeyTime, Key bytes, MapJSON, platform/token
-strings. **Read is authoritative:** the upstream Write method
+RSA-encrypted UTF password, randomint1, Secret, KeyTime, Key bytes, MapInfo bytes,
+obf1..obf5 strings. **Read is authoritative:** the upstream Write method
 has the intervening Int32 in a different position. `Client.SERVER_VERSION` is
 **27.3.2**, enforced in `HelloHandler.cs:26–39`.
 
@@ -193,12 +195,46 @@ ciphertext, matching the source. The stdlib has no safe RSA implementation;
 **RSA helper requires cryptography (tested 41.0.7)**. HTTP helper itself remains
 stdlib-only. No private key is stored in this repo or printed in any artifact.
 
+## Private profile / parent launcher contract
+
+Add `--profile` to bootstrap to generate an ignored private profile for the new
+account. Or use `profile --guid '<existing GUID>' --local-server-list` for an
+existing verified/listed account; `--character-id N` must be in that account's
+char list. Default character_id=-1 requests creation, class_type=782 (Wizard),
+skin_type=0. Use stdin/getpass as above. Profile preflight checks RSA UTF-8 length
+and the library dependency **before** any account mutation.
+
+Profiles are exclusively created as
+`scripts/fsod_account/.private/dev-<random uuid>.json`. The directory is 0700,
+files 0600, final directory/file symlinks are refused, and existing profiles are
+never overwritten. The owned `.gitignore` excludes this whole directory.
+Ciphertext is reusable login material: no profile content is printed. CLI output
+for profile operations drops the plaintext GUID too, returning only the absolute
+profile_path and nonsecret account/character metadata.
+
+Schema: host=127.0.0.1, port=2050, character_id, class_type, skin_type; `hello`
+contains actual source properties BuildVersion="27.3.2", GameId=-2 (Nexus),
+GUID/Password=RSA ciphertext, **IgnoredInt=0**, randomint1=0, Secret="", KeyTime=0,
+Key=[], **MapInfo**=[], and obf1..obf5="". Key/MapInfo are numeric JSON byte arrays
+(empty for a Nexus login); MapInfo is the original property name, not MapJSON.
+`Hello.Read` discards an unnamed Int32 immediately **after GUID**; the profile's
+IgnoredInt is an explicitly added codec key for that unnamed field, not an
+original C# property. Write zero there, then Password, then separate randomint1.
+
+The parent launcher contract is:
+`-- --fsod-client --fsod-login-file=<absolute profile_path>`.
+This worker does not edit the Godot reader/launcher and does not claim those
+flags work on this unmerged account branch; the separate transport/frontend owner
+must read the profile without printing it. Existing files remain private runtime
+data, not receipt artifacts. Fixture profiles are removed by their test context.
+
 ## Proof / not tested
 
 Fixture Node check exercises real loopback POST requests, exact register fields,
 XML namespaces/errors, numeric-output allowlisting, proxy disablement, redirect
 refusal, timeout/input guards, CLI password handling, packet-body byte layout and
-RSA roundtrips with a freshly generated in-memory test key. The separate offline
+RSA roundtrips with a freshly generated in-memory test key, private-profile
+permissions/schema/CLI redaction and refusal of unlisted character IDs. The separate offline
 proof compiled the original upstream RSA.cs with its original BouncyCastle DLL,
 then successfully decrypted our public-key helper's arbitrary fixture ciphertext;
 only PASS/exit status was logged (no secret or ciphertext output).
@@ -206,5 +242,5 @@ only PASS/exit status was logged (no secret or ciphertext output).
 Original wServer build passed in a disposable source clone under Mono/xbuild.
 **No live HTTP registration, MySQL account bootstrap, TCP login/create/load or
 Godot game session was tested:** loopback 8080/8088/2050 had no listener during
-this task. No real account/password/token or outbound mail was generated.
+this task. No real account/password/token, reusable live login profile or outbound mail was generated.
 Tests cover fixtures, not a claim of runtime readiness.

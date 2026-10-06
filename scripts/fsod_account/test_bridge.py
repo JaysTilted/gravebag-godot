@@ -262,5 +262,83 @@ class PublicEncryptionTests(unittest.TestCase):
         self.assertEqual(str(error.exception), 'cryptography_dependency_required')
 
 
+class LoginProfileTests(unittest.TestCase):
+    def test_profile_keys_permissions_and_plaintext_absence(self):
+        import tempfile
+        from pathlib import Path
+        import login_profile
+        with tempfile.TemporaryDirectory(prefix='fsod-profile-') as temporary:
+            directory = Path(temporary) / '.private'
+            path = Path(login_profile.write_profile('fixture-guid', 'fixture-password', private_dir=directory))
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(directory.stat().st_mode & 0o777, 0o700)
+            text = path.read_text()
+            self.assertNotIn('fixture-guid', text)
+            self.assertNotIn('fixture-password', text)
+            profile = json.loads(text)
+            self.assertEqual(set(profile), {'host', 'port', 'character_id', 'class_type', 'skin_type', 'hello'})
+            self.assertEqual((profile['host'], profile['port'], profile['character_id'], profile['class_type'], profile['skin_type']), ('127.0.0.1', 2050, -1, 782, 0))
+            hello = profile['hello']
+            self.assertEqual(set(hello), {'BuildVersion', 'GameId', 'GUID', 'IgnoredInt', 'Password', 'Secret', 'randomint1', 'KeyTime', 'Key', 'MapInfo', 'obf1', 'obf2', 'obf3', 'obf4', 'obf5'})
+            self.assertEqual(hello['BuildVersion'], '27.3.2')
+            self.assertEqual(hello['GameId'], -2)
+            self.assertEqual(hello['IgnoredInt'], 0)
+            self.assertEqual(hello['Key'], [])
+            self.assertEqual(hello['MapInfo'], [])
+            second = Path(login_profile.write_profile('fixture-guid', 'fixture-password', 3, private_dir=directory))
+            self.assertNotEqual(path, second)
+            self.assertEqual(json.loads(second.read_text())['character_id'], 3)
+
+    def test_profile_refuses_symlink_and_invalid_characters(self):
+        import tempfile
+        from pathlib import Path
+        import login_profile
+        for value in [-2, 0, 2147483648, True]:
+            with self.assertRaises(login_profile.ProfileError):
+                login_profile.profile_data('fixture-guid', 'fixture-password', value)
+        with tempfile.TemporaryDirectory(prefix='fsod-profile-') as temporary:
+            target = Path(temporary) / 'target'
+            target.mkdir()
+            link = Path(temporary) / '.private'
+            link.symlink_to(target, target_is_directory=True)
+            with self.assertRaises(login_profile.ProfileError):
+                login_profile.write_profile('fixture-guid', 'fixture-password', private_dir=link)
+            self.assertEqual(list(target.iterdir()), [])
+
+    def test_bootstrap_profile_cli_outputs_metadata_only(self):
+        import tempfile
+        from pathlib import Path
+        import login_profile
+        responses = {'/account/register': (200, b'<Success/>', {}), '/account/verify': (200, ACCOUNT, {}), '/char/list': (200, CHARS, {})}
+        with tempfile.TemporaryDirectory(prefix='fsod-profile-') as temporary, fixture(responses) as (_server, url):
+            original_writer = login_profile.write_profile
+            def writer(*args):
+                return original_writer(*args, private_dir=Path(temporary) / '.private')
+            with patch.object(login_profile, 'write_profile', side_effect=writer), patch('sys.stdin', io.StringIO('fixture-password\n')), contextlib.redirect_stdout(io.StringIO()) as out:
+                code = bridge.main(['--base-url', url, 'bootstrap', '--mail-disabled', '--local-server-list', '--password-stdin', '--profile'])
+            self.assertEqual(code, 0)
+            result = json.loads(out.getvalue())
+            self.assertTrue(Path(result['profile_path']).is_absolute())
+            self.assertNotIn('guid', result)
+            self.assertNotIn('fixture-password', out.getvalue())
+            self.assertNotIn('GUID', out.getvalue())
+            self.assertNotIn('Password', out.getvalue())
+            self.assertNotIn('ciphertext', out.getvalue())
+
+    def test_existing_profile_character_must_be_listed_and_preflight(self):
+        responses = {'/account/verify': (200, ACCOUNT, {}), '/char/list': (200, CHARS, {})}
+        with fixture(responses) as (server, url):
+            with patch('sys.stdin', io.StringIO('fixture-password\n')), contextlib.redirect_stdout(io.StringIO()) as out:
+                code = bridge.main(['--base-url', url, 'profile', '--guid', 'dev@gmail.invalid', '--local-server-list', '--password-stdin', '--character-id', '99'])
+            self.assertEqual(code, 2)
+            self.assertEqual(json.loads(out.getvalue())['error'], 'character_not_listed')
+            server.requests.clear()
+            with patch('sys.stdin', io.StringIO('x' * 118 + '\n')), contextlib.redirect_stdout(io.StringIO()) as out:
+                code = bridge.main(['--base-url', url, 'bootstrap', '--mail-disabled', '--local-server-list', '--password-stdin', '--profile'])
+            self.assertEqual(code, 2)
+            self.assertEqual(json.loads(out.getvalue())['error'], 'plaintext_too_long')
+            self.assertEqual(server.requests, [])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

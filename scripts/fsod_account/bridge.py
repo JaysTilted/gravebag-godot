@@ -266,15 +266,21 @@ def main(argv=None):
         parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
         parser.add_argument("--timeout", type=float, default=5.0)
         commands = parser.add_subparsers(dest="command", required=True, parser_class=SafeParser)
-        for name in ("bootstrap", "verify", "chars"):
+        for name in ("bootstrap", "verify", "chars", "profile"):
             command = commands.add_parser(name)
             command.add_argument("--password-stdin", action="store_true")
             if name == "bootstrap":
                 command.add_argument("--mail-disabled", action="store_true")
             else:
                 command.add_argument("--guid", required=True)
-            if name in ("bootstrap", "chars"):
+            if name in ("bootstrap", "chars", "profile"):
                 command.add_argument("--local-server-list", action="store_true")
+            if name == "bootstrap":
+                command.add_argument("--profile", action="store_true")
+            if name in ("bootstrap", "profile"):
+                command.add_argument("--character-id", type=int, default=-1)
+                command.add_argument("--class-type", type=int, default=782)
+                command.add_argument("--skin-type", type=int, default=0)
         create = commands.add_parser("create-body")
         create.add_argument("--class-type", type=int, default=782)
         create.add_argument("--skin-type", type=int, default=0)
@@ -290,15 +296,39 @@ def main(argv=None):
         else:
             if args.command == "bootstrap" and not args.mail_disabled:
                 raise BridgeError("mail_disabled_attestation_required")
-            if args.command in ("bootstrap", "chars") and not args.local_server_list:
+            if args.command in ("bootstrap", "chars", "profile") and not args.local_server_list:
                 raise BridgeError("local_server_list_attestation_required")
             password = _password(args)
+            wants_profile = args.command == "profile" or (args.command == "bootstrap" and args.profile)
+            if wants_profile:
+                from login_profile import ProfileError, profile_data
+                try:
+                    profile_data(args.guid if args.command == "profile" else "fsod-dev-preflight@gmail.invalid",
+                                 password, args.character_id, args.class_type, args.skin_type)
+                except ProfileError as error:
+                    raise BridgeError(str(error)) from None
             if args.command == "bootstrap":
                 result = client.bootstrap(password, mail_disabled=args.mail_disabled, local_server_list=args.local_server_list)
             elif args.command == "verify":
                 result = {"ok": True, "account": client.verify(args.guid, password)}
+            elif args.command == "profile":
+                result = {"ok": True, "account": client.verify(args.guid, password),
+                          "characters": client.characters(args.guid, password, local_server_list=args.local_server_list),
+                          "game_session_tested": False}
             else:
                 result = {"ok": True, "characters": client.characters(args.guid, password, local_server_list=args.local_server_list)}
+            if wants_profile:
+                from login_profile import ProfileError, write_profile
+                if result["account"]["account_id"] != result["characters"]["account"]["account_id"]:
+                    raise BridgeError("account_mismatch")
+                listed = result["characters"]["characters"]
+                if args.character_id != -1 and not any(item["id"] == args.character_id for item in listed):
+                    raise BridgeError("character_not_listed")
+                guid = result.pop("guid") if args.command == "bootstrap" else args.guid
+                try:
+                    result["profile_path"] = write_profile(guid, password, args.character_id, args.class_type, args.skin_type)
+                except ProfileError as error:
+                    raise BridgeError(str(error)) from None
         print(json.dumps(result, sort_keys=True))
         return 0
     except BridgeError as exc:
