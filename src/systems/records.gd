@@ -7,6 +7,12 @@ class_name Records
 ## settings (autofire, volume) survive restarts. Saved with a ConfigFile
 ## at SAVE_PATH (`user://gravebag.save`).
 ##
+## FSoD fame representation adapted 2026-10-06 from db/FameStats.cs:
+## https://github.com/ossimc82/fabiano-swagger-of-doom (AGPL-3.0),
+## commit 6fd20aad4a7905b13f25389c68368a942a2b68cb.
+## FSoD account fame is an integer death-award currency (FameStats.cs).
+## Fractional legacy saves/deposits are floored; there is no fame cap or
+## spending rule in FameStats/DailyQuestConstants. Daily quests pay tokens.
 ## Pure logic: no nodes, no scene wiring.
 
 ## Default save location for the live game.
@@ -50,7 +56,7 @@ func reset() -> void:
 func bank_fame(amount: float) -> float:
 	if not is_finite(amount) or amount <= 0.0:
 		return banked_fame
-	banked_fame += amount
+	banked_fame += floor(amount)
 	return banked_fame
 
 
@@ -59,7 +65,7 @@ func bank_fame(amount: float) -> float:
 ## Returns true when at least one best improved.
 func record_dive(p_level: int, p_kills: int, p_bags: int, p_fame: float) -> bool:
 	var improved := false
-	var level: int = maxi(p_level, 0)
+	var level: int = clampi(p_level, 0, 20)
 	if level > best_level:
 		best_level = level
 		improved = true
@@ -73,7 +79,7 @@ func record_dive(p_level: int, p_kills: int, p_bags: int, p_fame: float) -> bool
 		improved = true
 	var fame: float = 0.0
 	if is_finite(p_fame):
-		fame = maxf(p_fame, 0.0)
+		fame = floor(maxf(p_fame, 0.0))
 	if fame > best_fame:
 		best_fame = fame
 		improved = true
@@ -116,7 +122,7 @@ func load_from(path: String = SAVE_PATH) -> Error:
 		reset()
 		return err
 	banked_fame = _as_nonneg_float(cfg.get_value("bank", "fame", 0.0))
-	best_level = _as_nonneg_int(cfg.get_value("best", "level", 0))
+	best_level = mini(20, _as_nonneg_int(cfg.get_value("best", "level", 0)))
 	best_kills = _as_nonneg_int(cfg.get_value("best", "kills", 0))
 	best_bags = _as_nonneg_int(cfg.get_value("best", "bags", 0))
 	best_fame = _as_nonneg_float(cfg.get_value("best", "fame", 0.0))
@@ -128,7 +134,7 @@ func load_from(path: String = SAVE_PATH) -> Error:
 
 static func _as_nonneg_float(v: Variant) -> float:
 	if v is float and is_finite(v):
-		return maxf(v, 0.0)
+		return floor(maxf(v, 0.0))
 	if v is int:
 		return maxf(float(v), 0.0)
 	return 0.0
