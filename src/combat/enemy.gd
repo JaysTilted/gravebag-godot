@@ -70,7 +70,7 @@ const TELEGRAPH_COLOR := Color(1.0, 0.25, 0.2, 0.85)
 @export var bullet_damage := 8.0
 ## Drawn radius for enemy orbs (materialized via the pool default). Big and
 ## bright so a 1280x720 frame reads instantly.
-@export var bullet_radius := 13.0
+@export var bullet_radius := 5.0
 @export var bullet_curve := 0.0
 ## Muzzle telegraph floor is 0.4s (RotMG fairness); windup + cooldown stays
 ## under ~2s so every live enemy fires at least every ~2s.
@@ -115,6 +115,10 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if _state == State.DEAD:
+		return
+	# No target = nexus-safe hold. Don't drift or fire into the hub.
+	if target == null or not is_instance_valid(target):
+		velocity = Vector2.ZERO
 		return
 	_drift(delta)
 	match _state:

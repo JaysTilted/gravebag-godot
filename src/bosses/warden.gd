@@ -92,6 +92,9 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if phase == Phase.DEAD:
 		return
+	if aim_target == null or not is_instance_valid(aim_target):
+		velocity = Vector2.ZERO
+		return
 	_age += delta
 	_tick_timers(delta)
 	_drift(delta)

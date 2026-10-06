@@ -87,6 +87,8 @@ var mp: float = MAX_MP
 var autofire_enabled: bool = false
 
 var _aim_dir: Vector2 = Vector2.RIGHT
+var _walk_t: float = 0.0
+var _recoil: float = 0.0
 var _fire_timer: float = 0.0
 var _dash_timer: float = 0.0
 var _dead: bool = false
@@ -180,12 +182,27 @@ func _update_aim() -> void:
 	# 8px deadzone: a cursor on top of the player keeps the last aim.
 	if to_mouse.length() >= AIM_DEADZONE_PX:
 		_aim_dir = to_mouse.normalized()
-	# 45-degree snap: aim spokes and shots lock to 8-way spokes.
-	var step: float = deg_to_rad(AIM_SNAP_DEG)
-	var snapped: float = roundf(_aim_dir.angle() / step) * step
-	_aim_pivot.rotation = snapped
-	# Face the aim: flip the upright body sprite, never rotate the pixels.
-	_sprite.flip_h = cos(snapped) < 0.0
+	# Free mouse aim. Shots go exactly at the cursor, not 8 locked spokes.
+	_aim_pivot.rotation = _aim_dir.angle()
+	_sprite.flip_h = _aim_dir.x < 0.0
+	_animate(get_physics_process_delta_time())
+
+
+
+func _animate(delta: float) -> void:
+	var moving := velocity.length() > 8.0
+	if moving:
+		_walk_t += delta * 10.0
+		_sprite.position.y = sin(_walk_t) * 1.5
+		_sprite.scale = Vector2(PIXEL_SCALE, PIXEL_SCALE * (1.0 + 0.06 * sin(_walk_t * 2.0)))
+	else:
+		_walk_t = 0.0
+		_sprite.position.y = 0.0
+		_sprite.scale = Vector2(PIXEL_SCALE, PIXEL_SCALE)
+	_recoil = maxf(0.0, _recoil - delta * 8.0)
+	if _wand != null:
+		_wand.position.x = 6.0 - _recoil * 4.0
+		_wand.rotation = sin(_walk_t) * 0.08 if moving else 0.0
 
 
 func _handle_fire(delta: float) -> void:
@@ -201,6 +218,7 @@ func _fire() -> void:
 	bolt.direction = Vector2.RIGHT.rotated(_aim_pivot.rotation)
 	get_parent().add_child(bolt)
 	bolt.global_position = _muzzle.global_position
+	_recoil = 1.0
 	fired.emit()
 
 

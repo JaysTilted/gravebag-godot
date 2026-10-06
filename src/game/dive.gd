@@ -63,23 +63,23 @@ const FORMATION_RADIUS := 260.0
 const LEASH_RANGE := 520.0
 const COMBAT_BULLETS_MIN := 30
 const ENEMY_POOL_SIZE := 512
-const ENEMY_BULLET_RADIUS := 13.0
+const ENEMY_BULLET_RADIUS := 5.0
 const ENEMY_RESPAWN_SEC := 1.5
 const PICKUP_RADIUS := 48.0
 const PLAYER_SHOT_DAMAGE := 14.0
 const PLAYER_SHOT_HIT_RADIUS := 30.0
-const ENEMY_BULLET_HIT_RADIUS := 22.0
+const ENEMY_BULLET_HIT_RADIUS := 8.0
 const WARDEN_BULLET_SPEED := 240.0
 const WARDEN_BULLET_DAMAGE := 10.0
 const XP_BY_RANK := [50, 90, 130, 200, 400]
 ## Live loop (CCGS integrator): NEXUS -> REALM -> BOSS -> EXTRACT/DEAD.
 ## North = low Y (boss), south = high Y (extract). Hub exit by walking out;
 ## seals are Y-crossings so they work with zero new collision wiring.
-const NEXUS_HUB_RADIUS := 170.0
+const NEXUS_HUB_RADIUS := 260.0
 const NORTH_SEAL_Y := 480.0
 const BOSS_SPAWN := Vector2(1024.0, 320.0)
-const EXTRACT_Y := 1920.0
-const EXTRACT_POS := Vector2(1024.0, 1960.0)
+const EXTRACT_Y := 2140.0
+const EXTRACT_POS := Vector2(1024.0, 2180.0)
 const NEXUS_PORTAL_POS := Vector2(1024.0, 1640.0)
 const NORTH_SEAL_LABEL_POS := Vector2(1024.0, 480.0)
 ## Bot soak tuning.
@@ -192,6 +192,7 @@ func _ready() -> void:
 	loop_state = "NEXUS"
 	_spawn_player(nexus_spawn)
 	_spawn_initial_foes()
+	_set_combat_paused(true)
 
 
 func _process(delta: float) -> void:
@@ -315,6 +316,7 @@ func _enter_realm(how: String) -> void:
 	if loop_state != "NEXUS":
 		return
 	loop_state = "REALM"
+	_set_combat_paused(false)
 	_loop_toast("REALM — LEAVE WITH THE BAG")
 	print("LOOP STATE NEXUS -> REALM (%s)" % how)
 
@@ -354,6 +356,7 @@ func _enter_extract(how: String) -> void:
 	if pool != null and is_instance_valid(pool) and pool.has_method("clear_all"):
 		pool.call("clear_all")
 	loop_state = "NEXUS"
+	_set_combat_paused(true)
 	_loop_toast("NEXUS — SAFE")
 
 
@@ -606,6 +609,8 @@ func _player_shots_vs_foes() -> void:
 
 
 func _enemy_bullets_vs_player() -> void:
+	if loop_state == "NEXUS":
+		return
 	if pool == null or not is_instance_valid(player):
 		return
 	if player.get("hp") == null or float(player.get("hp")) <= 0.0:
@@ -830,11 +835,12 @@ func _respawn_player() -> void:
 	_pot_mp = 2
 	_spawn_player(nexus_spawn)
 	loop_state = "NEXUS"
+	_set_combat_paused(true)
 	_loop_toast("NEXUS — SAFE")
 	print("LOOP STATE DEAD -> NEXUS (respawn)")
 	# Re-point live foes at the new diver so the dive keeps moving.
 	for foe in enemies:
-		if foe is Node and is_instance_valid(foe):
+		if is_instance_valid(foe) and foe is Node:
 			(foe as Node).set("target", player)
 	if is_instance_valid(warden):
 		(warden as Node).set("aim_target", player)
@@ -844,12 +850,25 @@ func _respawn_player() -> void:
 		_spawn_enemy(nexus_spawn + Vector2(120, -80))
 
 
+
+func _set_combat_paused(paused: bool) -> void:
+	if paused and pool != null and is_instance_valid(pool) and pool.has_method("clear_all"):
+		pool.call("clear_all")
+	var tgt: Variant = null if paused else player
+	for foe in enemies:
+		if is_instance_valid(foe) and foe is Node:
+			(foe as Node).set("target", tgt)
+	if is_instance_valid(warden):
+		(warden as Node).set("aim_target", tgt)
+
+
 func _on_nexus_escape() -> void:
 	# R instant escape to the safe hub: teleport, clear bullets, back to NEXUS.
 	if not is_instance_valid(player):
 		return
 	(player as Node2D).global_position = nexus_spawn
 	loop_state = "NEXUS"
+	_set_combat_paused(true)
 	_loop_toast("NEXUS — SAFE")
 	if pool != null and pool.has_method("clear_all"):
 		pool.call("clear_all")
@@ -1046,12 +1065,14 @@ func _enemy_bullet_count() -> int:
 ## Teleports only when extremely far (respawn scatter); otherwise
 ## fast-drifts so the screen stays busy without pops.
 func _keep_formation(delta: float) -> void:
+	if loop_state == "NEXUS":
+		return
 	if not is_instance_valid(player):
 		return
 	var anchor: Vector2 = (player as Node2D).global_position
 	var idx := 0
 	for foe in enemies:
-		if foe is Node2D and is_instance_valid(foe):
+		if is_instance_valid(foe) and foe is Node2D:
 			var f := foe as Node2D
 			var want := _formation_slot(anchor, idx, ENEMY_COUNT)
 			var d: float = f.global_position.distance_to(anchor)
@@ -1077,16 +1098,16 @@ func _update_hud() -> void:
 	var pending := float(ledger.get("pending_fame"))
 	var foes: Array = []
 	for foe in enemies:
-		if foe is Node2D and is_instance_valid(foe):
+		if is_instance_valid(foe) and foe is Node2D:
 			foes.append(_world_to_map((foe as Node2D).global_position))
 	if is_instance_valid(warden):
 		foes.append(_world_to_map((warden as Node2D).global_position))
 	for m in minions:
-		if m is Node2D and is_instance_valid(m):
+		if is_instance_valid(m) and m is Node2D:
 			foes.append(_world_to_map((m as Node2D).global_position))
 	var bag_dots: Array = []
 	for b in bags:
-		if b is Node2D and is_instance_valid(b):
+		if is_instance_valid(b) and b is Node2D:
 			bag_dots.append({"pos": _world_to_map((b as Node2D).global_position), "tier": String((b as Node).get("tier"))})
 	var portals: Array = [_world_to_map(PORTAL_POS)]
 	var mm := {"player": _world_to_map((player as Node2D).global_position), "foes": foes, "bags": bag_dots, "portals": portals}
@@ -1128,7 +1149,7 @@ func _bot_drive(delta: float) -> void:
 	var has_bag := false
 	var bag_pos := Vector2.ZERO
 	for b in bags:
-		if b is Node2D and is_instance_valid(b):
+		if is_instance_valid(b) and b is Node2D:
 			var d: float = ppos.distance_to((b as Node2D).global_position)
 			if d < best_d:
 				best_d = d

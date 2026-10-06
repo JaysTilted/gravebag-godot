@@ -186,16 +186,14 @@ static func make_texture(p_team: int, p_radius: float) -> ImageTexture:
 ## and never confuses with cool white/cyan loot pips.
 static func _orb_pixel(p: Vector2) -> Color:
 	var d: float = p.length()
-	if d > 15.0:
+	# Small RotMG-style dot inside the 32px sheet. Scale comes from radius.
+	if d > 6.5:
 		return Color(0.0, 0.0, 0.0, 0.0)
-	if d > 13.0:
+	if d > 5.2:
 		return Color(0.02, 0.0, 0.05, 1.0)
-	if d > 9.5:
-		var t: float = (d - 9.5) / 3.5  # 0 core-side .. 1 outline-side
-		return Color(1.0, lerpf(0.55, 0.25, t), lerpf(0.25, 0.1, t), 1.0)
-	if d > 4.5:
-		return Color(1.0, 0.38, 0.08, 1.0)
-	return Color(1.0, 0.72, 0.2, 1.0)
+	if d > 2.4:
+		return Color(1.0, 0.42, 0.08, 1.0)
+	return Color(1.0, 0.82, 0.35, 1.0)
 
 
 ## Thin cyan needle, drawn pointing up: dark outline, cyan body, white core.
