@@ -1,0 +1,278 @@
+--- a/db/Database.cs
++++ b/db/Database.cs
+@@ -32,6 +32,8 @@
+         };
+ 
+         private static string _host, _databaseName, _user, _password;
++        // Linux sandbox connection routing only; original default is unchanged.
++        private static readonly string dbPort = Environment.GetEnvironmentVariable("FSOD_DB_PORT") ?? "3306";
+         private readonly MySqlConnection _con;
+         public MySqlConnection Connection { get { return _con; } }
+ 
+@@ -43,7 +45,7 @@
+             _password = password;
+ 
+             _con = new MySqlConnection(
+-                String.Format("Server={0};Database={1};uid={2};password={3};convert zero datetime=True;",
++                String.Format("Server={0};Port=" + dbPort + ";Database={1};uid={2};password={3};convert zero datetime=True;",
+                     host, database ?? "rotmgprod", user ?? "root", password ?? ""));
+             _con.Open();
+ 
+@@ -66,7 +68,7 @@
+         public Database()
+         {
+             _con = new MySqlConnection(
+-                String.Format("Server={0};Database={1};uid={2};password={3};convert zero datetime=True;",
++                String.Format("Server={0};Port=" + dbPort + ";Database={1};uid={2};password={3};convert zero datetime=True;",
+                     _host, _databaseName, _user, _password));
+             _con.Open();
+         }
+@@ -203,7 +205,7 @@
+             {
+                 if (!rdr.HasRows) return null;
+                 rdr.Read();
+-                accId = rdr.GetString("id");
++                accId = Convert.ToString(rdr["id"]);
+             }
+             return GetAccount(accId, data);
+         }
+@@ -232,8 +234,8 @@
+             }
+ 
+             DateTime converted;
+-            if (TimeZoneInfo.Local.Id != TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time").Id)
+-                converted = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
++            if (TimeZoneInfo.Local.Id != TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles").Id)
++                converted = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"));
+             else
+                 converted = DateTime.Now;
+ 
+@@ -389,7 +391,7 @@
+             {
+                 if (!rdr.HasRows) return null;
+                 rdr.Read();
+-                accId = rdr.GetString("id");
++                accId = Convert.ToString(rdr["id"]);
+             }
+             return GetAccount(accId, data);
+         }
+@@ -409,7 +411,7 @@
+                 ret = new Account
+                 {
+                     Name = rdr.GetString(UppercaseFirst("name")),
+-                    AccountId = rdr.GetString("id"),
++                    AccountId = Convert.ToString(rdr["id"]),
+                     Admin = rdr.GetInt32("rank") >= 2,
+                     Email = uuid ?? rdr.GetString("uuid"),
+                     Password = password ?? rdr.GetString("password"),
+@@ -432,7 +434,7 @@
+                     Locked = rdr.GetString("locked").Split(',').ToList(),
+                     Ignored = rdr.GetString("ignored").Split(',').ToList(),
+                     _Gifts = rdr.GetString("gifts"),
+-                    IsAgeVerified = rdr.GetString("isAgeVerified").ToLower() == "true" ? 1 : 0,
++                    IsAgeVerified = Convert.ToString(rdr["isAgeVerified"]).ToLower() == "true" ? 1 : 0,
+                     AuthToken = rdr.GetString("authToken"),
+                     NotAcceptedNewTos = rdr.GetInt32("acceptedNewTos") == 1 ? null : String.Empty,
+                     OwnedSkins = Utils.FromCommaSepString32(rdr.GetString("ownedSkins")).ToList()
+--- a/server/Program.cs
++++ b/server/Program.cs
+@@ -59,7 +59,7 @@
+             if (RunPreCheck(port))
+             {
+                 listener = new HttpListener();
+-                listener.Prefixes.Add($"http://*:{port}/");
++                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+                 listener.Start();
+ 
+                 listener.BeginGetContext(ListenerCallback, null);
+--- a/wServer/networking/Server.cs
++++ b/wServer/networking/Server.cs
+@@ -27,7 +27,7 @@
+         public void Start()
+         {
+             log.Info("Starting server...");
+-            Socket.Bind(new IPEndPoint(IPAddress.Any, Program.Settings.GetValue<int>("port")));
++            Socket.Bind(new IPEndPoint(IPAddress.Loopback, Program.Settings.GetValue<int>("port")));
+             Socket.Listen(0xff);
+             Socket.BeginAccept(Listen, null);
+         }
+--- a/wServer/networking/PolicyServer.cs
++++ b/wServer/networking/PolicyServer.cs
+@@ -18,7 +18,7 @@
+ 
+         public PolicyServer()
+         {
+-            listener = new TcpListener(IPAddress.Any, 843);
++            listener = new TcpListener(IPAddress.Loopback, Program.Settings.GetValue<int>("policyPort", "843"));
+         }
+ 
+         private static void ServePolicyFile(IAsyncResult ar)
+--- a/db/db.csproj
++++ b/db/db.csproj
+@@ -9,7 +9,7 @@
+     <AppDesignerFolder>Properties</AppDesignerFolder>
+     <RootNamespace>db</RootNamespace>
+     <AssemblyName>db</AssemblyName>
+-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
++    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+     <MonoTargetFrameworkVersion>v4.0</MonoTargetFrameworkVersion>
+     <FileAlignment>512</FileAlignment>
+     <TargetFrameworkProfile />
+@@ -61,7 +61,7 @@
+       <HintPath>..\packages\log4net.2.0.0\lib\net40-full\log4net.dll</HintPath>
+     </Reference>
+     <Reference Include="MySql.Data">
+-      <HintPath>..\packages\MySql.Data.6.9.6\lib\net45\MySql.Data.dll</HintPath>
++      <HintPath>..\.dependencies\MySql.Data.dll</HintPath>
+     </Reference>
+     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+--- a/wServer/wServer.csproj
++++ b/wServer/wServer.csproj
+@@ -10,7 +10,7 @@
+     <AppDesignerFolder>Properties</AppDesignerFolder>
+     <RootNamespace>wServer</RootNamespace>
+     <AssemblyName>wServer</AssemblyName>
+-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
++    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+     <MonoTargetFrameworkVersion>v4.0</MonoTargetFrameworkVersion>
+     <FileAlignment>512</FileAlignment>
+     <FileUpgradeFlags>
+@@ -91,7 +91,7 @@
+       <HintPath>..\packages\MarkerMetro.Unity.Ionic.Zlib.2.0.0.6\lib\net35\Ionic.ZLib.dll</HintPath>
+     </Reference>
+     <Reference Include="MySql.Data">
+-      <HintPath>..\packages\MySql.Data.6.9.6\lib\net45\MySql.Data.dll</HintPath>
++      <HintPath>..\.dependencies\MySql.Data.dll</HintPath>
+     </Reference>
+     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+--- a/server/server.csproj
++++ b/server/server.csproj
+@@ -9,7 +9,7 @@
+     <AppDesignerFolder>Properties</AppDesignerFolder>
+     <RootNamespace>server</RootNamespace>
+     <AssemblyName>server</AssemblyName>
+-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
++    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+     <MonoTargetFrameworkVersion>v4.0</MonoTargetFrameworkVersion>
+     <FileAlignment>512</FileAlignment>
+     <TargetFrameworkProfile />
+@@ -101,9 +101,9 @@
+     <Reference Include="MimeKit">
+       <HintPath>..\packages\MimeKit.0.96.0.0\lib\net45\MimeKit.dll</HintPath>
+     </Reference>
+-    <Reference Include="MySql.Data, Version=6.9.6.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
++    <Reference Include="MySql.Data">
+       <SpecificVersion>False</SpecificVersion>
+-      <HintPath>..\packages\MySql.Data.6.9.6\lib\net45\MySql.Data.dll</HintPath>
++      <HintPath>..\.dependencies\MySql.Data.dll</HintPath>
+     </Reference>
+     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+@@ -145,7 +145,7 @@
+     <Compile Include="credits\add.cs" />
+     <Compile Include="credits\getoffers.cs" />
+     <Compile Include="credits\kabamadd.cs" />
+-    <Compile Include="crossdomain.cs" />
++    <Compile Include="Crossdomain.cs" />
+     <Compile Include="fame\list.cs" />
+     <Compile Include="guild\getBoard.cs" />
+     <Compile Include="guild\listMembers.cs" />
+@@ -161,10 +161,10 @@
+     <Compile Include="RequestHandlers.cs" />
+     <Compile Include="sfx\Sfx.cs" />
+     <Compile Include="account\verify.cs" />
+-    <Compile Include="app\init.cs" />
+-    <Compile Include="app\getLanguageStrings.cs" />
+-    <Compile Include="app\globalNews.cs" />
+-    <Compile Include="picture\get.cs" />
++    <Compile Include="App\init.cs" />
++    <Compile Include="App\getLanguageStrings.cs" />
++    <Compile Include="App\globalNews.cs" />
++    <Compile Include="Picture\Get.cs" />
+     <Compile Include="arena\getRecords.cs" />
+   </ItemGroup>
+   <ItemGroup>
+@@ -214,7 +214,7 @@
+     </None>
+   </ItemGroup>
+   <ItemGroup>
+-    <Content Include="app\Languages\en.txt">
++    <Content Include="App\Languages\en.txt">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+     <Content Include="game\404.html">
+@@ -385,7 +385,7 @@
+     <Content Include="game\userData.htm">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+-    <Content Include="app\globalNews\globalNews.txt">
++    <Content Include="App\globalNews\globalNews.txt">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+     <Content Include="game\version.txt">
+@@ -403,7 +403,7 @@
+     <Content Include="package\392.txt">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+-    <Content Include="package\MysteryBox.xml">
++    <Content Include="package\Mysterybox.xml">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+     <Content Include="package\Packages.xml">
+@@ -1120,19 +1120,19 @@
+     <Content Include="sfx\weapon\wand_of_death.mp3">
+       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+     </Content>
+-    <Content Include="app\Languages\it.txt">
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="app\Languages\fr.txt">
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="app\Languages\es.txt">
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="app\Languages\ru.txt">
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="app\Languages\de.txt">
++    <Content Include="App\Languages\it.txt">
++      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
++    </Content>
++    <Content Include="App\Languages\fr.txt">
++      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
++    </Content>
++    <Content Include="App\Languages\es.txt">
++      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
++    </Content>
++    <Content Include="App\Languages\ru.txt">
++      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
++    </Content>
++    <Content Include="App\Languages\de.txt">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+   </ItemGroup>
+--- a/DungeonGen/DungeonGen.csproj
++++ b/DungeonGen/DungeonGen.csproj
+@@ -10,7 +10,7 @@
+     <AppDesignerFolder>Properties</AppDesignerFolder>
+     <RootNamespace>DungeonGenerator</RootNamespace>
+     <AssemblyName>DungeonGen</AssemblyName>
+-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
++    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+     <FileAlignment>512</FileAlignment>
+   </PropertyGroup>
+   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+--- a/terrain/terrain.csproj
++++ b/terrain/terrain.csproj
+@@ -10,7 +10,7 @@
+     <AppDesignerFolder>Properties</AppDesignerFolder>
+     <RootNamespace>terrain</RootNamespace>
+     <AssemblyName>terrain</AssemblyName>
+-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
++    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+     <MonoTargetFrameworkVersion>v4.0</MonoTargetFrameworkVersion>
+     <FileAlignment>512</FileAlignment>
+     <TargetFrameworkProfile />

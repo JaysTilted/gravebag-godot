@@ -1,0 +1,95 @@
+{
+  "purpose": "Pinned MariaDB-compatible MySQL connector and transitive .NET Framework DLLs; no gameplay changes",
+  "assemblies": [
+    {
+      "package": "mysql.data",
+      "version": "8.4.0",
+      "relative_dll": "mysql.data/8.4.0/lib/net462/MySql.Data.dll",
+      "sha256": "8c7e5f8b8b0adb4c5d07975f1afaa7735340d117cb658f877acf0839a691d6cf"
+    },
+    {
+      "package": "bouncycastle.cryptography",
+      "version": "2.2.1",
+      "relative_dll": "bouncycastle.cryptography/2.2.1/lib/net461/BouncyCastle.Cryptography.dll",
+      "sha256": "3f0182309f8ffb9ce0fa5f303219d3155bf1da232e14a620ed234aec209a2935"
+    },
+    {
+      "package": "google.protobuf",
+      "version": "3.25.1",
+      "relative_dll": "google.protobuf/3.25.1/lib/net45/Google.Protobuf.dll",
+      "sha256": "44b0b144e10ab00469bc4c9b29f14e903430746b0b5dba3e5f896f4eacd90277"
+    },
+    {
+      "package": "k4os.compression.lz4",
+      "version": "1.3.5",
+      "relative_dll": "k4os.compression.lz4/1.3.5/lib/net462/K4os.Compression.LZ4.dll",
+      "sha256": "55ba7e4630ae93e40a29c58db2b8b739827b2ca98797b8ef7859ac21f29b1a8d"
+    },
+    {
+      "package": "k4os.compression.lz4.streams",
+      "version": "1.3.5",
+      "relative_dll": "k4os.compression.lz4.streams/1.3.5/lib/net462/K4os.Compression.LZ4.Streams.dll",
+      "sha256": "2126e711a662e557321bfb289126a8b29cc6d374c89b8ae9a2f53d13a1c65f6f"
+    },
+    {
+      "package": "k4os.hash.xxhash",
+      "version": "1.0.8",
+      "relative_dll": "k4os.hash.xxhash/1.0.8/lib/net462/K4os.Hash.xxHash.dll",
+      "sha256": "fd5fbeafb3ae59b45dbc6ac6b867ecdbeb4b4b715adebc5d1766e155e639caf3"
+    },
+    {
+      "package": "system.io.pipelines",
+      "version": "5.0.2",
+      "relative_dll": "system.io.pipelines/5.0.2/lib/net461/System.IO.Pipelines.dll",
+      "sha256": "91d6404aa214aa4ba21e066180a88cbe9565e52316491111cb7f239fc4982f82"
+    },
+    {
+      "package": "system.buffers",
+      "version": "4.5.1",
+      "relative_dll": "system.buffers/4.5.1/lib/net461/System.Buffers.dll",
+      "sha256": "accccfbe45d9f08ffeed9916e37b33e98c65be012cfff6e7fa7b67210ce1fefb"
+    },
+    {
+      "package": "system.memory",
+      "version": "4.5.5",
+      "relative_dll": "system.memory/4.5.5/lib/net461/System.Memory.dll",
+      "sha256": "bf3fb84664f4097f1a8a9bc71a51dcf8cf1a905d4080a4d290da1730866e856f"
+    },
+    {
+      "package": "system.numerics.vectors",
+      "version": "4.5.0",
+      "relative_dll": "system.numerics.vectors/4.5.0/lib/net46/System.Numerics.Vectors.dll",
+      "sha256": "1d3ef8698281e7cf7371d1554afef5872b39f96c26da772210a33da041ba1183"
+    },
+    {
+      "package": "system.configuration.configurationmanager",
+      "version": "4.4.1",
+      "relative_dll": "system.configuration.configurationmanager/4.4.1/lib/net461/System.Configuration.ConfigurationManager.dll",
+      "sha256": "ee07f08c66d91978ad6eafa3f0e0104344e448a179da9f779e2b1385735d387e"
+    },
+    {
+      "package": "system.diagnostics.diagnosticsource",
+      "version": "7.0.2",
+      "relative_dll": "system.diagnostics.diagnosticsource/7.0.2/lib/net462/System.Diagnostics.DiagnosticSource.dll",
+      "sha256": "5b8ccdda36486950de37484c25e1334376431e52176c32f87dd730690b273e3b"
+    },
+    {
+      "package": "system.runtime.compilerservices.unsafe",
+      "version": "6.0.0",
+      "relative_dll": "system.runtime.compilerservices.unsafe/6.0.0/lib/net461/System.Runtime.CompilerServices.Unsafe.dll",
+      "sha256": "37768488e8ef45729bc7d9a2677633c6450042975bb96516e186da6cb9cd0dcf"
+    },
+    {
+      "package": "system.threading.tasks.extensions",
+      "version": "4.5.4",
+      "relative_dll": "system.threading.tasks.extensions/4.5.4/lib/net461/System.Threading.Tasks.Extensions.dll",
+      "sha256": "4f81ffd0dc7204db75afc35ea4291769b07c440592f28894260eea76626a23c6"
+    },
+    {
+      "package": "zstdsharp.port",
+      "version": "0.7.1",
+      "relative_dll": "zstdsharp.port/0.7.1/lib/net461/ZstdSharp.dll",
+      "sha256": "187e9ef20eaa4c0c150a0554ec6812590f262388c3c5dbd9da299006bdec1569"
+    }
+  ]
+}
