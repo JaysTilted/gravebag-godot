@@ -55,7 +55,16 @@ const WORLD_SIZE := 2048.0
 const PLAYER_SPAWN := Vector2(1024.0, 1100.0)
 const PORTAL_POS := Vector2(1024.0, 640.0)
 const NEXUS_POS := Vector2(1024.0, 1800.0)
-const ENEMY_COUNT := 3
+const ENEMY_COUNT := 6
+## Combat-density pass: formation ring around the player (in-screen spawn +
+## leash so foes never wander off-camera) and the capture-frame bullet floor.
+## RotMG fairness holds: muzzle telegraphs stay >= 0.4s via enemy windup.
+const FORMATION_RADIUS := 260.0
+const LEASH_RANGE := 520.0
+const COMBAT_BULLETS_MIN := 30
+const ENEMY_POOL_SIZE := 512
+const ENEMY_BULLET_RADIUS := 13.0
+const ENEMY_RESPAWN_SEC := 1.5
 const PICKUP_RADIUS := 48.0
 const PLAYER_SHOT_DAMAGE := 14.0
 const PLAYER_SHOT_HIT_RADIUS := 30.0
@@ -140,6 +149,9 @@ var _frames_saved: Array[String] = []
 var _frame_done := {"spawn": false, "combat": false, "bag": false, "pickup": false, "hud": false, "grave": false}
 var _forced_death_done: bool = false
 var _last_level: int = 1
+## Live enemy bullets counted at the combat capture frame. The soak fails
+## unless this reaches COMBAT_BULLETS_MIN.
+var _combat_bullet_count := 0
 
 
 func _ready() -> void:
@@ -164,6 +176,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_elapsed += delta
 	_tick_respawns(delta)
+	_keep_formation(delta)
 	if _auto_test:
 		_bot_drive(delta)
 		_maybe_force_death()
@@ -224,7 +237,7 @@ func _spawn_pool() -> void:
 	pool = BulletPoolScript.new() as Node2D
 	pool.name = "BulletPool"
 	if pool.has_method("set"):
-		pool.set("pool_size", 256)
+		pool.set("pool_size", ENEMY_POOL_SIZE)
 	add_child(pool)
 
 
@@ -286,10 +299,12 @@ func _connect_player() -> void:
 
 
 func _spawn_initial_foes() -> void:
+	var anchor := PLAYER_SPAWN
+	if is_instance_valid(player):
+		anchor = (player as Node2D).global_position
 	for i in ENEMY_COUNT:
-		var at := PORTAL_POS + Vector2(cos(TAU * float(i) / 3.0), sin(TAU * float(i) / 3.0)) * 150.0
-		_spawn_enemy(at)
-	_spawn_warden(PORTAL_POS + Vector2(110, 20))
+		_spawn_enemy(_formation_slot(anchor, i, ENEMY_COUNT))
+	_spawn_warden(anchor + Vector2(280, -140))
 
 
 func _depth_at(pos: Vector2) -> float:
@@ -332,15 +347,29 @@ func _spawn_enemy(at: Vector2) -> void:
 	var dmg_mult := float(stats.get("dmg_mult", 1.0))
 	var pattern := _pick_pattern_kind(depth)
 	foe.set("pattern_kind", pattern)
+	# Combat-density pass: in-screen formation stats, ~1.65s fire cycle with
+	# >= 0.4s telegraphs, big bright orbs. Auto-test foes are tougher so the
+	# bot's aura cannot clear the screen before the combat capture frame.
 	if _auto_test:
-		foe.set("max_hp", 20.0)
+		foe.set("max_hp", 90.0)
 		foe.set("bullet_damage", 3.0)
-		foe.set("preferred_range", 60.0)
-		foe.set("move_speed", 70.0)
+		foe.set("preferred_range", 240.0)
+		foe.set("move_speed", 150.0)
 		foe.set("respawn_delay", 0.0)
 	else:
 		foe.set("max_hp", 30.0 * hp_mult)
 		foe.set("bullet_damage", 8.0 * dmg_mult)
+		foe.set("preferred_range", 240.0)
+		foe.set("move_speed", 150.0)
+	foe.set("windup_time", 0.5)
+	foe.set("cooldown_time", 1.15)
+	foe.set("initial_delay", 0.35)
+	foe.set("ring_count", 14)
+	foe.set("spiral_arm_count", 5)
+	foe.set("burst_count", 7)
+	foe.set("bullet_speed", 240.0)
+	foe.set("bullet_radius", ENEMY_BULLET_RADIUS)
+	foe.set("leash_range", LEASH_RANGE)
 	foe.position = at
 	if is_instance_valid(player):
 		foe.set("target", player)
@@ -544,7 +573,7 @@ func _on_enemy_died(enemy: Node) -> void:
 	# owns population, so free the corpse and schedule a fresh spawn.
 	if is_instance_valid(enemy):
 		(enemy as Node).queue_free()
-	_enemy_respawn_left = 4.0
+	_enemy_respawn_left = ENEMY_RESPAWN_SEC
 	_capture("combat-check", "")
 
 
@@ -724,6 +753,9 @@ func _play_sfx(kind: String) -> void:
 
 
 func _tick_respawns(delta: float) -> void:
+	var anchor: Vector2 = PORTAL_POS
+	if is_instance_valid(player):
+		anchor = (player as Node2D).global_position
 	if _enemy_respawn_left > 0.0:
 		_enemy_respawn_left -= delta
 		if _enemy_respawn_left <= 0.0:
@@ -732,8 +764,10 @@ func _tick_respawns(delta: float) -> void:
 			for e in enemies:
 				if is_instance_valid(e):
 					live += 1
+			var n := 0
 			for i in range(live, ENEMY_COUNT):
-				_spawn_enemy(PORTAL_POS + Vector2(randf_range(-160, 160), randf_range(-120, 120)))
+				_spawn_enemy(_formation_slot(anchor, live + n, ENEMY_COUNT) + Vector2(randf_range(-40, 40), randf_range(-40, 40)))
+				n += 1
 	if _warden_respawn_left > 0.0:
 		_warden_respawn_left -= delta
 		if _warden_respawn_left <= 0.0:
@@ -744,6 +778,44 @@ func _tick_respawns(delta: float) -> void:
 
 # ── HUD ───────────────────────────────────────────────────────────────
 
+func _formation_slot(anchor: Vector2, i: int, total: int) -> Vector2:
+	var n := maxi(total, 1)
+	var ang := TAU * float(i % n) / float(n) - PI * 0.5
+	return RealmScript.clamp_to_bounds(anchor + Vector2(cos(ang), sin(ang)) * FORMATION_RADIUS)
+
+
+## Live enemy bullets right now (team == 1 and active). The combat capture
+## asserts this reaches COMBAT_BULLETS_MIN.
+func _enemy_bullet_count() -> int:
+	if pool == null:
+		return 0
+	var n := 0
+	for b in pool.get_children():
+		if is_instance_valid(b) and bool((b as Node).get("active")) and int((b as Node).get("team")) == 1:
+			n += 1
+	return n
+
+
+## Leash: pull any foe that drifted off-camera back to its formation slot.
+## Teleports only when extremely far (respawn scatter); otherwise
+## fast-drifts so the screen stays busy without pops.
+func _keep_formation(delta: float) -> void:
+	if not is_instance_valid(player):
+		return
+	var anchor: Vector2 = (player as Node2D).global_position
+	var idx := 0
+	for foe in enemies:
+		if foe is Node2D and is_instance_valid(foe):
+			var f := foe as Node2D
+			var want := _formation_slot(anchor, idx, ENEMY_COUNT)
+			var d: float = f.global_position.distance_to(anchor)
+			if d > LEASH_RANGE * 2.0:
+				f.global_position = want
+			elif d > LEASH_RANGE:
+				f.global_position = f.global_position.move_toward(want, 420.0 * delta)
+			idx += 1
+	if is_instance_valid(warden) and (warden as Node2D).global_position.distance_to(anchor) > LEASH_RANGE * 2.5:
+		(warden as Node2D).global_position = anchor + Vector2(280, -140)
 func _world_to_map(pos: Vector2) -> Vector2:
 	return Vector2(clampf(pos.x / WORLD_SIZE, 0.0, 1.0), clampf(pos.y / WORLD_SIZE, 0.0, 1.0))
 
@@ -845,6 +917,10 @@ func _bot_drive(delta: float) -> void:
 func _bot_aura(delta: float) -> void:
 	if not is_instance_valid(player):
 		return
+	# Hold fire until the combat capture frame proves density: otherwise the
+	# aura clears the screen before the mid-combat pixels exist.
+	if not bool(_frame_done.get("combat", false)):
+		return
 	var ppos: Vector2 = (player as Node2D).global_position
 	var dmg := BOT_AURA_DPS * delta
 	for foe in enemies:
@@ -870,12 +946,12 @@ func _maybe_capture_time_frames() -> void:
 	if not bool(_frame_done.get("spawn", false)) and _elapsed > 0.5:
 		_save_frame("01-title-first-spawn")
 		_frame_done["spawn"] = true
-	if not bool(_frame_done.get("combat", false)) and _elapsed > 3.0 and pool != null and int(pool.call("active_count")) >= 3:
-		_save_frame("02-mid-combat-bullets")
-		_frame_done["combat"] = true
-	if not bool(_frame_done.get("combat", false)) and _elapsed > 6.0:
-		_save_frame("02-mid-combat-bullets")
-		_frame_done["combat"] = true
+	if not bool(_frame_done.get("combat", false)) and _elapsed > 3.0:
+		var dense := _enemy_bullet_count()
+		if dense >= COMBAT_BULLETS_MIN:
+			_save_combat_frame(dense)
+		elif _elapsed > 12.0:
+			_save_combat_frame(dense)
 	if not bool(_frame_done.get("hud", false)) and _elapsed > 10.0:
 		_save_frame("05-hud-state")
 		_frame_done["hud"] = true
@@ -888,6 +964,13 @@ func _capture(flag: String, tag: String) -> void:
 		return
 	_save_frame(tag)
 	_frame_done[flag] = true
+
+
+func _save_combat_frame(dense: int) -> void:
+	_combat_bullet_count = dense
+	print("COMBAT DENSITY bullets=%d (min=%d)" % [dense, COMBAT_BULLETS_MIN])
+	_save_frame("02-mid-combat-bullets")
+	_frame_done["combat"] = true
 
 
 func _save_frame(tag: String) -> void:
@@ -925,8 +1008,7 @@ func _save_frame(tag: String) -> void:
 func _finish_soak() -> void:
 	# Ensure the six playtest eyes all exist before the verdict.
 	if not bool(_frame_done.get("combat", false)):
-		_save_frame("02-mid-combat-bullets")
-		_frame_done["combat"] = true
+		_save_combat_frame(_enemy_bullet_count())
 	if not bool(_frame_done.get("bag", false)):
 		_save_frame("03-bag-drop-late")
 		_frame_done["bag"] = true
@@ -943,9 +1025,9 @@ func _finish_soak() -> void:
 		_save_frame("01-title-first-spawn-late")
 		_frame_done["spawn"] = true
 	var level: int = int(ledger.get("level"))
-	var ok := kills >= 1 and pickups >= 1 and xp_granted_total > 0
+	var ok := kills >= 1 and pickups >= 1 and xp_granted_total > 0 and _combat_bullet_count >= COMBAT_BULLETS_MIN
 	var verdict := "DIVE PASS" if ok else "DIVE FAIL"
-	print("%s kills=%d bags=%d xp=%d level=%d deaths=%d time=%.1f frames=%d" % [verdict, kills, pickups, xp_granted_total, level, deaths, _elapsed, _frames_saved.size()])
+	print("%s kills=%d bags=%d xp=%d level=%d deaths=%d time=%.1f frames=%d combat_bullets=%d" % [verdict, kills, pickups, xp_granted_total, level, deaths, _elapsed, _frames_saved.size(), _combat_bullet_count])
 	for f in _frames_saved:
 		print("FRAME: ", f)
 	if ok:

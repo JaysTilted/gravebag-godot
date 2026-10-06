@@ -46,11 +46,29 @@ func _run_all() -> void:
 	_test_bullet_flight()
 	_test_pool_reuse()
 	_test_enemy_cycle()
+	_test_density_tuning()
 	if _failures == 0:
 		print("SELFTEST PASS")
 	else:
 		printerr("SELFTEST FAILURES: %d" % _failures)
 	quit(_failures)
+
+
+func _test_density_tuning() -> void:
+	# Combat-density pass: every live enemy fires at least every ~2s with a
+	# fair >= 0.4s telegraph, orbs are big and bright, the pool holds the
+	# formation without drops, and the leash keeps foes on-screen.
+	var foe: Enemy = Enemy.new()
+	_check(foe.windup_time >= 0.4, "telegraph >= 0.4s stays dodgeable")
+	_check(foe.windup_time + foe.cooldown_time <= 2.05, "fire cycle <= ~2s per enemy")
+	_check(foe.bullet_radius >= 12.0, "enemy orbs big and bright")
+	_check(foe.ring_count >= 12, "ring volleys stay dense")
+	_check(foe.move_speed >= 120.0, "enemies keep up with the player")
+	_check(foe.leash_range > foe.preferred_range, "leash holds formation on-screen")
+	foe.free()
+	var pool: Pool = Pool.new()
+	_check(pool.pool_size >= 400, "pool holds the formation without drops")
+	pool.free()
 
 
 func _test_radial_ring() -> void:
