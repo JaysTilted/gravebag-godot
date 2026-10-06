@@ -1,91 +1,67 @@
 extends RefCounted
 class_name BagTiers
-## Loot-bag tier table for GRAVEBAG (RotMG-like looter).
-##
-## Port of the NUMBERS and rules from the prior Phaser design
-## (`src/game/bags.ts` in the breadth prototype): ladder low -> high is
-## brown, pink, purple, blue, white. Brown/pink are public (anyone nearby
-## can loot); purple and up are soulbound (killer only). Blue is the
-## potion bag (a single draught, still soulbound). White is the rare bag
-## with the longest ground life. Despawn times rise strictly with rank so
-## a better bag is never punished with a shorter pickup window.
-##
-## Pure logic: no nodes, no scene wiring.
+## Adapted 2026-10-06 from FSoD (AGPLv3), commit 6fd20aa:
+## https://github.com/ossimc82/fabiano-swagger-of-doom
+## wServer/logic/loot/Loots.cs; db/data/dat1.xml.
+## Color hex values are GRAVEBAG presentation, not upstream numeric data.
+## FSoD Loots.cs.ShowBag: highest XML BagType wins; 8 items per bag,
+## every bag lives 30 seconds. Ownership belongs to the rolled loot,
+## not its color (even a brown bag can have an owner).
 
-const ORDER: Array[String] = ["brown", "pink", "purple", "blue", "white"]
-
-const TOP_RANK: int = 4
-
-# Ground-sprite tints, 0xRRGGBB.
+const ORDER: Array[String] = ["brown", "pink", "purple", "egg", "cyan", "blue", "white", "orange"]
+const TOP_RANK: int = 7
+const CAPACITY: int = 8
+const OBJECT_TYPES := [0x500, 0x506, 0x503, 0x508, 0x509, 0x50b, 0x50c, 0xfff]
 const COLORS := {
-	"brown": 0x8A5A2B,
-	"pink": 0xFF7AB3,
-	"purple": 0xA55AFF,
-	"blue": 0x3FA9FF,
-	"white": 0xF5F2FF,
+	"brown": 0x8A5A2B, "pink": 0xFF7AB3, "purple": 0xA55AFF,
+	"egg": 0xF5DEB3, "cyan": 0x00FFFF, "blue": 0x3FA9FF,
+	"white": 0xF5F2FF, "orange": 0xFF8A1A,
 }
+const RANKS := {"brown": 0, "pink": 1, "purple": 2, "egg": 3, "cyan": 4, "blue": 5, "white": 6, "orange": 7}
+const DESPAWN_SEC := {"brown": 30.0, "pink": 30.0, "purple": 30.0, "egg": 30.0, "cyan": 30.0, "blue": 30.0, "white": 30.0, "orange": 30.0}
 
-# Rank per tier: 0 (common) .. 4 (rarest).
-const RANKS := {
-	"brown": 0,
-	"pink": 1,
-	"purple": 2,
-	"blue": 3,
-	"white": 4,
-}
 
-# Seconds a bag waits on the ground before fading. Strictly rising.
-const DESPAWN_SEC := {
-	"brown": 60.0,
-	"pink": 120.0,
-	"purple": 200.0,
-	"blue": 260.0,
-	"white": 340.0,
-}
+static func for_bag_type(bag_type: int) -> String:
+	return ORDER[bag_type] if bag_type >= 0 and bag_type < ORDER.size() else "brown"
+
+
+static func object_type(tier: String) -> int:
+	return int(OBJECT_TYPES[int(RANKS.get(tier, 0))])
 
 
 static func is_valid_tier(tier: String) -> bool:
 	return RANKS.has(tier)
 
 
-## True for the public bags (brown, pink): anyone can loot.
+## Legacy color-based API for existing callers. Real FSoD bag ownership
+## must come from DropTable.make_bags().owner_id, independent of color.
 static func is_public_bag(tier: String) -> bool:
 	return not is_soulbound(tier)
 
 
-## True once purple-or-better: only the killer may loot.
 static func is_soulbound(tier: String) -> bool:
-	return int(RANKS[tier]) >= int(RANKS["purple"])
+	return int(RANKS.get(tier, 0)) >= int(RANKS["purple"])
 
 
-## May this diver loot the bag? Public bags are free for all; soulbound
-## bags (purple and up) open only for the killer.
 static func can_loot(tier: String, is_killer: bool) -> bool:
-	if is_killer:
-		return true
-	return is_public_bag(tier)
+	return is_killer or is_public_bag(tier)
 
 
-## Compare two tiers by rank: negative if a < b, 0 if equal, positive.
 static func compare_rank(a: String, b: String) -> int:
-	return int(RANKS[a]) - int(RANKS[b])
+	return int(RANKS.get(a, 0)) - int(RANKS.get(b, 0))
 
 
-## Ground-sprite tint as a 0xRRGGBB integer.
 static func tier_color_hex(tier: String) -> int:
-	return int(COLORS[tier])
+	return int(COLORS.get(tier, COLORS.brown))
 
 
-## Ground-sprite tint as a Color.
 static func tier_color(tier: String) -> Color:
 	return Color.html("%06X" % tier_color_hex(tier))
 
 
-## Despawn window in seconds.
 static func despawn_sec(tier: String) -> float:
-	return float(DESPAWN_SEC[tier])
+	return float(DESPAWN_SEC.get(tier, 30.0))
 
 
-## Despawn window in milliseconds (frame-clock friendly).
 static func despawn_msec(tier: String) -> int:
 	return int(despawn_sec(tier) * 1000.0)

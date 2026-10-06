@@ -61,7 +61,7 @@ func _test_density_tuning() -> void:
 	var foe: Enemy = Enemy.new()
 	_check(foe.windup_time >= 0.4, "telegraph >= 0.4s stays dodgeable")
 	_check(foe.windup_time + foe.cooldown_time <= 2.05, "fire cycle <= ~2s per enemy")
-	_check(foe.bullet_radius >= 12.0, "enemy orbs big and bright")
+	_check(foe.bullet_radius >= 4.0, "enemy orbs stay small and readable (live feel fix)")
 	_check(foe.ring_count >= 12, "ring volleys stay dense")
 	_check(foe.move_speed >= 120.0, "enemies keep up with the player")
 	_check(foe.leash_range > foe.preferred_range, "leash holds formation on-screen")
