@@ -9,17 +9,48 @@ signal healed
 
 const HUB_RADIUS := 128.0
 const HEAL_RADIUS := 96.0
+## Heal tick while bodies stay inside: the hub tops divers up over time.
+const HEAL_TICK_SEC := 0.5
+
+var _inside: Array = []
+var _tick_left: float = 0.0
 
 
 func _ready() -> void:
 	var zone := get_node_or_null("HealZone") as Area2D
 	if zone != null:
-		zone.body_entered.connect(_on_heal_zone_body_entered)
+		if not zone.body_entered.is_connected(_on_heal_zone_body_entered):
+			zone.body_entered.connect(_on_heal_zone_body_entered)
+		if not zone.body_exited.is_connected(_on_heal_zone_body_exited):
+			zone.body_exited.connect(_on_heal_zone_body_exited)
 	queue_redraw()
 
 
-func _on_heal_zone_body_entered(_body: Node2D) -> void:
+func _process(delta: float) -> void:
+	# Tick-heal: while any body stays in the zone, re-emit healed on a
+	# timer so divers tick back to full. Prunes freed bodies defensively.
+	for i in range(_inside.size() - 1, -1, -1):
+		var b: Variant = _inside[i]
+		if not (b is Node and is_instance_valid(b)):
+			_inside.remove_at(i)
+	if _inside.is_empty():
+		_tick_left = 0.0
+		return
+	_tick_left -= delta
+	if _tick_left <= 0.0:
+		_tick_left = HEAL_TICK_SEC
+		healed.emit()
+
+
+func _on_heal_zone_body_entered(body: Node2D) -> void:
+	if not _inside.has(body):
+		_inside.append(body)
+	_tick_left = 0.0
 	healed.emit()
+
+
+func _on_heal_zone_body_exited(body: Node2D) -> void:
+	_inside.erase(body)
 
 
 func _draw() -> void:
