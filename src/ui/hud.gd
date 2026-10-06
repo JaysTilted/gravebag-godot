@@ -41,6 +41,12 @@ const GEAR_SLOTS := 4
 const INV_SLOTS := 8
 ## Level at which XP flips to fame (fame latches on; permadeath banks it).
 const FAME_LEVEL := 20
+## Juice tuning (display-only; all drawn UI, no assets).
+const LOW_HP_FRAC := 0.30
+const DAMAGE_LIFE := 0.9
+const MAX_FLOATERS := 32
+const BANNER_LIFE := 2.0
+const TOAST_LIFE := 2.5
 
 var _hp := 100.0
 var _max_hp := 100.0
@@ -77,6 +83,18 @@ var _gear_slots: Array = []
 var _inv_slots: Array = []
 var _pot_hp_label: Label
 var _pot_mp_label: Label
+## Juice overlay (all drawn UI, no assets; wiring lands later).
+var _overlay: Control
+var _vignette: Control
+var _banner_label: Label
+var _toast_label: Label
+var _banner_t := 0.0
+var _toast_t := 0.0
+var _xp_punch_t := 999.0
+var _xp_punch_dur := 0.25
+var _xp_punch_amp := 0.0
+var _vignette_phase := 0.0
+var _floaters: Array = []
 
 
 func _ready() -> void:
@@ -86,11 +104,13 @@ func _ready() -> void:
 	_mono_font = SystemFont.new()
 	_mono_font.font_names = PackedStringArray(["monospace"])
 	_build_rail()
+	_build_juice()
 	_refresh_all()
 
 
 ## Switch the XP bar to fame mode (orange). Latched: fame never flips back.
 func set_fame_mode(enabled: bool) -> void:
+	var was := _fame_mode
 	_fame_mode = enabled
 	if not _built:
 		return
@@ -103,6 +123,8 @@ func set_fame_mode(enabled: bool) -> void:
 		_xp_bar.value = _xp_frac
 		_xp_title.text = tr("XP LV %d") % _level
 		_xp_bar.add_theme_stylebox_override("fill", _fill_style(XP_COLOR))
+	if enabled and not was:
+		play_fame_flip()
 
 
 ## Push plain data into the HUD. Unknown / missing keys keep their old values.
@@ -117,6 +139,9 @@ func set_fame_mode(enabled: bool) -> void:
 ## minimap (Dictionary: player Vector2, foes Array[Vector2],
 ## bags Array of {pos, tier}, portals Array[Vector2], quest Vector2).
 func update_state(d: Dictionary) -> void:
+	var old_level := _level
+	var old_xp := _xp_frac
+	var old_fame := _fame_frac
 	_hp = float(d.get("hp", _hp))
 	_max_hp = float(d.get("max_hp", _max_hp))
 	_mp = float(d.get("mp", _mp))
@@ -145,6 +170,12 @@ func update_state(d: Dictionary) -> void:
 	elif _level >= FAME_LEVEL:
 		set_fame_mode(true)
 	_refresh_all()
+	if not _built:
+		return
+	if _level > old_level:
+		show_level_up(_level)
+	if _xp_frac > old_xp or _fame_frac > old_fame:
+		notify_kill()
 
 
 func _on_minimap_draw() -> void:
@@ -430,3 +461,245 @@ func _codes(v: Variant, count: int) -> Array:
 		for i in range(mini(a.size(), count)):
 			out[i] = str(a[i]).to_upper()
 	return out
+
+
+## ── HUD juice: additive display-only APIs (wiring lands later) ──
+## All drawn UI, no assets. update_state()/set_fame_mode() behavior above
+## is unchanged; these effects only add motion on top.
+
+
+## Spawn a floating damage number at a world position. Converts to screen
+## via the viewport canvas transform; safe to call before layout (no-op
+## until _ready has built the overlay). Color tints the number.
+func spawn_damage(world_pos: Vector2, amount: Variant, color: Color = Color.WHITE) -> void:
+	if not _built:
+		return
+	if _overlay == null or not is_instance_valid(_overlay):
+		return
+	var screen := world_pos
+	var vp := get_viewport()
+	if vp != null:
+		screen = vp.get_canvas_transform() * world_pos
+	var txt := str(amount)
+	if amount is float:
+		txt = str(int(round(float(amount))))
+	elif amount is int:
+		txt = str(amount)
+	var lbl := Label.new()
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.text = txt
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_override("font", _mono_font)
+	lbl.add_theme_font_size_override("font_size", 20)
+	lbl.add_theme_color_override("font_color", color)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	lbl.add_theme_constant_override("outline_size", 5)
+	_overlay.add_child(lbl)
+	var jitter := Vector2(randf_range(-10.0, 10.0), randf_range(-6.0, 6.0))
+	var base := screen + jitter
+	lbl.position = base
+	_floaters.append({"label": lbl, "age": 0.0, "life": DAMAGE_LIFE, "base": base})
+	while _floaters.size() > MAX_FLOATERS:
+		var old: Dictionary = _floaters.pop_front()
+		var old_lbl: Variant = old.get("label")
+		if old_lbl is Label and is_instance_valid(old_lbl):
+			(old_lbl as Label).queue_free()
+
+
+## Flash the center-screen level-up banner for the given level.
+## Auto-called by update_state() when level rises; wiring may call it too.
+func show_level_up(level: int) -> void:
+	if not _built:
+		return
+	if _banner_label == null or not is_instance_valid(_banner_label):
+		return
+	_banner_label.text = "LEVEL UP! LV %d" % level
+	_banner_t = BANNER_LIFE
+	_banner_label.visible = true
+	_banner_label.modulate.a = 0.0
+
+
+## Scale-punch the XP/fame bar for a kill. Auto-called when xp/fame frac
+## rises; wiring may call it directly on kills. Never squashes a bigger
+## fame-flip punch already playing.
+func notify_kill() -> void:
+	if not _built:
+		return
+	if _xp_bar == null or not is_instance_valid(_xp_bar):
+		return
+	if _xp_punch_t < _xp_punch_dur and _xp_punch_amp > 0.18:
+		return
+	_xp_punch_dur = 0.25
+	_xp_punch_amp = 0.18
+	_xp_punch_t = 0.0
+
+
+## Show a one-line toast (bag pickups). Replaces the current line and
+## restarts its fade; wiring passes the bag tier/name as the label.
+func show_toast(text: String) -> void:
+	if not _built:
+		return
+	if _toast_label == null or not is_instance_valid(_toast_label):
+		return
+	_toast_label.text = text
+	_toast_t = TOAST_LIFE
+	_toast_label.visible = true
+	_toast_label.modulate.a = 0.0
+
+
+## Bag-pickup toast line: "PICKED UP  <LABEL>" (uppercase, HUD style).
+func notify_bag_pickup(bag_label: String) -> void:
+	show_toast("PICKED UP  %s" % bag_label.to_upper())
+
+
+## Fame-flip punch on the XP bar (bigger/longer than kill-pop).
+## Auto-called once when set_fame_mode() latches at 20.
+func play_fame_flip() -> void:
+	if not _built:
+		return
+	if _xp_bar == null or not is_instance_valid(_xp_bar):
+		return
+	_xp_punch_dur = 0.6
+	_xp_punch_amp = 0.45
+	_xp_punch_t = 0.0
+
+
+func _process(delta: float) -> void:
+	if not _built:
+		return
+	_tick_juice(delta)
+
+
+func _build_juice() -> void:
+	if _overlay != null and is_instance_valid(_overlay):
+		return
+	_overlay = Control.new()
+	_overlay.name = "JuiceOverlay"
+	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_overlay)
+	_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vignette = Control.new()
+	_vignette.name = "LowHpVignette"
+	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vignette.visible = false
+	_overlay.add_child(_vignette)
+	_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vignette.draw.connect(_on_vignette_draw)
+	_banner_label = Label.new()
+	_banner_label.name = "LevelBanner"
+	_banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_banner_label.add_theme_font_override("font", _mono_font)
+	_banner_label.add_theme_font_size_override("font_size", 34)
+	_banner_label.add_theme_color_override("font_color", Color("ffd94d"))
+	_banner_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_banner_label.add_theme_constant_override("outline_size", 8)
+	_banner_label.modulate.a = 0.0
+	_banner_label.visible = false
+	_overlay.add_child(_banner_label)
+	_banner_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_toast_label = Label.new()
+	_toast_label.name = "BagToast"
+	_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_toast_label.add_theme_font_override("font", _mono_font)
+	_toast_label.add_theme_font_size_override("font_size", 15)
+	_toast_label.add_theme_color_override("font_color", Color("ffe9a8"))
+	_toast_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_toast_label.add_theme_constant_override("outline_size", 4)
+	_toast_label.modulate.a = 0.0
+	_toast_label.visible = false
+	_overlay.add_child(_toast_label)
+	_toast_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_toast_label.offset_left = 0.0
+	_toast_label.offset_right = 0.0
+	_toast_label.offset_top = -56.0
+	_toast_label.offset_bottom = -16.0
+
+
+func _on_vignette_draw() -> void:
+	if _vignette == null or not is_instance_valid(_vignette):
+		return
+	var sz := _vignette.size
+	if sz.x <= 0.0 or sz.y <= 0.0:
+		return
+	var pulse := 0.5 + 0.5 * sin(_vignette_phase)
+	var edge := 26.0
+	var a := 0.28 + 0.22 * pulse
+	var col := Color(1.0, 0.12, 0.12, a)
+	_vignette.draw_rect(Rect2(Vector2.ZERO, Vector2(sz.x, edge)), col, true)
+	_vignette.draw_rect(Rect2(Vector2(0, sz.y - edge), Vector2(sz.x, edge)), col, true)
+	_vignette.draw_rect(Rect2(Vector2.ZERO, Vector2(edge, sz.y)), col, true)
+	_vignette.draw_rect(Rect2(Vector2(sz.x - edge, 0), Vector2(edge, sz.y)), col, true)
+	var inner := Color(1.0, 0.2, 0.2, a * 0.5)
+	_vignette.draw_rect(Rect2(Vector2.ZERO, sz), inner, false, 2.0)
+
+
+func _tick_juice(delta: float) -> void:
+	if _vignette != null and is_instance_valid(_vignette):
+		var frac := 1.0
+		if _max_hp > 0.0:
+			frac = clampf(_hp / maxf(_max_hp, 1.0), 0.0, 1.0)
+		var low := frac < LOW_HP_FRAC
+		_vignette.visible = low
+		if low:
+			_vignette_phase += delta * 6.0
+			_vignette.queue_redraw()
+	if _banner_label != null and is_instance_valid(_banner_label):
+		if _banner_t > 0.0:
+			_banner_t = maxf(_banner_t - delta, 0.0)
+			var elapsed := BANNER_LIFE - _banner_t
+			var ba := 1.0
+			if elapsed < 0.15:
+				ba = elapsed / 0.15
+			elif _banner_t < 0.6:
+				ba = maxf(_banner_t / 0.6, 0.0)
+			_banner_label.modulate.a = clampf(ba, 0.0, 1.0)
+			var bp := clampf(elapsed / 0.4, 0.0, 1.0)
+			var bs := 1.35 - 0.35 * bp
+			_banner_label.pivot_offset = _banner_label.size * 0.5
+			_banner_label.scale = Vector2(bs, bs)
+			if _banner_t <= 0.0:
+				_banner_label.visible = false
+				_banner_label.scale = Vector2.ONE
+	if _toast_label != null and is_instance_valid(_toast_label):
+		if _toast_t > 0.0:
+			_toast_t = maxf(_toast_t - delta, 0.0)
+			var telapsed := TOAST_LIFE - _toast_t
+			var ta := 1.0
+			if telapsed < 0.2:
+				ta = telapsed / 0.2
+			elif _toast_t < 0.8:
+				ta = maxf(_toast_t / 0.8, 0.0)
+			_toast_label.modulate.a = clampf(ta, 0.0, 1.0)
+			if _toast_t <= 0.0:
+				_toast_label.visible = false
+	if _xp_bar != null and is_instance_valid(_xp_bar):
+		if _xp_punch_t < _xp_punch_dur:
+			_xp_punch_t += delta
+			var p := clampf(_xp_punch_t / _xp_punch_dur, 0.0, 1.0)
+			var s := 1.0 + _xp_punch_amp * sin(PI * p)
+			_xp_bar.pivot_offset = _xp_bar.size * 0.5
+			_xp_bar.scale = Vector2(s, s)
+		elif _xp_bar.scale != Vector2.ONE:
+			_xp_bar.scale = Vector2.ONE
+	for i in range(_floaters.size() - 1, -1, -1):
+		var f: Dictionary = _floaters[i]
+		var lbl: Variant = f.get("label")
+		if not (lbl is Label and is_instance_valid(lbl)):
+			_floaters.remove_at(i)
+			continue
+		var label := lbl as Label
+		var age := float(f.get("age", 0.0)) + delta
+		f["age"] = age
+		var life := float(f.get("life", DAMAGE_LIFE))
+		var base: Vector2 = f.get("base", Vector2.ZERO)
+		var k := clampf(age / life, 0.0, 1.0)
+		label.position = base + Vector2(0, -56.0 * k)
+		label.modulate.a = 1.0 - k
+		if age >= life:
+			_floaters.remove_at(i)
+			if is_instance_valid(label):
+				label.queue_free()
