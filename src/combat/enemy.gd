@@ -52,26 +52,34 @@ const FLASH_TIME := 0.09
 const TELEGRAPH_COLOR := Color(1.0, 0.25, 0.2, 0.85)
 
 @export var max_hp := 30.0
-@export var move_speed := 60.0
+@export var move_speed := 150.0
 ## Drift toward the target until this close, then hold (firing) position.
-@export var preferred_range := 220.0
+@export var preferred_range := 240.0
+## Leash: beyond this distance from the target, chase back even while
+## winding up so the formation never drifts off-camera.
+@export var leash_range := 520.0
+@export var leash_speed_mult := 2.0
 @export var pattern_kind: PatternKind = PatternKind.RING
-@export var ring_count := 10
-@export var spiral_arm_count := 3
+@export var ring_count := 14
+@export var spiral_arm_count := 5
 ## Radians the spiral (and ring offset) rotates forward per volley.
 @export var spiral_step := 0.6
-@export var burst_count := 5
+@export var burst_count := 7
 @export var burst_spread := 0.5
-@export var bullet_speed := 260.0
+@export var bullet_speed := 240.0
 @export var bullet_damage := 8.0
-@export var bullet_radius := 8.0
+## Drawn radius for enemy orbs (materialized via the pool default). Big and
+## bright so a 1280x720 frame reads instantly.
+@export var bullet_radius := 13.0
 @export var bullet_curve := 0.0
-@export var windup_time := 0.6
-@export var cooldown_time := 1.6
+## Muzzle telegraph floor is 0.4s (RotMG fairness); windup + cooldown stays
+## under ~2s so every live enemy fires at least every ~2s.
+@export var windup_time := 0.5
+@export var cooldown_time := 1.15
 ## Seconds a corpse waits before reforming at full hp. <= 0 disables respawn.
 @export var respawn_delay := 3.0
 ## Delay before the first telegraph after spawn/reform.
-@export var initial_delay := 0.5
+@export var initial_delay := 0.35
 
 ## Current hp. Use take_damage()/reform(), never set directly.
 var hp: float
@@ -184,13 +192,20 @@ func _die() -> void:
 
 
 ## Drift toward the target until in range; hold still while telegraphing.
+## Leash override: beyond leash_range, chase back at leash speed even while
+## winding up so enemies hold formation around the player on-screen.
 func _drift(_delta: float) -> void:
 	var dir := Vector2.ZERO
-	if _state != State.WINDUP and target != null and is_instance_valid(target):
+	var speed := move_speed
+	if target != null and is_instance_valid(target):
 		var to_target: Vector2 = target.global_position - global_position
-		if to_target.length() > preferred_range:
+		var dist := to_target.length()
+		if dist > leash_range:
 			dir = to_target.normalized()
-	velocity = dir * move_speed
+			speed = move_speed * leash_speed_mult
+		elif _state != State.WINDUP and dist > preferred_range:
+			dir = to_target.normalized()
+	velocity = dir * speed
 	move_and_slide()
 
 

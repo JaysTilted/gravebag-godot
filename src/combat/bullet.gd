@@ -172,17 +172,18 @@ static func make_texture(p_team: int, p_radius: float) -> ImageTexture:
 	return tex
 
 
-## Dense bright orb: near-black purple outline, hot orange-red band, white core.
+## Dense bright orb: near-black high-contrast outline, hot yellow-orange
+## band, big pure-white core. Reads instantly on a 1280x720 frame.
 static func _orb_pixel(p: Vector2) -> Color:
 	var d: float = p.length()
 	if d > 15.0:
 		return Color(0.0, 0.0, 0.0, 0.0)
-	if d > 12.5:
-		return Color(0.05, 0.01, 0.08, 1.0)
-	if d > 7.0:
-		var t: float = (d - 7.0) / 5.5  # 0 core-side .. 1 outline-side
-		return Color(1.0, lerpf(0.92, 0.22, t), lerpf(0.88, 0.08, t), 1.0)
-	return Color(1.0, 0.97, 0.93, 1.0)
+	if d > 13.0:
+		return Color(0.02, 0.0, 0.05, 1.0)
+	if d > 9.5:
+		var t: float = (d - 9.5) / 3.5  # 0 core-side .. 1 outline-side
+		return Color(1.0, lerpf(1.0, 0.25, t), lerpf(0.95, 0.1, t), 1.0)
+	return Color(1.0, 1.0, 1.0, 1.0)
 
 
 ## Thin cyan needle, drawn pointing up: dark outline, cyan body, white core.

@@ -16,9 +16,10 @@ extends Node2D
 ## Bullet script, preloaded so this file parses standalone (no class cache).
 const Bullet := preload("res://src/combat/bullet.gd")
 
-## How many bullets to pre-allocate. A 10-ring enemy at ~1 volley/sec with
-## ~2s flight time needs ~20; 256 covers several enemies plus the player.
-@export var pool_size := 256
+## How many bullets to pre-allocate. Combat-density pass: 6 enemies firing
+## ~14-shot volleys every ~1.7s with ~2.5s flight time keep 100+ live;
+## 512 covers the formation plus warden/minions without drops.
+@export var pool_size := 512
 
 ## Shots dropped because every bullet was flying. Diagnostic only.
 var dropped_shots := 0
@@ -41,7 +42,7 @@ func spawn(
 	direction: Vector2,
 	speed: float = 260.0,
 	team: int = 1,
-	radius: float = 8.0,
+	radius: float = 13.0,
 	curve: float = 0.0,
 	damage: float = 8.0
 ) -> Bullet:
@@ -62,7 +63,7 @@ func spawn_volley(
 	speed: float,
 	damage: float,
 	team: int = 1,
-	radius: float = 8.0,
+	radius: float = 13.0,
 	curve: float = 0.0
 ) -> int:
 	var launched := 0
