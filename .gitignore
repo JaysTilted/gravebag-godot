@@ -121,6 +121,8 @@ Saved/
 *.log
 __pycache__/
 *.pyc
+# Godot regenerates this per checkout; never merge its class registry.
+.godot/
 node_modules/
 .npm/
 
