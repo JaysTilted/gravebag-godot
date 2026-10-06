@@ -34,7 +34,8 @@ var _port := 2050
 func bind(network: Node, frontend: Node, descriptors: Dictionary = {}, items: Dictionary = {}) -> void:
 	transport = network
 	view = frontend
-	metadata = descriptors
+	metadata = descriptors.duplicate()
+	metadata["items"] = items
 	item_descriptors = items
 	transport.connect("connected", _on_connected)
 	transport.connect("disconnected", _on_disconnected)
@@ -54,6 +55,10 @@ func bind(network: Node, frontend: Node, descriptors: Dictionary = {}, items: Di
 		view.connect("potion_requested", consume_potion)
 	if view.has_signal("ground_damage_requested"):
 		view.connect("ground_damage_requested", _on_ground_damage)
+	if view.has_signal("inventory_swap_requested"):
+		view.connect("inventory_swap_requested", _on_inventory_swap)
+	if view.has_signal("item_use_requested"):
+		view.connect("item_use_requested", _on_inventory_use)
 
 
 func start(host: String, port: int, login_fields: Dictionary, load_character_id: int = -1) -> Error:
@@ -354,6 +359,16 @@ func send_gameplay(command: Dictionary) -> Error:
 	if state != "playing" or command.is_empty():
 		return ERR_INVALID_PARAMETER
 	return transport.call("send_packet", int(command.id), command.payload)
+
+
+func _on_inventory_swap(source_id: int, source_slot: int, destination_id: int, destination_slot: int) -> void:
+	var result := swap_slots(source_id, source_slot, destination_id, destination_slot)
+	if result != OK: session_error.emit("Inventory request refused: %s" % error_string(result))
+
+
+func _on_inventory_use(slot: int) -> void:
+	var result := use_item(slot, pending_position)
+	if result != OK: session_error.emit("Item request refused: %s" % error_string(result))
 
 
 func _on_ability(target_position: Vector2) -> void:

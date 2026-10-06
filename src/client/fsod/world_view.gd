@@ -5,6 +5,7 @@
 extends Node2D
 
 const EntityView = preload("res://src/client/fsod/entity_view.gd")
+const InventoryPanel = preload("res://src/client/fsod/inventory_panel.gd")
 const TILE_PIXELS: float = 32.0
 const RAIL_WIDTH: float = 256.0
 signal move_requested(pos: Dictionary, records: Array)
@@ -14,6 +15,8 @@ signal interact_requested(entity: int, slot: int)
 signal ability_requested(position: Vector2)
 signal potion_requested(kind: String)
 signal ground_damage_requested(position: Vector2)
+signal inventory_swap_requested(source_id: int, source_slot: int, destination_id: int, destination_slot: int)
+signal item_use_requested(slot: int)
 # Contact geometry comes from recovered original-client facts; no local damage.
 signal projectile_hit_requested(owner_id: int, bullet_id: int, target_id: int, hit_kind: String)
 
@@ -36,7 +39,9 @@ var _ground: Node2D
 var _rail: PanelContainer
 var _minimap: Control
 var _summary: Label
-var _inventory: Label
+var _inventory: Label # Hidden debug projection retained for fixture/diagnostic readback.
+var _inventory_panel: PanelContainer
+var _inventory_snapshot: Dictionary = {}
 var _prediction: Vector2 = Vector2.ZERO
 var _move_clock: float = 0.0
 var _shoot_clock: float = 0.0
@@ -90,8 +95,19 @@ func _ensure_nodes() -> void:
 	_inventory.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_inventory.add_theme_font_size_override("font_size", 12)
 	column.add_child(_inventory)
+	_inventory.hide()
+	var inventory_scroll := ScrollContainer.new()
+	inventory_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	inventory_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column.add_child(inventory_scroll)
+	_inventory_panel = InventoryPanel.new()
+	_inventory_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inventory_scroll.add_child(_inventory_panel)
+	_inventory_panel.swap_requested.connect(func(source_id: int, source_slot: int, destination_id: int, destination_slot: int): inventory_swap_requested.emit(source_id, source_slot, destination_id, destination_slot))
+	_inventory_panel.use_requested.connect(func(slot: int): item_use_requested.emit(slot))
+	_inventory_panel.selection_changed.connect(func(slot: int): inventory_slot = maxi(slot, 0))
 	var keys := Label.new()
-	keys.text = "WASD  move · Mouse  aim / shoot\nSpace  ability · F / V  potions\nR  escape · E  interact\n\nServer owns all game state"
+	keys.text = "WASD / Mouse  move / aim / shoot\nSpace / F / V  ability / potions\nR / E  escape / interact"
 	keys.add_theme_color_override("font_color", Color("8996af"))
 	keys.add_theme_font_size_override("font_size", 12)
 	column.add_child(keys)
@@ -99,6 +115,7 @@ func _ensure_nodes() -> void:
 
 func set_descriptors(metadata: Dictionary) -> void:
 	descriptors = metadata.duplicate(true)
+	_inventory_snapshot.clear()
 	for id: Variant in entities:
 		var view: Variant = entities[id]
 		if _live(view): view.configure(int(id), view.object_type, _object_descriptor(view.object_type))
@@ -486,6 +503,7 @@ func _refresh_rail() -> void:
 			text = "empty" if type < 0 else str(_object_descriptor(type).get("name", "0x%04x" % type))
 		lines.append("%02d  %s" % [slot, text.left(28)])
 	_inventory.text = "\n".join(lines)
+	_refresh_inventory_panel(stats)
 	_minimap.queue_redraw()
 
 
@@ -525,6 +543,44 @@ func _redraw() -> void:
 	_ground.queue_redraw()
 	_minimap.queue_redraw()
 
+
+func _refresh_inventory_panel(stats: Dictionary) -> void:
+	if not is_instance_valid(_inventory_panel): return
+	var source_slots: Dictionary = {}
+	for wire in range(8, 20):
+		if stats.has(wire): source_slots[wire] = stats[wire]
+	for wire in range(71, 80):
+		if stats.has(wire): source_slots[wire] = stats[wire]
+	var bag_id := -1
+	var bag_stats: Dictionary = {}
+	var player: Variant = _player()
+	var distance := 1.5
+	if player != null:
+		for id in entities:
+			var candidate: Variant = entities[id]
+			if not _live(candidate) or candidate.kind != "container": continue
+			var separation: float = _prediction.distance_to(candidate.authoritative_position)
+			if separation < distance:
+				distance = separation
+				bag_id = int(id)
+				bag_stats = candidate.stats
+	var snapshot := {"player_id": player_id, "slots": source_slots, "bag_id": bag_id, "bag_stats": bag_stats.duplicate(true)}
+	if snapshot == _inventory_snapshot: return # Keep a drag valid across unrelated HP/tick updates.
+	_inventory_snapshot = snapshot.duplicate(true)
+	# Clone only occupied item metadata, not the entire multi-MB descriptor catalog per tick.
+	var item_meta: Dictionary = {}
+	var object_meta: Dictionary = {}
+	for values in [source_slots, bag_stats]:
+		for wire in values:
+			if int(wire) not in range(8, 20) and int(wire) not in range(71, 79): continue
+			var type := int(values[wire])
+			if type < 0: continue
+			var key := str(type)
+			var item: Dictionary = descriptors.get("items", {}).get(key, descriptors.get("items", {}).get(type, {}))
+			var object: Dictionary = descriptors.get("objects", {}).get(key, descriptors.get("objects", {}).get(type, {}))
+			if not item.is_empty(): item_meta[key] = item
+			if not object.is_empty(): object_meta[key] = object
+	_inventory_panel.set_snapshot(player_id, source_slots, bag_id, bag_stats, {"items": item_meta, "objects": object_meta})
 
 static func _stat_text(stats: Dictionary, id: int) -> String:
 	return str(stats[id]) if stats.has(id) else "—"

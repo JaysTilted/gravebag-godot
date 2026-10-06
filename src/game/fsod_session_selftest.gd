@@ -37,6 +37,8 @@ class Frontend extends Node:
 	signal ability_requested(position: Vector2)
 	signal potion_requested(kind: String)
 	signal ground_damage_requested(position: Vector2)
+	signal inventory_swap_requested(source_id: int, source_slot: int, destination_id: int, destination_slot: int)
+	signal item_use_requested(slot: int)
 	var clock_ms: Callable
 	var interaction_target_id := -1
 	var prediction_speed_tiles := 0.0
@@ -111,6 +113,11 @@ func _init() -> void:
 	assert(normalized.GameId is int and normalized.Key == PackedByteArray([0, 255]) and normalized.MapInfo is PackedByteArray)
 	assert(Session.normalize_login({"GameId": 1.5}).is_empty())
 	assert(Session.normalize_login({"Key": [256.0]}).is_empty())
+	var before_ui_swap := network.sent.size()
+	view.inventory_swap_requested.emit(99, 0, session.player_id, 4)
+	assert(network.sent.size() == before_ui_swap + 1 and network.sent[-1].id == 34)
+	view.item_use_requested.emit(0)
+	assert(network.sent[-1].id == 48)
 	session.player_stats[69] = 1
 	view.potion_requested.emit("health")
 	assert(network.sent[-1].id == 48 and network.sent[-1].payload[8] == 254)

@@ -47,6 +47,22 @@ func _run() -> void:
 	world.advance_visuals(0.1)
 	_check(world.entities[20].position == Vector2(160, 96), "halfway authoritative interpolation")
 	_check(world.entities[20].stats[1] == 23, "list stats supported")
+	var loot_meta: Dictionary = world.descriptors.duplicate(true)
+	loot_meta.objects[400] = {"kind": "container", "name": "Bag"}
+	loot_meta.objects[500] = {"name": "Source loot"}
+	world.set_descriptors(loot_meta)
+	world.apply_update({"new_objects": [{"object_type": 400, "stats": {"id": 50, "position": {"x": 2.6, "y": 3}, "stats": {8: 500}}}]})
+	_check(world._inventory_panel._container_id == 50 and world._inventory_panel._item_name(true, 0) == "Source loot", "nearby authoritative bag exposed with real source names")
+	var drag: Dictionary = world._inventory_panel._drag_record(true, 0)
+	world._refresh_rail()
+	_check(world._inventory_panel._valid_drag(drag, false, 0), "unchanged source tick does not invalidate an active inventory drag")
+	var swaps: Array = []
+	world.inventory_swap_requested.connect(func(source_id: int, source_slot: int, dest_id: int, dest_slot: int): swaps.append([source_id, source_slot, dest_id, dest_slot]))
+	world._inventory_panel._request_swap(true, 0, false, 0)
+	_check(swaps == [[50, 0, 10, 0]], "inventory widget forwards source object/slot requests to session")
+	_check(world.entities[50].stats[8] == 500, "requested loot remains visible until server response")
+	world.remove_entity(50)
+	_check(world._inventory_panel._container_id == -1, "server-removed bag clears inventory selection")
 	world.advance_visuals(0.1)
 	_check(world.entities[20].position == Vector2(192, 96), "interpolation endpoint")
 	_check(world.entities[20].animation_frame == 1, "actual alternate movement frame")
