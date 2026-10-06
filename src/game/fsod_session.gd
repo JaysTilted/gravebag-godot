@@ -16,6 +16,8 @@ var class_type := 782 # Original XML Wizard, 0x030e.
 var skin_type := 0
 var map_bounds := Vector2.ZERO
 var object_types: Dictionary = {}
+var entity_states: Dictionary = {}
+var metadata: Dictionary = {}
 var player_stats: Dictionary = {}
 var item_descriptors: Dictionary = {}
 var login: Dictionary = {}
@@ -28,9 +30,10 @@ var _host := "127.0.0.1"
 var _port := 2050
 
 
-func bind(network: Node, frontend: Node, metadata: Dictionary = {}, items: Dictionary = {}) -> void:
+func bind(network: Node, frontend: Node, descriptors: Dictionary = {}, items: Dictionary = {}) -> void:
 	transport = network
 	view = frontend
+	metadata = descriptors
 	item_descriptors = items
 	transport.connect("connected", _on_connected)
 	transport.connect("disconnected", _on_disconnected)
@@ -42,6 +45,8 @@ func bind(network: Node, frontend: Node, metadata: Dictionary = {}, items: Dicti
 	view.connect("interact_requested", _on_interact)
 	view.call("set_descriptors", metadata)
 	view.set("clock_ms", Callable(self, "clock_ms"))
+	if view.has_signal("projectile_hit_requested"):
+		view.connect("projectile_hit_requested", _on_projectile_hit)
 
 
 func start(host: String, port: int, login_fields: Dictionary, load_character_id: int = -1) -> Error:
@@ -89,6 +94,7 @@ func receive_packet(packet_id: int, fields: Dictionary) -> void:
 		65: # MAPINFO: server world loaded; original CREATE/LOAD now enters it.
 			map_bounds = Vector2(float(fields["Width"]), float(fields["Height"]))
 			object_types.clear()
+			entity_states.clear()
 			player_stats.clear()
 			move_records.clear()
 			view.call("apply_map", Adapter.map_info(fields))
@@ -109,7 +115,9 @@ func receive_packet(packet_id: int, fields: Dictionary) -> void:
 				_observe_status(record)
 			for removed in fields.get("RemovedObjectIds", []):
 				object_types.erase(int(removed))
+				entity_states.erase(int(removed))
 			view.call("apply_update", Adapter.update(fields))
+			_update_interaction_target()
 		80: # NEW_TICK; report client position + samples, server validates and simulates.
 			for record in fields.get("UpdateStatuses", []):
 				_observe_status(record)
@@ -117,6 +125,7 @@ func receive_packet(packet_id: int, fields: Dictionary) -> void:
 			if state == "playing":
 				transport.call("send_move", int(fields["TickId"]), clock_ms(), pending_position, move_records.duplicate(true))
 				move_records.clear()
+			_update_interaction_target()
 		84, 96:
 			var owner_type := int(object_types.get(int(fields["OwnerId"]), -1))
 			view.call("apply_projectile", Adapter.projectile(fields, owner_type))
@@ -139,7 +148,13 @@ func receive_packet(packet_id: int, fields: Dictionary) -> void:
 
 
 func _observe_status(record: Dictionary) -> void:
-	if int(record["Id"]) != player_id:
+	var id := int(record["Id"])
+	var snapshot: Dictionary = entity_states.get(id, {"stats": {}})
+	snapshot["position"] = _vector(record["Position"])
+	for pair in record.get("Stats", []):
+		snapshot.stats[int(pair["Type"])] = pair["Value"]
+	entity_states[id] = snapshot
+	if id != player_id:
 		return
 	# Initialize position on first authoritative state; preserve active prediction until GOTO.
 	if player_stats.is_empty():
@@ -225,9 +240,92 @@ func _on_escape() -> void:
 		transport.call("send_fields", 47, {})
 
 
-func _on_interact(entity_id: int, _slot: int) -> void:
-	if state == "playing" and object_types.has(entity_id):
+func _class_for(entity_id: int) -> String:
+	var record: Dictionary = metadata.get("objects", {}).get(str(object_types.get(entity_id, -1)), {})
+	return String(record.get("class", ""))
+
+
+func _update_interaction_target() -> void:
+	var nearest := -1
+	var distance := 1.0 # UI interaction affordance; original server checks actual distance.
+	for id in entity_states:
+		if id == player_id or _class_for(id) not in ["Portal", "Container"]:
+			continue
+		var candidate: float = pending_position.distance_to(entity_states[id].position)
+		if candidate < distance:
+			nearest = id
+			distance = candidate
+	# This optional view field is part of the current frontend contract.
+	if _has_property(view, "interaction_target_id"):
+		view.set("interaction_target_id", nearest)
+
+
+func _has_property(object: Object, property: String) -> bool:
+	for info in object.get_property_list():
+		if info.name == property:
+			return true
+	return false
+
+
+func _on_interact(entity_id: int, slot: int) -> void:
+	if state != "playing" or not object_types.has(entity_id):
+		return
+	if _class_for(entity_id) == "Portal":
 		transport.call("send_fields", 9, {"ObjectId": entity_id})
+	elif _class_for(entity_id) == "Container":
+		pickup(entity_id, slot)
+
+
+func pickup(container_id: int, source_slot: int) -> Error:
+	if state != "playing" or source_slot < 0 or source_slot > 7 or not entity_states.has(container_id):
+		return ERR_INVALID_PARAMETER
+	var item_type := int(entity_states[container_id].stats.get(8 + source_slot, -1))
+	if item_type < 0:
+		return ERR_DOES_NOT_EXIST
+	for destination_slot in range(4, 12):
+		if int(player_stats.get(8 + destination_slot, -1)) < 0:
+			return swap_slots(container_id, source_slot, player_id, destination_slot)
+	return ERR_OUT_OF_MEMORY # Full inventory leaves bag and player unchanged.
+
+
+func swap_slots(source_id: int, source_slot: int, destination_id: int, destination_slot: int) -> Error:
+	if state != "playing" or not entity_states.has(source_id) or not entity_states.has(destination_id):
+		return ERR_UNCONFIGURED
+	if source_slot < 0 or source_slot > 19 or destination_slot < 0 or destination_slot > 19:
+		return ERR_INVALID_PARAMETER
+	var source_type := int(entity_states[source_id].stats.get(_slot_stat(source_slot), -1))
+	var destination_type := int(entity_states[destination_id].stats.get(_slot_stat(destination_slot), -1))
+	# Inventory is mutated ONLY by subsequent authoritative server updates.
+	return transport.call("send_fields", 34, {
+		"Time": clock_ms(), "Position": pending_position,
+		"SlotObject1": {"ObjectId": source_id, "SlotId": source_slot, "ObjectType": source_type & 65535},
+		"SlotObject2": {"ObjectId": destination_id, "SlotId": destination_slot, "ObjectType": destination_type & 65535},
+	})
+
+
+func _slot_stat(slot: int) -> int:
+	return 8 + slot if slot < 12 else 71 + slot - 12
+
+
+func use_item(slot: int, target_position: Vector2, use_type: int = 0) -> Error:
+	if state != "playing" or slot < 0 or slot > 19 or use_type < 0 or use_type > 255 or not target_position.is_finite():
+		return ERR_INVALID_PARAMETER
+	var type := int(player_stats.get(_slot_stat(slot), -1))
+	if type < 0:
+		return ERR_DOES_NOT_EXIST
+	return transport.call("send_fields", 48, {
+		"Time": clock_ms(), "SlotObject": {"ObjectId": player_id, "SlotId": slot, "ObjectType": type},
+		"ItemUsePos": target_position, "UseType": use_type,
+	})
+
+
+func _on_projectile_hit(owner_id: int, bullet_id: int, target_id: int, hit_kind: String) -> void:
+	if state != "playing":
+		return
+	if hit_kind == "player" and target_id == player_id:
+		transport.call("send_fields", 17, {"BulletId": bullet_id, "ObjectId": owner_id})
+	elif hit_kind == "enemy" and owner_id == player_id:
+		transport.call("send_fields", 42, {"Time": clock_ms(), "BulletId": bullet_id, "TargetId": target_id, "Killed": false})
 
 
 func _reconnect(fields: Dictionary) -> void:
@@ -249,6 +347,7 @@ func _reconnect(fields: Dictionary) -> void:
 	move_records.clear()
 	player_stats.clear()
 	object_types.clear()
+	entity_states.clear()
 	_set_state("reconnecting")
 	transport.call("configure_login", login)
 	transport.call("connect_to_server", host, port)

@@ -13,7 +13,9 @@ class Network extends Node:
 		sent.append({"method": "connect", "host": host, "port": port})
 		return OK
 	func send_hello() -> void: sent.append({"method": "hello"})
-	func send_fields(id: int, fields: Dictionary) -> void: sent.append({"id": id, "fields": fields})
+	func send_fields(id: int, fields: Dictionary) -> Error:
+		sent.append({"id": id, "fields": fields})
+		return OK
 	func send_move(tick: int, time: int, position: Vector2, records: Array) -> void: sent.append({"method": "move", "tick": tick, "time": time, "position": position, "records": records})
 	func send_shoot(time: int, bullet: int, weapon: int, position: Vector2, angle: float) -> void: sent.append({"method": "shoot", "time": time, "bullet": bullet, "weapon": weapon, "position": position, "angle": angle})
 
@@ -22,7 +24,9 @@ class Frontend extends Node:
 	signal shoot_requested(angle: float)
 	signal escape_requested
 	signal interact_requested(entity: int, slot: int)
+	signal projectile_hit_requested(owner: int, bullet: int, target: int, kind: String)
 	var clock_ms: Callable
+	var interaction_target_id := -1
 	var prediction_speed_tiles := 0.0
 	var shot_request_interval := 0.0
 	var seen: Array = []
@@ -37,7 +41,7 @@ func _init() -> void:
 	var network := Network.new()
 	var view := Frontend.new()
 	var session := Session.new()
-	session.bind(network, view, {}, {"100": {"RateOfFire": 1.0, "NumProjectiles": 3, "ArcGap": 10.0}})
+	session.bind(network, view, {"objects": {"782": {"class": "Player"}, "900": {"class": "Container"}, "901": {"class": "Portal"}}}, {"100": {"RateOfFire": 1.0, "NumProjectiles": 3, "ArcGap": 10.0}})
 	assert(session.start("example.com", 2050, {}) == ERR_INVALID_PARAMETER)
 	assert(network.sent.is_empty(), "no external connection")
 	assert(session.start("127.0.0.1", 2050, {"GameId": -2}) == OK)
@@ -69,6 +73,23 @@ func _init() -> void:
 	assert(session.pending_position == Vector2(20, 22))
 	view.escape_requested.emit()
 	assert(network.sent[-1].id == 47)
+	var bag := {"Id": 99, "Position": Vector2(20, 22), "Stats": [{"Type": 8, "Value": 123}]}
+	session.receive_packet(7, {"Tiles": [], "NewObjects": [{"ObjectType": 900, "Stats": bag}], "RemovedObjectIds": []})
+	assert(view.interaction_target_id == 99)
+	assert(session.pickup(99, 0) == OK and network.sent[-1].id == 34)
+	assert(network.sent[-1].fields.SlotObject1.ObjectType == 123)
+	assert(network.sent[-1].fields.SlotObject2.SlotId == 4)
+	assert(session.entity_states[99].stats[8] == 123, "no optimistic item destruction")
+	for slot in range(4, 12):
+		session.player_stats[8 + slot] = 1
+	assert(session.pickup(99, 0) == ERR_OUT_OF_MEMORY)
+	assert(session.use_item(0, Vector2(21, 22)) == OK and network.sent[-1].id == 48)
+	assert(session.use_item(0, Vector2(21, 22), 256) == ERR_INVALID_PARAMETER)
+	view.projectile_hit_requested.emit(1234, 2, 100, "enemy")
+	assert(network.sent[-1].id == 42 and not network.sent[-1].fields.Killed)
+	view.projectile_hit_requested.emit(100, 3, 1234, "player")
+	assert(network.sent[-1].id == 17 and network.sent[-1].fields.ObjectId == 100)
+	assert(session._slot_stat(12) == 71 and session._slot_stat(19) == 78)
 	session.receive_packet(63, {"AccountId": "42"})
 	assert(session.state == "dead" and session.character_id == -1)
 	var messages := network.sent.size()

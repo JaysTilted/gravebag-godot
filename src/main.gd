@@ -7,9 +7,15 @@ extends Node2D
 
 
 const DIVE_SCRIPT: Script = preload("res://src/game/dive.gd")
+const FSOD_ENTRY: Script = preload("res://src/game/fsod_entry.gd")
 
 
 func _ready() -> void:
+	if OS.get_cmdline_user_args().has("--fsod-client"):
+		var client: Node = FSOD_ENTRY.new()
+		client.name = "ServerClient"
+		add_child(client)
+		return
 	var dive: Node2D = DIVE_SCRIPT.new()
 	dive.name = "Dive"
 	add_child(dive)
