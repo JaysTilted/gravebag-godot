@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Pre-push gate (CCGS validate-push analog): fast checks only (~1 min).
+# Full gate incl. xvfb dive: bash scripts/verify.sh
+set -u
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT" || exit 1
+bash scripts/verify.sh --fast || { echo "PUSH BLOCKED: verify --fast failed"; exit 1; }
