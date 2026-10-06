@@ -1,0 +1,17 @@
+; WARDEN OF THE GATE — GRAVEBAG first boss scene. Standalone: no wiring required.
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/bosses/warden.gd" id="1_warden"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_warden"]
+radius = 20.0
+
+[node name="Warden" type="CharacterBody2D"]
+script = ExtResource("1_warden")
+
+[node name="Body" type="Sprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(3, 3)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_warden")
