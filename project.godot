@@ -1,0 +1,25 @@
+; Engine configuration file.
+; GRAVEBAG — RotMG-like bullet-hell looter. Godot 4.6, GL Compatibility (Steam Deck + low-end safe).
+
+config_version=5
+
+[application]
+
+config/name="GRAVEBAG"
+config/description="Leave with the bag, or get greedy. A RotMG-like bullet-hell looter."
+run/main_scene="res://src/main.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.043, 0.063, 0.125, 1)
