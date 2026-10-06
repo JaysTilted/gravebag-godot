@@ -60,7 +60,7 @@ func _initialize() -> void:
 	_check(XpLedger.xp_to_max_level() == 19950, "xp total to 20 is 19950")
 
 	# XP to 20, then overflow flips to fame; fame banks only on death.
-	var diver := XpLedger.new()
+	var diver: XpLedger = XpLedger.new()
 	diver.grant_xp(float(XpLedger.xp_to_max_level()))
 	_check(diver.level == 20 and diver.xp == 0 and diver.pending_fame == 0.0,
 			"exact total reaches 20 with no fame")
@@ -98,13 +98,13 @@ func _initialize() -> void:
 	_check(DropTable.best_bag_for_drops([]) == "", "empty drops pay nothing")
 
 	# Grave record: reclaim-or-lose.
-	var grave := GraveRecord.new(Vector2(7, -3), ["sword", "draught"])
+	var grave: GraveRecord = GraveRecord.new(Vector2(7, -3), ["sword", "draught"])
 	_check(not grave.is_empty(), "grave holds items")
 	var got: Array = grave.reclaim()
 	var want_got: Array = ["sword", "draught"]
 	_check(got == want_got and grave.is_empty() and grave.reclaimed,
 			"grave reclaim clears")
-	var lost := GraveRecord.new(Vector2.ZERO, ["relic"])
+	var lost: GraveRecord = GraveRecord.new(Vector2.ZERO, ["relic"])
 	lost.abandon()
 	_check(lost.is_empty() and not lost.reclaimed, "abandoned grave is lost")
 
