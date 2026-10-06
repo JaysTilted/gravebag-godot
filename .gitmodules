@@ -1,0 +1,3 @@
+[submodule "references/fsod"]
+	path = references/fsod
+	url = https://github.com/ossimc82/fabiano-swagger-of-doom

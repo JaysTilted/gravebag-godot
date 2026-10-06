@@ -178,7 +178,7 @@ func _ready() -> void:
 	_auto_test = user_args.has("--auto-test") or full_args.has("--auto-test")
 	if _auto_test:
 		seed(12345)
-		DirAccess.make_dir_recursive_absolute("/tmp/gravebag-frames")
+		DirAccess.make_dir_recursive_absolute(_frame_directory())
 	ledger = XpLedgerScript.new()
 	_last_level = int(ledger.get("level"))
 	_spawn_realm()
@@ -1240,10 +1240,15 @@ func _save_combat_frame(dense: int) -> void:
 	_frame_done["combat"] = true
 
 
+func _frame_directory() -> String:
+	var configured := OS.get_environment("GRAVEBAG_FRAME_DIR")
+	return configured if not configured.is_empty() else "/tmp/gravebag-frames"
+
+
 func _save_frame(tag: String) -> void:
 	if not _auto_test:
 		return
-	var dir := "/tmp/gravebag-frames"
+	var dir := _frame_directory()
 	DirAccess.make_dir_recursive_absolute(dir)
 	var path := "%s/%s.png" % [dir, tag]
 	var saved := false
