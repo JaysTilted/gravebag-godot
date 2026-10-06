@@ -678,9 +678,11 @@ func _on_player_died() -> void:
 		banked = float(ledger.call("die"))
 	total_fame_banked += banked
 	print("FAME TALLY +%.1f (deaths=%d) grave at %s" % [banked, deaths, str(pos)])
+	# Death pause: grave renders (and the death registers) before capture.
+	await get_tree().create_timer(0.35).timeout
 	_capture("grave", "06-death-grave")
 	# Respawn as a fresh diver at the nexus (player has no revive API).
-	await get_tree().create_timer(0.8).timeout
+	await get_tree().create_timer(0.45).timeout
 	_respawn_player()
 
 
