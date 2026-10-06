@@ -10,7 +10,7 @@ Facts independently implemented in Godot:
 - `Projectile` candidate checks compare both absolute tile-axis differences against that radius: square/AABB, not circle. Each sample chooses one nearest eligible target; multihit uses a per-projectile hit collection.
 - The original client tests the current projectile point, not a swept segment. Rendering/interpolated positions determine client contact; the C# server still performs damage/credit/death.
 - `Player` ground checks use a per-square last-damage timestamp and strict `now > lastDamage +500ms`, protecting objects and immunity. Ground requests never apply local damage.
-- `Player` splits movement into dominant-axis steps <=0.4 tile, checking half-cell neighbors for solid geometry.
+- `Player` splits movement into dominant-axis steps <=0.4 tile. Blocked half-grid transitions clip to the half-cell boundary (0.01 inset when entering a new integer cell) and try the preferred sliding axis. The main cell checks ground NoWalk/OccupySquare; neighbor checks use void255/FullOccupy, NOT every neighboring NoWalk/OccupySquare. Verified in Player.as441–642, Square.as292–355 and ObjectProperties.as174–176. Blanket neighboring-square rejection caused a real Nexus navigation stall and has been removed.
 - Original client's wavy angle amplitude is `PI/64` with fractional seconds and6*PI frequency. The C# server has a different `PI*64`/integer-seconds expression; that server code is unchanged. Frontend projection follows the inspected original client.
 
 Evidence: staged inspection in `build/ffdec/geometry/` and `geometry-extra/`, and scout report `/home/jay/.pi/agent/runs/scout-muwyex26a/evidence/report.md`. No wholesale ActionScript implementation or original textures were copied into the runtime.

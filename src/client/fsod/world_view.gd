@@ -283,12 +283,7 @@ func predict_motion(input_vector: Vector2, delta: float) -> void:
 		var steps := maxi(1, ceili(maxf(absf(offset.x), absf(offset.y)) / 0.4))
 		var step := offset / float(steps)
 		for index in steps:
-			var next_x := _prediction + Vector2(step.x, 0.0)
-			if _can_walk(next_x):
-				_prediction.x = next_x.x
-			var next_y := _prediction + Vector2(0.0, step.y)
-			if _can_walk(next_y):
-				_prediction.y = next_y.y
+			_prediction = _clip_movement(_prediction, _prediction + step)
 	# Visual smoothing of authoritative corrections. Player position remains server-owned.
 	player.predict_position(player.position.lerp(_prediction * TILE_PIXELS, minf(1.0, delta * 20.0)) / TILE_PIXELS)
 	_move_clock += delta
@@ -300,29 +295,59 @@ func predict_motion(input_vector: Vector2, delta: float) -> void:
 	_last_move = moving
 
 
+func _clip_movement(from: Vector2, requested: Vector2) -> Vector2:
+	# Recovered original Player half-grid clipping: don't just reject a blocked step.
+	var cross_x := (fmod(from.x, 0.5) == 0.0 and requested.x != from.x) or int(from.x / 0.5) != int(requested.x / 0.5)
+	var cross_y := (fmod(from.y, 0.5) == 0.0 and requested.y != from.y) or int(from.y / 0.5) != int(requested.y / 0.5)
+	if (not cross_x and not cross_y) or _can_walk(requested): return requested
+	var clipped := from
+	if cross_x:
+		clipped.x = float(int(requested.x * 2.0)) / 2.0 if requested.x > from.x else float(int(from.x * 2.0)) / 2.0
+		if int(clipped.x) > int(from.x): clipped.x -= 0.01
+	if cross_y:
+		clipped.y = float(int(requested.y * 2.0)) / 2.0 if requested.y > from.y else float(int(from.y * 2.0)) / 2.0
+		if int(clipped.y) > int(from.y): clipped.y -= 0.01
+	if not cross_x: return Vector2(requested.x, clipped.y)
+	if not cross_y: return Vector2(clipped.x, requested.y)
+	var overshoot_x := requested.x - clipped.x if requested.x > from.x else clipped.x - requested.x
+	var overshoot_y := requested.y - clipped.y if requested.y > from.y else clipped.y - requested.y
+	var first := Vector2(requested.x, clipped.y) if overshoot_x > overshoot_y else Vector2(clipped.x, requested.y)
+	var second := Vector2(clipped.x, requested.y) if overshoot_x > overshoot_y else Vector2(requested.x, clipped.y)
+	if _can_walk(first): return first
+	if _can_walk(second): return second
+	return clipped
+
+
 func _can_walk(position_tiles: Vector2) -> bool:
-	if not position_tiles.is_finite() or position_tiles.x < 0.0 or position_tiles.y < 0.0 or position_tiles.x >= map_width or position_tiles.y >= map_height:
-		return false
-	# Source neighbor-cell checks use half-cell boundaries, not the art's silhouette.
-	var lower := Vector2i(floori(position_tiles.x - 0.5 + 0.000001), floori(position_tiles.y - 0.5 + 0.000001))
-	var upper := Vector2i(floori(position_tiles.x + 0.5 - 0.000001), floori(position_tiles.y + 0.5 - 0.000001))
-	for y in range(lower.y, upper.y + 1):
-		for x in range(lower.x, upper.x + 1):
-			var cell := Vector2i(x, y)
-			if not tiles.has(cell) or int(tiles[cell]) == 255:
-				return false
-			var tile_type := int(tiles[cell])
-			var tile_meta: Dictionary = descriptors.get("tiles", {}).get(str(tile_type), descriptors.get("tiles", {}).get(tile_type, {}))
-			if bool(tile_meta.get("source_descriptor", {}).get("NoWalk", false)):
-				return false
-			for id in entities:
-				var entity: Variant = entities[id]
-				if not _live(entity) or int(id) == player_id:
-					continue
-				var meta: Dictionary = _object_descriptor(entity.object_type).get("source_descriptor", {})
-				if bool(meta.get("OccupySquare", false)) and Vector2i(floori(entity.authoritative_position.x), floori(entity.authoritative_position.y)) == cell:
-					return false
+	if not position_tiles.is_finite() or position_tiles.x < 0.0 or position_tiles.y < 0.0 or position_tiles.x >= map_width or position_tiles.y >= map_height: return false
+	var center := Vector2i(floori(position_tiles.x), floori(position_tiles.y))
+	if _cell_blocked(center, false): return false
+	# Neighbors use FullOccupy/void, NOT neighboring ground NoWalk/OccupySquare.
+	var fractional := position_tiles - Vector2(center)
+	var neighbors: Array = []
+	if fractional.x < 0.5: neighbors.append(Vector2i.LEFT)
+	elif fractional.x > 0.5: neighbors.append(Vector2i.RIGHT)
+	if fractional.y < 0.5: neighbors.append(Vector2i.UP)
+	elif fractional.y > 0.5: neighbors.append(Vector2i.DOWN)
+	if neighbors.size() == 2: neighbors.append(neighbors[0] + neighbors[1])
+	for offset in neighbors:
+		if _cell_blocked(center + offset, true): return false
 	return true
+
+
+func _cell_blocked(cell: Vector2i, neighbor: bool) -> bool:
+	if not tiles.has(cell) or int(tiles[cell]) == 255: return true
+	if not neighbor:
+		var tile_type := int(tiles[cell])
+		var tile_meta: Dictionary = descriptors.get("tiles", {}).get(str(tile_type), descriptors.get("tiles", {}).get(tile_type, {}))
+		if bool(tile_meta.get("source_descriptor", {}).get("NoWalk", false)): return true
+	for id in entities:
+		var entity: Variant = entities[id]
+		if not _live(entity) or int(id) == player_id: continue
+		if Vector2i(floori(entity.authoritative_position.x), floori(entity.authoritative_position.y)) != cell: continue
+		var meta: Dictionary = _object_descriptor(entity.object_type).get("source_descriptor", {})
+		if bool(meta.get("FullOccupy" if neighbor else "OccupySquare", false)): return true
+	return false
 
 
 func _input(event: InputEvent) -> void:

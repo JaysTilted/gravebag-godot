@@ -18,6 +18,11 @@ var playing_at := -1
 var _done := false
 var _frame_dir := "/state/live-frames"
 var _bot_realm := false
+var _bot_injury := false
+var _bot_loot := false
+var _deadline_ms := 90000
+var _loot_request := {}
+var _injury_observed := false
 var _portal_used := false
 var _visited_realm := false
 var _realm_since := -1
@@ -47,6 +52,14 @@ func _start() -> void:
 			load_override = int(argument.trim_prefix("--fsod-load-character-id="))
 		elif argument == "--fsod-bot-realm":
 			_bot_realm = true
+		elif argument == "--fsod-bot-injury":
+			_bot_realm = true
+			_bot_injury = true
+		elif argument.begins_with("--fsod-deadline-ms="):
+			_deadline_ms = clampi(int(argument.trim_prefix("--fsod-deadline-ms=")), 1000, 300000)
+		elif argument == "--fsod-bot-loot":
+			_bot_realm = true
+			_bot_loot = true
 	if profile_path.is_empty():
 		_fail("profile missing")
 		return
@@ -98,7 +111,7 @@ func _on_packet(id: int, _fields: Dictionary) -> void:
 func _process(_delta: float) -> bool:
 	if _done or session == null:
 		return false
-	if Time.get_ticks_msec() - started > (90000 if _bot_realm else 20000):
+	if Time.get_ticks_msec() - started > (_deadline_ms if _bot_realm else 20000):
 		_fail("real-client bounded deadline")
 		return false
 	if _bot_realm and session.state == "playing" and not session.player_stats.is_empty():
@@ -168,10 +181,11 @@ func _drive_bot() -> void:
 		if dist < enemy_dist:
 			enemy_id = id
 			enemy_dist = dist
+	if _bot_loot and _drive_loot(): return
 	if enemy_id >= 0:
 		var target: Vector2 = session.entity_states[enemy_id].position
-		frontend.shoot_requested.emit((target - pos).angle())
-		if enemy_dist > 3.5:
+		if not _bot_injury: frontend.shoot_requested.emit((target - pos).angle())
+		if enemy_dist > (1.0 if _bot_injury else 3.5):
 			_navigate(target)
 		else:
 			_release_keys()
@@ -179,12 +193,68 @@ func _drive_bot() -> void:
 		_navigate(Vector2.ZERO, true)
 	if _realm_since >= 0 and now - _realm_since > 6000 and capture_attempts < 3:
 		_capture("03-original-realm-%02d" % capture_attempts)
-	if _source_xp > _starting_xp and _realm_since >= 0 and now - _realm_since > 10000:
+	if _bot_injury and _source_hp < int(session.player_stats.get(0, _source_hp)):
+		_injury_observed = true
+		_release_keys()
+		_capture("05-original-damage")
+		_done = true
+		print("FSOD LIVE DAMAGE PASS original_server_hp=%d maximum=%d realm=true" % [_source_hp, session.player_stats.get(0, -1)])
+		quit(0)
+	if not _bot_injury and not _bot_loot and _source_xp > _starting_xp and _realm_since >= 0 and now - _realm_since > 10000:
 		_release_keys()
 		_capture("04-original-combat")
 		_done = true
 		print("FSOD LIVE COMBAT PASS realm=true original_server_xp=%d hp=%d ticks=%d frames=%d" % [_source_xp, _source_hp, ticks, frame_count])
 		quit(0)
+
+func _drive_loot() -> bool:
+	if not _loot_request.is_empty():
+		var wire: int = 8 + int(_loot_request.destination_slot)
+		if int(session.player_stats.get(wire, -1)) == int(_loot_request.type):
+			_release_keys()
+			_capture("06-original-loot")
+			_done = true
+			print("FSOD LIVE LOOT PASS original_server_item=%d inventory_slot=%d source_bag=%d" % [_loot_request.type, _loot_request.destination_slot, _loot_request.source_id])
+			quit(0)
+		return true
+	var nearest := -1
+	var nearest_distance := INF
+	var item_slot := -1
+	for id in session.entity_states:
+		if session._class_for(id) != "Container": continue
+		var stats: Dictionary = session.entity_states[id].get("stats", {})
+		var nonempty := -1
+		for slot in range(8):
+			if int(stats.get(8 + slot, -1)) >= 0:
+				nonempty = slot
+				break
+		if nonempty < 0: continue
+		var distance: float = session.pending_position.distance_to(session.entity_states[id].position)
+		if distance < nearest_distance:
+			nearest = id
+			nearest_distance = distance
+			item_slot = nonempty
+	if nearest < 0: return false
+	if nearest_distance >= 1.0:
+		_navigate(session.entity_states[nearest].position)
+		return true
+	_release_keys()
+	var destination_slot := -1
+	for slot in range(4, 12):
+		if int(session.player_stats.get(8 + slot, -1)) < 0:
+			destination_slot = slot
+			break
+	if destination_slot < 0:
+		_fail("source inventory full: no destructive loot request")
+		return true
+	var type: int = int(session.entity_states[nearest].stats.get(8 + item_slot, -1))
+	var result: int = session.swap_slots(nearest, item_slot, session.player_id, destination_slot)
+	if result != OK:
+		_fail("original loot request refused")
+		return true
+	_loot_request = {"source_id": nearest, "source_slot": item_slot, "destination_slot": destination_slot, "type": type}
+	print("FSOD LIVE LOOT REQUEST source_bag=%d type=%d destination_slot=%d; awaiting actual server snapshot" % [nearest, type, destination_slot])
+	return true
 
 func _navigate(target: Vector2, explore: bool = false) -> void:
 	var pos: Vector2 = session.pending_position

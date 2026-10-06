@@ -92,6 +92,13 @@ func _run() -> void:
 	_check(not world._can_walk(Vector2(4.5, 3.5)), "source NoWalk tile blocks client prediction")
 	_check(not world._can_walk(Vector2(-1, 3)), "map bounds block prediction")
 	_check(not world._can_walk(Vector2(10, 10)), "unstreamed map cells cannot become fake walkable tiles")
+	world.tiles[Vector2i(3, 3)] = 2
+	_check(world._clip_movement(Vector2(2.9, 3.5), Vector2(3.1, 3.5)).distance_to(Vector2(2.99, 3.5)) < 0.00001, "original half-grid wall clip uses0.01 entering-cell inset")
+	world.tiles[Vector2i(3, 3)] = 1
+	_check(world._can_walk(Vector2(3.6, 3.5)), "neighbor NoWalk is not a FullOccupy blocker in original client")
+	world.tiles[Vector2i(4, 3)] = 255
+	_check(not world._can_walk(Vector2(3.6, 3.5)), "neighbor void remains a source full-cell blocker")
+	world.tiles[Vector2i(4, 3)] = 2
 	world.apply_projectile({"owner_id": 20, "bullet_id": 1, "angle": 0, "position": {"x": 6, "y": 3}})
 	_check(world.projectiles.size() == 1, "visible source descriptor projectile")
 	world.advance_visuals(0.2)
