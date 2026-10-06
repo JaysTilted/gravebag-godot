@@ -362,7 +362,8 @@ def export(data_dir, file_order=FILES, auto_ids=None):
 
 
 def serialize(table):
-    return json.dumps(table, sort_keys=True, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    # Generated runtime tables stay compact; full upstream XML remains pinned.
+    return json.dumps(table, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n"
 
 
 def main():
