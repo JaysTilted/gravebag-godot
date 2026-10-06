@@ -9,6 +9,10 @@ extends SceneTree
 ## mix pass: every sound < 0.5 s except death_sting (< 1.2 s); MIX_DB volumes
 ## in [-24, 0] dB with shots quiet / hits-kills punchy / UI soft; ±10% pitch
 ## variance on rapid sounds (shoot/enemy_shoot/hit) and none elsewhere.
+## Music asserts: nexus_calm + combat_drive loops are non-empty, > 10 s,
+## loop-enabled with 0..size loop points and silence at the seam (seamless),
+## byte-distinct from each other, and crossfade_to() switches tracks while
+## set_intensity() removes/restores the extra layer.
 ## Prints SELFTEST PASS and quits 0; prints SELFTEST FAIL and quits 1.
 
 const SOUND_NAMES: Array[String] = [
@@ -20,6 +24,7 @@ const RAPID_SOUNDS: Array[String] = ["shoot", "enemy_shoot", "hit"]
 
 var _failures := 0
 var _sfx: GDScript
+var _music: GDScript
 var _peaks: Dictionary = {}
 
 
@@ -76,6 +81,7 @@ func _initialize() -> void:
 		print("ok: ", sound_name, " frames=", stream.data.size(), " rate=", stream.mix_rate)
 	_check_mix_balance()
 	_check_pitch_variance()
+	_check_music_static()
 
 
 func _process(_delta: float) -> bool:
@@ -120,6 +126,7 @@ func _process(_delta: float) -> bool:
 			print("ok: sfx_player pool=8 play()/play_varied() voiced")
 		root.remove_child(player)
 		player.queue_free()
+	_check_music_player()
 
 	if _failures > 0:
 		printerr("SELFTEST FAIL: ", _failures, " failure(s)")
@@ -248,3 +255,124 @@ func _hash(data: PackedByteArray) -> int:
 		h = (h ^ b) * 16777619
 		h = h & 0xFFFFFFFF
 	return h
+
+
+func _check_music_static() -> void:
+	_music = load("res://src/audio/music.gd") as GDScript
+	if _music == null:
+		printerr("SELFTEST FAIL: could not load res://src/audio/music.gd")
+		_failures += 1
+		return
+	for want in ["nexus_calm", "combat_drive"]:
+		if not (want in _music.TRACKS):
+			printerr("SELFTEST FAIL: music TRACKS missing ", want)
+			_failures += 1
+	if int(_music.BARS_PER_LOOP) < 8:
+		printerr("SELFTEST FAIL: music BARS_PER_LOOP=", _music.BARS_PER_LOOP, " (want >= 8)")
+		_failures += 1
+	var bpms := {"nexus_calm": float(_music.CALM_BPM), "combat_drive": float(_music.COMBAT_BPM)}
+	var seen: Dictionary = {}
+	for track_name in ["nexus_calm", "combat_drive"]:
+		var stream: AudioStreamWAV = _music.call("stream_for", track_name)
+		if stream == null:
+			printerr("SELFTEST FAIL: music ", track_name, " returned null")
+			_failures += 1
+			continue
+		if stream.format != AudioStreamWAV.FORMAT_8_BITS:
+			printerr("SELFTEST FAIL: music ", track_name, " is not 8-bit")
+			_failures += 1
+		if stream.mix_rate != _music.MIX_RATE:
+			printerr("SELFTEST FAIL: music ", track_name, " mix_rate=", stream.mix_rate)
+			_failures += 1
+		if stream.stereo:
+			printerr("SELFTEST FAIL: music ", track_name, " is stereo, expected mono")
+			_failures += 1
+		if stream.data.is_empty():
+			printerr("SELFTEST FAIL: music ", track_name, " has empty sample data")
+			_failures += 1
+			continue
+		var duration := float(stream.data.size()) / float(stream.mix_rate)
+		if duration <= float(_music.MIN_DURATION):
+			printerr("SELFTEST FAIL: music ", track_name, " duration=", duration, " (want >", _music.MIN_DURATION, "s)")
+			_failures += 1
+		var want_dur := float(_music.BARS_PER_LOOP) * float(_music.BEATS_PER_BAR) * 60.0 / float(bpms[track_name])
+		if absf(duration - want_dur) > 0.25:
+			printerr("SELFTEST FAIL: music ", track_name, " duration=", duration, " (want ~", want_dur, "s for 8 bars)")
+			_failures += 1
+		if stream.loop_mode != AudioStreamWAV.LOOP_FORWARD:
+			printerr("SELFTEST FAIL: music ", track_name, " loop_mode=", stream.loop_mode, " (want FORWARD)")
+			_failures += 1
+		if stream.loop_begin != 0 or stream.loop_end != stream.data.size():
+			printerr("SELFTEST FAIL: music ", track_name, " loop points=", stream.loop_begin, "..", stream.loop_end, " (want 0..", stream.data.size(), ")")
+			_failures += 1
+		var first := int(stream.data[0])
+		var last := int(stream.data[stream.data.size() - 1])
+		if abs(first - 128) > 10 or abs(last - 128) > 10:
+			printerr("SELFTEST FAIL: music ", track_name, " seam bytes=", first, "/", last, " (want ~128 for a seamless loop)")
+			_failures += 1
+		var peak := _peak(stream.data)
+		if peak < 0.15 or peak > 0.99:
+			printerr("SELFTEST FAIL: music ", track_name, " peak=", peak, " (want 0.15..0.99)")
+			_failures += 1
+		var fingerprint := str(stream.data.size()) + ":" + str(_hash(stream.data))
+		if seen.has(fingerprint):
+			printerr("SELFTEST FAIL: music ", track_name, " duplicates ", seen[fingerprint])
+			_failures += 1
+		else:
+			seen[fingerprint] = track_name
+		print("ok: music ", track_name, " dur=", snappedf(duration, 0.01), "s loop=", stream.loop_begin, "..", stream.loop_end)
+	var bogus: AudioStreamWAV = _music.call("stream_for", "no_such_track")
+	if bogus != null:
+		printerr("SELFTEST FAIL: music stream_for(bogus) should be null")
+		_failures += 1
+	print("ok: music loops distinct + loop-enabled + seamless")
+
+
+func _check_music_player() -> void:
+	if _music == null:
+		return
+	var node := _music.new() as Node
+	if node == null:
+		printerr("SELFTEST FAIL: music node does not instantiate")
+		_failures += 1
+		return
+	root.add_child(node)
+	if not node.has_method("crossfade_to") or not node.has_method("set_intensity"):
+		printerr("SELFTEST FAIL: music node missing crossfade_to/set_intensity")
+		_failures += 1
+		root.remove_child(node)
+		node.queue_free()
+		return
+	if bool(node.call("crossfade_to", "nope", 0.0)):
+		printerr("SELFTEST FAIL: music crossfade_to(bogus) should fail")
+		_failures += 1
+	for track_name in ["nexus_calm", "combat_drive"]:
+		if not bool(node.call("crossfade_to", track_name, 0.0)):
+			printerr("SELFTEST FAIL: music crossfade_to(", track_name, ") failed")
+			_failures += 1
+			continue
+		if String(node.get("current_track")) != track_name:
+			printerr("SELFTEST FAIL: music current_track=", node.get("current_track"))
+			_failures += 1
+		if not bool(node.call("is_track_playing")):
+			printerr("SELFTEST FAIL: music ", track_name, " not playing after crossfade")
+			_failures += 1
+	node.call("set_intensity", 0.0)
+	if float(node.get("intensity")) != 0.0 or bool(node.call("is_layer_active")):
+		printerr("SELFTEST FAIL: music set_intensity(0) did not remove layer")
+		_failures += 1
+	node.call("set_intensity", 1.0)
+	if float(node.get("intensity")) != 1.0 or not bool(node.call("is_layer_active")):
+		printerr("SELFTEST FAIL: music set_intensity(1) did not restore layer")
+		_failures += 1
+	node.call("set_intensity", 2.0)
+	if float(node.get("intensity")) != 1.0:
+		printerr("SELFTEST FAIL: music set_intensity(2) not clamped to 1")
+		_failures += 1
+	node.call("set_intensity", -1.0)
+	if float(node.get("intensity")) != 0.0:
+		printerr("SELFTEST FAIL: music set_intensity(-1) not clamped to 0")
+		_failures += 1
+	print("ok: music crossfade + intensity layers")
+	root.remove_child(node)
+	node.queue_free()
