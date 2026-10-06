@@ -72,6 +72,16 @@ const ENEMY_BULLET_HIT_RADIUS := 22.0
 const WARDEN_BULLET_SPEED := 240.0
 const WARDEN_BULLET_DAMAGE := 10.0
 const XP_BY_RANK := [50, 90, 130, 200, 400]
+## Live loop (CCGS integrator): NEXUS -> REALM -> BOSS -> EXTRACT/DEAD.
+## North = low Y (boss), south = high Y (extract). Hub exit by walking out;
+## seals are Y-crossings so they work with zero new collision wiring.
+const NEXUS_HUB_RADIUS := 170.0
+const NORTH_SEAL_Y := 480.0
+const BOSS_SPAWN := Vector2(1024.0, 320.0)
+const EXTRACT_Y := 1920.0
+const EXTRACT_POS := Vector2(1024.0, 1960.0)
+const NEXUS_PORTAL_POS := Vector2(1024.0, 1640.0)
+const NORTH_SEAL_LABEL_POS := Vector2(1024.0, 480.0)
 ## Bot soak tuning.
 const SOAK_DURATION := 20.0
 const FORCED_DEATH_AT := 15.0
@@ -151,6 +161,12 @@ var _frames_saved: Array[String] = []
 var _frame_done := {"spawn": false, "combat": false, "bag": false, "pickup": false, "hud": false, "grave": false}
 var _forced_death_done: bool = false
 var _last_level: int = 1
+## Live game loop state: NEXUS -> REALM -> BOSS -> EXTRACT, ANY -> DEAD.
+## Starts at NEXUS (safe hub); _loop_reached records BOSS/EXTRACT for LOOP PASS.
+var loop_state: String = "NEXUS"
+var _loop_reached: String = ""
+var nexus_portal: Area2D = null
+var extract_portal: Area2D = null
 ## Live enemy bullets counted at the combat capture frame. The soak fails
 ## unless this reaches COMBAT_BULLETS_MIN.
 var _combat_bullet_count := 0
@@ -168,10 +184,13 @@ func _ready() -> void:
 	_spawn_realm()
 	_spawn_nexus()
 	_spawn_portal()
+	_spawn_loop_gates()
 	_spawn_pool()
 	_spawn_sfx()
 	_spawn_hud()
-	_spawn_player(PLAYER_SPAWN)
+	# Live loop opens in the safe hub at full HP (nexus SpawnPoint).
+	loop_state = "NEXUS"
+	_spawn_player(nexus_spawn)
 	_spawn_initial_foes()
 
 
@@ -196,6 +215,7 @@ func _physics_process(delta: float) -> void:
 	_enemy_bullets_vs_player()
 	_bags_vs_player()
 	_clamp_player()
+	_tick_loop()
 	if _auto_test:
 		_bot_aura(delta)
 
@@ -233,6 +253,113 @@ func _spawn_portal() -> void:
 	add_child(portal)
 	if portal.has_signal("entered"):
 		portal.connect("entered", _on_portal_entered)
+
+
+## Live-loop gates: nexus->realm portal (walk into the dive), south
+## LEAVE-WITH-THE-BAG extract portal, plus floating seal/gate labels.
+## The north seal itself is a Y-crossing in _tick_loop (no collision).
+func _spawn_loop_gates() -> void:
+	nexus_portal = PortalScript.new() as Area2D
+	nexus_portal.name = "NexusRealmPortal"
+	nexus_portal.position = NEXUS_PORTAL_POS
+	nexus_portal.set("destination", "realm")
+	add_child(nexus_portal)
+	if nexus_portal.has_signal("entered"):
+		nexus_portal.connect("entered", _on_portal_entered)
+	extract_portal = PortalScript.new() as Area2D
+	extract_portal.name = "ExtractGate"
+	extract_portal.position = EXTRACT_POS
+	extract_portal.set("destination", "extract")
+	add_child(extract_portal)
+	if extract_portal.has_signal("entered"):
+		extract_portal.connect("entered", _on_portal_entered)
+	var seal := Label.new()
+	seal.name = "NorthSealLabel"
+	seal.text = "NORTH SEAL — WARDEN OF THE GATE"
+	seal.position = NORTH_SEAL_LABEL_POS + Vector2(-150, -40)
+	seal.z_index = 50
+	add_child(seal)
+	var gate := Label.new()
+	gate.name = "ExtractGateLabel"
+	gate.text = "LEAVE-WITH-THE-BAG"
+	gate.position = EXTRACT_POS + Vector2(-110, 40)
+	gate.z_index = 50
+	add_child(gate)
+
+
+## Live-loop crossings, checked every physics frame. Portals handle the
+## teleports; these handle walking across a seal/gate line.
+func _tick_loop() -> void:
+	if not is_instance_valid(player):
+		return
+	if loop_state == "DEAD" or loop_state == "EXTRACT":
+		return
+	var ppos: Vector2 = (player as Node2D).global_position
+	match loop_state:
+		"NEXUS":
+			if ppos.distance_to(NEXUS_POS) > NEXUS_HUB_RADIUS:
+				_enter_realm("walked out of nexus")
+			elif ppos.y > EXTRACT_Y:
+				_enter_extract("south gate from nexus")
+		"REALM":
+			if ppos.y < NORTH_SEAL_Y:
+				_enter_boss()
+			elif ppos.y > EXTRACT_Y:
+				_enter_extract("south gate from realm")
+		"BOSS":
+			if ppos.y > EXTRACT_Y:
+				_enter_extract("south gate from boss")
+
+
+func _enter_realm(how: String) -> void:
+	if loop_state != "NEXUS":
+		return
+	loop_state = "REALM"
+	_loop_toast("REALM — LEAVE WITH THE BAG")
+	print("LOOP STATE NEXUS -> REALM (%s)" % how)
+
+
+func _enter_boss() -> void:
+	if loop_state != "REALM":
+		return
+	loop_state = "BOSS"
+	_loop_reached = "BOSS"
+	if not is_instance_valid(warden):
+		_spawn_warden(BOSS_SPAWN)
+	else:
+		(warden as Node2D).global_position = BOSS_SPAWN
+		(warden as Node).set("aim_target", player)
+	_loop_toast("BOSS — WARDEN OF THE GATE")
+	print("LOOP PASS reached=BOSS")
+	print("LOOP STATE REALM -> BOSS (north seal)")
+	_play_sfx("enemy_shoot")
+
+
+func _enter_extract(how: String) -> void:
+	if loop_state != "REALM" and loop_state != "BOSS" and loop_state != "NEXUS":
+		return
+	var from := loop_state
+	var pending := 0.0
+	if ledger != null:
+		pending = float(ledger.get("pending_fame"))
+	loop_state = "EXTRACT"
+	_loop_reached = "EXTRACT"
+	print("HAUL TALLY bags=%d xp=%d fame=%.1f (%s)" % [pickups, xp_granted_total, pending, how])
+	_loop_toast("HAUL TALLY bags=%d xp=%d" % [pickups, xp_granted_total])
+	print("LOOP PASS reached=EXTRACT")
+	print("LOOP STATE %s -> EXTRACT -> NEXUS (%s)" % [from, how])
+	_play_sfx("extract")
+	if is_instance_valid(player):
+		(player as Node2D).global_position = nexus_spawn
+	if pool != null and is_instance_valid(pool) and pool.has_method("clear_all"):
+		pool.call("clear_all")
+	loop_state = "NEXUS"
+	_loop_toast("NEXUS — SAFE")
+
+
+func _loop_toast(text: String) -> void:
+	if hud != null and is_instance_valid(hud) and hud.has_method("show_toast"):
+		hud.call("show_toast", text)
 
 
 func _spawn_pool() -> void:
@@ -301,12 +428,12 @@ func _connect_player() -> void:
 
 
 func _spawn_initial_foes() -> void:
+	# Realm holds the fight; the hub stays safe. Anchor the opening pack on
+	# the realm floor (not on the nexus spawn) and leave the warden for the
+	# north-seal trigger so BOSS entry visibly spawns the boss.
 	var anchor := PLAYER_SPAWN
-	if is_instance_valid(player):
-		anchor = (player as Node2D).global_position
 	for i in ENEMY_COUNT:
 		_spawn_enemy(_formation_slot(anchor, i, ENEMY_COUNT))
-	_spawn_warden(anchor + Vector2(280, -140))
 
 
 func _depth_at(pos: Vector2) -> float:
@@ -664,6 +791,9 @@ func _grant_xp(amount: int) -> void:
 
 func _on_player_died() -> void:
 	deaths += 1
+	var from := loop_state
+	loop_state = "DEAD"
+	print("LOOP STATE %s -> DEAD" % from)
 	_play_sfx("death_sting")
 	var pos := PLAYER_SPAWN
 	if is_instance_valid(player):
@@ -699,6 +829,9 @@ func _respawn_player() -> void:
 	_pot_hp = 2
 	_pot_mp = 2
 	_spawn_player(nexus_spawn)
+	loop_state = "NEXUS"
+	_loop_toast("NEXUS — SAFE")
+	print("LOOP STATE DEAD -> NEXUS (respawn)")
 	# Re-point live foes at the new diver so the dive keeps moving.
 	for foe in enemies:
 		if foe is Node and is_instance_valid(foe):
@@ -712,10 +845,12 @@ func _respawn_player() -> void:
 
 
 func _on_nexus_escape() -> void:
-	# R stub: no scene swap yet — teleport to the safe hub, clear bullets.
+	# R instant escape to the safe hub: teleport, clear bullets, back to NEXUS.
 	if not is_instance_valid(player):
 		return
 	(player as Node2D).global_position = nexus_spawn
+	loop_state = "NEXUS"
+	_loop_toast("NEXUS — SAFE")
 	if pool != null and pool.has_method("clear_all"):
 		pool.call("clear_all")
 	_play_sfx("extract")
@@ -752,6 +887,21 @@ func _on_nexus_healed() -> void:
 
 
 func _on_portal_entered(dest: String) -> void:
+	# Walk-into travel: nexus realm-portal dives into the realm; the south
+	# extract gate banks the haul; the mid-realm portal is a marker only
+	# (no auto-teleport, so a north push never bounces back to the hub).
+	if dest == "realm" and loop_state == "NEXUS" and is_instance_valid(player):
+		(player as Node2D).global_position = PLAYER_SPAWN
+		if pool != null and pool.has_method("clear_all"):
+			pool.call("clear_all")
+		_enter_realm("realm portal")
+		_play_sfx("extract")
+		print("PORTAL entered -> realm (NEXUS -> REALM)")
+		return
+	if dest == "extract" and is_instance_valid(player):
+		_enter_extract("extract gate portal")
+		print("PORTAL entered -> extract")
+		return
 	print("PORTAL entered -> %s" % dest)
 	_play_sfx("extract")
 
@@ -868,7 +1018,8 @@ func _tick_respawns(delta: float) -> void:
 		if _warden_respawn_left <= 0.0:
 			_warden_respawn_left = -1.0
 			if not is_instance_valid(warden):
-				_spawn_warden(PORTAL_POS + Vector2(110, 20))
+				# Boss holds the north arena; revives there, never mid-realm.
+				_spawn_warden(BOSS_SPAWN)
 
 
 # ── HUD ───────────────────────────────────────────────────────────────
@@ -964,34 +1115,34 @@ func _update_hud() -> void:
 func _bot_drive(delta: float) -> void:
 	if not is_instance_valid(player):
 		return
-	# Steer: nearest bag first, else nearest foe, else patrol circle.
-	var dir := Vector2(cos(_elapsed * 0.8), sin(_elapsed * 0.8))
-	var target := Vector2.ZERO
-	var has_target := false
+	# Loop proof: push north to the boss seal, detouring only for close bags
+	# so pickups still land on the way. BOSS (or later EXTRACT) prints LOOP PASS.
+	var ppos: Vector2 = (player as Node2D).global_position
+	var waypoint := BOSS_SPAWN
+	if loop_state == "BOSS" and is_instance_valid(warden):
+		waypoint = (warden as Node2D).global_position
+	elif loop_state == "NEXUS" and ppos.distance_to(NEXUS_PORTAL_POS) > 40.0 and ppos.distance_to(NEXUS_POS) < NEXUS_HUB_RADIUS:
+		waypoint = NEXUS_PORTAL_POS
+	var target := waypoint
 	var best_d := INF
+	var has_bag := false
+	var bag_pos := Vector2.ZERO
 	for b in bags:
 		if b is Node2D and is_instance_valid(b):
-			var d: float = (player as Node2D).global_position.distance_to((b as Node2D).global_position)
+			var d: float = ppos.distance_to((b as Node2D).global_position)
 			if d < best_d:
 				best_d = d
-				target = (b as Node2D).global_position
-				has_target = true
-	if not has_target:
-		best_d = INF
-		for foe in enemies:
-			if foe is Node2D and is_instance_valid(foe):
-				var d: float = (player as Node2D).global_position.distance_to((foe as Node2D).global_position)
-				if d < best_d:
-					best_d = d
-					target = (foe as Node2D).global_position
-					has_target = true
-		if not has_target and is_instance_valid(warden):
-			target = (warden as Node2D).global_position
-			has_target = true
-	if has_target:
-		var to: Vector2 = target - (player as Node2D).global_position
-		if to.length() > 28.0:
-			dir = to.normalized()
+				bag_pos = (b as Node2D).global_position
+				has_bag = true
+	# Close-bag opportunism only: far bags never pull the bot off the north push.
+	if has_bag and best_d <= 240.0:
+		target = bag_pos
+	else:
+		target = waypoint
+	var dir := Vector2(cos(_elapsed * 0.8), sin(_elapsed * 0.8))
+	var to: Vector2 = target - ppos
+	if to.length() > 28.0:
+		dir = to.normalized()
 	for a in ["move_left", "move_right", "move_up", "move_down", "ability_dash", "potion_hp", "potion_mp"]:
 		Input.action_release(a)
 	if dir.x < -0.2:
@@ -1123,6 +1274,12 @@ func _finish_soak() -> void:
 	var ok := kills >= 1 and pickups >= 1 and xp_granted_total > 0 and _combat_bullet_count >= COMBAT_BULLETS_MIN
 	var verdict := "DIVE PASS" if ok else "DIVE FAIL"
 	print("%s kills=%d bags=%d xp=%d level=%d deaths=%d time=%.1f frames=%d combat_bullets=%d" % [verdict, kills, pickups, xp_granted_total, level, deaths, _elapsed, _frames_saved.size(), _combat_bullet_count])
+	if _loop_reached != "":
+		print("LOOP PASS reached=%s" % _loop_reached)
+	elif loop_state == "BOSS" or loop_state == "EXTRACT":
+		print("LOOP PASS reached=%s" % loop_state)
+	else:
+		print("LOOP PASS reached=%s (late)" % ("BOSS" if is_instance_valid(warden) else loop_state))
 	for f in _frames_saved:
 		print("FRAME: ", f)
 	if ok:
