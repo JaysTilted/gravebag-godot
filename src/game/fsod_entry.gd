@@ -7,6 +7,8 @@ const FRONTEND := "res://src/client/fsod/frontend.tscn"
 const DATA := "res://src/data/fsod/"
 var session: Node
 var _status: Label
+var _profile_path := ""
+var _profile: Dictionary = {}
 
 
 func _ready() -> void:
@@ -22,15 +24,14 @@ func _ready() -> void:
 		if not ResourceLoader.exists(required) and not FileAccess.file_exists(required):
 			_fail("Backend cutover dependency not yet installed: " + required)
 			return
-	var profile_path := ""
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--fsod-login-file="):
-			profile_path = argument.trim_prefix("--fsod-login-file=")
-	if profile_path.is_empty():
+			_profile_path = argument.trim_prefix("--fsod-login-file=")
+	if _profile_path.is_empty():
 		_fail("No local backend login profile supplied")
 		return
-	var profile := _read_json(profile_path)
-	if not profile.has("hello") or not profile.hello is Dictionary:
+	_profile = _read_json(_profile_path)
+	if not _profile.has("hello") or not _profile.hello is Dictionary:
 		_fail("Invalid local login profile (expected hello dictionary)")
 		return
 	var network_script: Script = load(NETWORK)
@@ -46,11 +47,11 @@ func _ready() -> void:
 	add_child(session)
 	var metadata := Adapter.descriptors(_read_json(DATA + "objects.json"), _read_json(DATA + "object_descriptors.json"), _read_json(DATA + "projectiles.json"), _read_json(DATA + "grounds.json"))
 	session.bind(network, frontend, metadata, _read_json(DATA + "items.json"))
-	session.class_type = int(profile.get("class_type", 782))
-	session.skin_type = int(profile.get("skin_type", 0))
+	session.class_type = int(_profile.get("class_type", 782))
+	session.skin_type = int(_profile.get("skin_type", 0))
 	session.state_changed.connect(_on_state)
 	session.session_error.connect(_fail)
-	var result: Error = session.start(String(profile.get("host", "127.0.0.1")), int(profile.get("port", 2050)), profile.hello, int(profile.get("character_id", -1)))
+	var result: Error = session.start(String(_profile.get("host", "127.0.0.1")), int(_profile.get("port", 2050)), _profile.hello, int(_profile.get("character_id", -1)))
 	if result != OK:
 		_fail("Could not start local backend connection (code %d)" % result)
 
@@ -65,10 +66,22 @@ func _read_json(path: String) -> Dictionary:
 func _on_state(state: String) -> void:
 	_status.text = "GRAVEBAG — " + state.replace("_", " ")
 	if state == "playing":
+		_profile["character_id"] = session.character_id
+		_save_profile()
 		_status.text = "GRAVEBAG · original backend"
 		print("FSOD CLIENT PLAYING") # Server CREATE_SUCCESS, not a local simulated world.
 	elif state == "dead":
+		_profile["character_id"] = -1
+		_save_profile()
 		_status.text = "YOU DIED · character saved by server"
+
+
+func _save_profile() -> void:
+	# Existing private profile keeps its file permissions; never echo auth fields.
+	var saved := FileAccess.open(_profile_path, FileAccess.WRITE)
+	if saved != null:
+		saved.store_string(JSON.stringify(_profile) + "\n")
+		saved.close()
 
 
 func _fail(message: String) -> void:

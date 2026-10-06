@@ -1,4 +1,5 @@
 extends RefCounted
+const ClientFacts := preload("res://src/game/fsod_client_constants.gd")
 ## Transport/view boundary: source PascalCase + tile vectors -> view snake_case.
 ## Original backend remains authoritative; this file performs no game simulation.
 
@@ -46,10 +47,12 @@ static func tick(fields: Dictionary) -> Dictionary:
 static func projectile(fields: Dictionary, owner_type: int = -1) -> Dictionary:
 	var result := {
 		"owner_id": int(fields["OwnerId"]), "bullet_id": int(fields["BulletId"]),
-		"position": position(fields.get("Position", fields.get("StartingPos"))),
 		"angle": float(fields["Angle"]), "bullet_type": int(fields.get("BulletType", 0)),
 		"num_shots": int(fields.get("NumShots", 1)), "angle_inc": float(fields.get("AngleInc", 0.0)),
 	}
+	if fields.has("Position") or fields.has("StartingPos"):
+		result["position"] = position(fields.get("Position", fields.get("StartingPos")))
+	# AllyShoot has no position; the view resolves the authoritative owner position.
 	# Enemy volleys resolve projectile metadata from owner type; player volleys carry weapon type.
 	var container_type := int(fields.get("ContainerType", owner_type))
 	if container_type >= 0:
@@ -78,9 +81,25 @@ static func descriptors(objects: Dictionary, object_descs: Dictionary, projectil
 		mapped_objects[String(key)] = {
 			"name": String(record.get("id", "")), "class": String(record.get("class", typed.get("Class", ""))),
 			"player": bool(typed.get("Player", false)), "enemy": bool(typed.get("Enemy", false)),
-			"projectiles": shots, "source_descriptor": typed,
+			"hit_radius_tiles": ClientFacts.CONTACT_HALF_EXTENT_TILES if bool(typed.get("Player", false)) or bool(typed.get("Enemy", false)) else 0.0,
+			"hit_shape": "aabb", "projectiles": shots, "source_descriptor": typed,
 		}
 	var tiles: Dictionary = {}
 	for key in grounds:
-		tiles[String(key)] = {"source_descriptor": _descriptor(grounds[key])}
+		var ground := _descriptor(grounds[key])
+		var name := String(ground.get("ObjectId", "")).to_lower()
+		var color := Color("53645d") # Original frontend art palette, not upstream textures.
+		if "grass" in name or "forest" in name or "jungle" in name:
+			color = Color("517c49")
+		elif "sand" in name or "beach" in name or "desert" in name:
+			color = Color("b59e6c")
+		elif "water" in name or "sea" in name or "ocean" in name:
+			color = Color("456f91")
+		elif "lava" in name or "fire" in name:
+			color = Color("a95438")
+		elif "snow" in name or "ice" in name:
+			color = Color("a6b8c2")
+		elif "stone" in name or "floor" in name or "brick" in name or "nexus" in name:
+			color = Color("70767f")
+		tiles[String(key)] = {"color": color, "source_descriptor": ground}
 	return {"objects": mapped_objects, "tiles": tiles}

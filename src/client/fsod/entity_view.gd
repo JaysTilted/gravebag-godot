@@ -29,11 +29,16 @@ var _duration: float = 0.1
 var _walk_clock: float = 0.0
 var _moving: bool = false
 var _initialized: bool = false
+var _pulse: float = 0.0
+var _label: String = ""
+var _visual_size: float = 1.0
 
 
 func configure(id: int, type: int, descriptor: Dictionary) -> void:
 	entity_id = id
 	object_type = type
+	_label = String(descriptor.get("name", "")).to_lower()
+	_visual_size = clampf(float(descriptor.get("source_descriptor", {}).get("MinSize", 100)) / 100.0, 0.5, 3.0)
 	kind = str(descriptor.get("kind", descriptor.get("class", "object"))).to_lower()
 	if descriptor.get("player", false) == true: kind = "player"
 	if descriptor.get("enemy", false) == true: kind = "enemy"
@@ -51,6 +56,8 @@ func apply_status(status: Dictionary, seconds: float = 0.1) -> void:
 			if pair is Dictionary and pair.has("type") and pair.has("value"):
 				var wire_id: int = _stat_id(pair["type"])
 				if wire_id >= 0: stats[wire_id] = pair["value"]
+	if stats.has(2):
+		_visual_size = clampf(float(stats[2]) / 100.0, 0.5, 3.0)
 	var parsed: Variant = parse_position(status.get("position"))
 	if parsed is Vector2:
 		authoritative_position = parsed
@@ -79,6 +86,7 @@ func predict_position(tile_position: Vector2) -> void:
 func advance_visual(delta: float) -> void:
 	if not is_finite(delta) or delta <= 0.0: return
 	_elapsed += delta
+	_pulse += delta
 	if not is_local_player:
 		position = _from.lerp(_to, clampf(_elapsed / _duration, 0.0, 1.0))
 	if _moving:
@@ -90,6 +98,8 @@ func advance_visual(delta: float) -> void:
 
 
 func _draw() -> void:
+	# Visual scale only; original client contact geometry is supplied separately.
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * _visual_size)
 	draw_ellipse_shadow()
 	if kind == "enemy" or kind == "player" or is_local_player:
 		var frames: Array[String] = PLAYER_FRAMES if kind == "player" or is_local_player else ENEMY_FRAMES
@@ -103,6 +113,29 @@ func _draw() -> void:
 			for x: int in rows[y].length():
 				var key: String = rows[y][x]
 				if key != ".": draw_rect(Rect2(Vector2(x - 4, y - 6) * PIXEL, Vector2.ONE * PIXEL), colors[key])
+	elif kind == "portal":
+		draw_circle(Vector2(0, -7), 13.0, Color("182f43"))
+		draw_arc(Vector2(0, -7), 12.0, 0.0, TAU, 16, Color("64cbd3"), 2.0)
+		for index in 3:
+			var angle := _pulse * 1.8 + index * TAU / 3.0
+			draw_arc(Vector2(0, -7), 4.0 + index * 2.0, angle, angle + 1.9, 8, Color("b2e9de"), 2.0)
+	elif kind == "container" and "bag" in _label:
+		var bag_color := Color("ad8560")
+		if "white" in _label:
+			bag_color = Color("e8e5d8")
+		elif "blue" in _label:
+			bag_color = Color("6b9cce")
+		elif "purple" in _label:
+			bag_color = Color("a98bcc")
+		elif "pink" in _label:
+			bag_color = Color("d99bae")
+		draw_rect(Rect2(-6, -7, 12, 10), bag_color)
+		draw_rect(Rect2(-4, -11, 8, 4), bag_color.darkened(0.15))
+		draw_rect(Rect2(-4, -8, 8, 2), Color("e6c479"))
+	elif "tree" in _label or "bush" in _label:
+		draw_rect(Rect2(-3, -6, 6, 12), Color("71614d"))
+		draw_rect(Rect2(-11, -19, 22, 15), Color("436a4d"))
+		draw_rect(Rect2(-8, -25, 16, 10), Color("608653"))
 	else:
 		draw_rect(Rect2(-10, -18, 20, 22), Color("525c78"))
 		draw_rect(Rect2(-7, -15, 14, 6), Color("d3b677"))

@@ -31,6 +31,10 @@ func _run() -> void:
 	_check(world.entities[10].is_local_player, "player identity set before spawn")
 	_check(world._summary.text.contains("HP  80 / 100") and world._summary.text.contains("Level  5"), "authoritative rail")
 	_check(world._inventory.text.contains("Source weapon") and world._inventory.text.contains("empty"), "source inventory descriptor names")
+	world.entities[10].apply_status({"stats": {2: 150, 5: 50, 6: 12, 57: 3}})
+	world._refresh_rail()
+	_check(is_equal_approx(world.entities[10]._visual_size, 1.5), "source size uses wire stat2, not merchandise stat32")
+	_check(world._summary.text.contains("XP  12 / 50") and world._summary.text.contains("Fame  3"), "XP and Fame use actual original source stat IDs")
 	world.apply_tick({"tick_time": 200, "update_statuses": [
 		{"id": 10, "position": {"x": 2.5, "y": 3.0}, "stats": {"1": 70}},
 		{"id": 20, "position": {"x": 6.0, "y": 3.0}, "stats": [{"type": 1, "value": 23}]},
@@ -53,6 +57,7 @@ func _run() -> void:
 	world.clock_ms = func(): return 1234
 	world.move_requested.connect(func(pos: Dictionary, records: Array): moves.append({"pos": pos, "records": records}))
 	world.shoot_requested.connect(func(angle: float): shots.append(angle))
+	world.apply_update({"tiles": [{"x": 2, "y": 2, "tile": 1}, {"x": 3, "y": 2, "tile": 1}, {"x": 2, "y": 3, "tile": 1}, {"x": 3, "y": 3, "tile": 1}, {"x": 2, "y": 4, "tile": 1}, {"x": 3, "y": 4, "tile": 1}]})
 	world.predict_motion(Vector2(1, 1), 0.1)
 	_check(moves.size() == 1 and moves[0]["records"][0]["time"] == 1234, "outbound move records supplied clock")
 	_check(is_equal_approx(world._prediction.distance_to(Vector2(2.5, 3)), 0.4), "normalized independent prediction")
@@ -64,6 +69,13 @@ func _run() -> void:
 	_check(shots.size() == 1 and is_equal_approx(shots[0], 0.317), "unsnapped source-radian shot request")
 	world.predict_motion(Vector2.RIGHT, 0.1)
 	_check(moves.size() == 2, "movement continues while firing held")
+	var collision_meta: Dictionary = world.descriptors.duplicate(true)
+	collision_meta["tiles"][2] = {"source_descriptor": {"NoWalk": true}}
+	world.set_descriptors(collision_meta)
+	world.tiles[Vector2i(4, 3)] = 2
+	_check(not world._can_walk(Vector2(4.5, 3.5)), "source NoWalk tile blocks client prediction")
+	_check(not world._can_walk(Vector2(-1, 3)), "map bounds block prediction")
+	_check(not world._can_walk(Vector2(10, 10)), "unstreamed map cells cannot become fake walkable tiles")
 	world.apply_projectile({"owner_id": 20, "bullet_id": 1, "angle": 0, "position": {"x": 6, "y": 3}})
 	_check(world.projectiles.size() == 1, "visible source descriptor projectile")
 	world.advance_visuals(0.2)
@@ -80,15 +92,22 @@ func _run() -> void:
 	_check(hits.is_empty(), "missing source geometry never invents hit radius")
 	world.projectiles.clear()
 	var geometry: Dictionary = world.descriptors.duplicate(true)
-	geometry["objects"][200]["hit_radius_tiles"] = 0.2 # Synthetic geometry only for this test.
+	geometry["objects"][200]["hit_radius_tiles"] = 0.5 # Verified original GameObject default.
+	geometry["objects"][200]["hit_shape"] = "aabb"
 	geometry["objects"][200]["projectiles"] = [{"BulletType": 7, "Speed": 100, "LifetimeMS": 1000, "Boomerang": true}, {"BulletType": 2, "Speed": 180, "LifetimeMS": 475, "Amplitude": 0.5, "Frequency": 2}]
 	world.set_descriptors(geometry)
 	world.apply_projectile({"owner_id": 10, "bullet_id": 5, "position": {"x": 2.5, "y": 3}, "angle": 0, "speed": 150, "lifetime_ms": 600})
 	world.advance_visuals(0.25)
-	_check(hits == [[10, 5, 20, "enemy"]], "swept hit request only with explicit injected geometry")
+	_check(hits == [[10, 5, 20, "enemy"]], "current-point AABB contact with recovered half-tile extent")
 	_check(world.entities[20].stats[1] == 23, "hit request never applies damage")
 	world.advance_visuals(0.01)
 	_check(hits.size() == 1, "hit requests deduped per bullet target")
+	hits.clear()
+	world.apply_update({"new_objects": [{"object_type": 200, "stats": {"id": 21, "position": {"x": 6.4, "y": 3}, "stats": {}}}]})
+	world.apply_projectile({"owner_id": 10, "bullet_id": 8, "position": {"x": 6, "y": 3}, "angle": 0, "speed": 150, "lifetime_ms": 600})
+	world.advance_visuals(0.02)
+	_check(hits == [[10, 8, 21, "enemy"]], "one nearest eligible original-client target selected per sample")
+	world.remove_entity(21)
 	world.projectiles.clear()
 	world.apply_projectile({"owner_id": 20, "bullet_id": 6, "bullet_type": 2, "position": {"x": 6, "y": 3}, "angle": 0})
 	var curved: Dictionary = world.projectiles["20:6"]
@@ -106,7 +125,32 @@ func _run() -> void:
 	_check(world.projectile_position(returning).is_equal_approx(Vector2(9, 3)), "source parametric parity signs and magnitude")
 	returning["descriptor"] = {"wavy": true}
 	returning["age"] = 0.25
-	_check(world.projectile_position(returning).is_equal_approx(Vector2(8.5, 3)), "source wavy integer elapsed seconds behavior")
+	_check(world.projectile_position(returning).distance_to(Vector2(8.49698864, 3.12266919)) < 0.00001, "recovered client wavy PI/64 and fractional seconds")
+	var ground_meta: Dictionary = world.descriptors.duplicate(true)
+	ground_meta["tiles"][1]["source_descriptor"] = {"MaxDamage": 10}
+	world.set_descriptors(ground_meta)
+	var ground_hits: Array = []
+	var ground_clock := {"time": 500}
+	world.clock_ms = func(): return ground_clock.time
+	world.ground_damage_requested.connect(func(position: Vector2): ground_hits.append(position))
+	world._check_ground_contact()
+	_check(ground_hits.is_empty(), "ground interval uses strict lastDamage plus500 comparison")
+	ground_clock.time = 501
+	world._check_ground_contact()
+	_check(ground_hits.size() == 1, "ground contact delegates source damage request, not local HP")
+	ground_clock.time = 1001
+	world._check_ground_contact()
+	_check(ground_hits.size() == 1, "ground damage not repeated at exact500ms boundary")
+	ground_clock.time = 1002
+	world._check_ground_contact()
+	_check(ground_hits.size() == 2, "ground500ms cadence resumes after boundary")
+	world.entities[10].stats[29] = 1 << 23
+	ground_clock.time = 1600
+	world._check_ground_contact()
+	_check(ground_hits.size() == 2, "invincible player does not advance ground-contact clock")
+	world.entities[10].stats[29] = 0
+	world._check_ground_contact()
+	_check(ground_hits.size() == 3, "expired invincibility restores eligible ground contact immediately")
 	world.entities[20].free()
 	world.apply_tick({"update_statuses": [{"id": 20, "position": {"x": 1, "y": 1}}]})
 	_check(not world.entities.has(20), "externally freed entity safe")

@@ -3,6 +3,7 @@ extends Node
 ## Wire constants/rates from upstream 6fd20aad... PacketIds.cs, StatsManager.cs.
 ## AGPL-3.0 adaptation, 2026-10-06. No AI, loot, XP or damage simulation here.
 const Adapter := preload("res://src/game/fsod_view_adapter.gd")
+const Commands := preload("res://src/net/fsod_inventory/commands.gd")
 signal state_changed(state: String)
 signal server_event(packet_id: int, fields: Dictionary)
 signal session_error(message: String)
@@ -47,6 +48,12 @@ func bind(network: Node, frontend: Node, descriptors: Dictionary = {}, items: Di
 	view.set("clock_ms", Callable(self, "clock_ms"))
 	if view.has_signal("projectile_hit_requested"):
 		view.connect("projectile_hit_requested", _on_projectile_hit)
+	if view.has_signal("ability_requested"):
+		view.connect("ability_requested", _on_ability)
+	if view.has_signal("potion_requested"):
+		view.connect("potion_requested", consume_potion)
+	if view.has_signal("ground_damage_requested"):
+		view.connect("ground_damage_requested", _on_ground_damage)
 
 
 func start(host: String, port: int, login_fields: Dictionary, load_character_id: int = -1) -> Error:
@@ -57,12 +64,39 @@ func start(host: String, port: int, login_fields: Dictionary, load_character_id:
 		return ERR_UNCONFIGURED
 	_host = host
 	_port = port
-	login = login_fields.duplicate(true)
+	login = normalize_login(login_fields)
+	if not login_fields.is_empty() and login.is_empty():
+		return ERR_INVALID_PARAMETER
 	character_id = load_character_id
 	_clock_start = Time.get_ticks_msec()
 	_set_state("connecting")
 	transport.call("configure_login", login)
 	return transport.call("connect_to_server", host, port)
+
+
+static func normalize_login(fields: Dictionary) -> Dictionary:
+	var normalized := fields.duplicate(true)
+	# JSON numbers arrive as floats; the binary codec rightly requires typed integers.
+	for key in ["GameId", "IgnoredInt", "randomint1", "KeyTime"]:
+		if not normalized.has(key):
+			continue
+		var value: Variant = normalized[key]
+		if not (value is int or value is float) or not is_finite(float(value)) or float(value) != floor(float(value)) or float(value) < -2147483648.0 or float(value) > 2147483647.0:
+			return {}
+		normalized[key] = int(value)
+	for key in ["Key", "MapInfo"]:
+		if not normalized.has(key) or normalized[key] is PackedByteArray:
+			continue
+		var value: Variant = normalized[key]
+		if not value is Array:
+			return {}
+		var bytes := PackedByteArray()
+		for byte in value:
+			if not (byte is int or byte is float) or not is_finite(float(byte)) or float(byte) != floor(float(byte)) or float(byte) < 0.0 or float(byte) > 255.0:
+				return {}
+			bytes.append(int(byte))
+		normalized[key] = bytes
+	return normalized
 
 
 func clock_ms() -> int:
@@ -76,11 +110,13 @@ func _set_state(next: String) -> void:
 
 func _on_connected() -> void:
 	_set_state("authenticating")
-	transport.call("send_hello")
+	var result: Error = transport.call("send_hello")
+	if result != OK:
+		_on_protocol_error("Unable to serialize encrypted local login")
 
 
-func _on_disconnected() -> void:
-	if state != "reconnecting":
+func _on_disconnected(_reason: String = "") -> void:
+	if state not in ["reconnecting", "dead", "failed"]:
 		_set_state("offline")
 
 
@@ -126,7 +162,7 @@ func receive_packet(packet_id: int, fields: Dictionary) -> void:
 				transport.call("send_move", int(fields["TickId"]), clock_ms(), pending_position, move_records.duplicate(true))
 				move_records.clear()
 			_update_interaction_target()
-		84, 96:
+		84, 92, 96:
 			var owner_type := int(object_types.get(int(fields["OwnerId"]), -1))
 			view.call("apply_projectile", Adapter.projectile(fields, owner_type))
 		3: # GOTO: codec sends GOTOACK; view updates authoritative position.
@@ -186,10 +222,10 @@ func _on_move(position_tiles: Variant, records: Array) -> void:
 
 
 func _update_input_rates() -> void:
-	var effects := int(player_stats.get(29, 0))
+	var effects: int = (int(player_stats.get(29, 0)) & 0xffffffff) | ((int(player_stats.get(96, 0)) & 0xffffffff) << 32)
 	# Original StatsManager GetSpeed/GetDex: client input/prediction only.
 	var speed := 4.0 + 5.6 * float(player_stats.get(22, 0)) / 75.0
-	if effects & (1 << 14):
+	if effects & ((1 << 14) | (1 << 47)):
 		speed *= 1.5
 	if effects & (1 << 3):
 		speed = 4.0
@@ -296,11 +332,9 @@ func swap_slots(source_id: int, source_slot: int, destination_id: int, destinati
 	var source_type := int(entity_states[source_id].stats.get(_slot_stat(source_slot), -1))
 	var destination_type := int(entity_states[destination_id].stats.get(_slot_stat(destination_slot), -1))
 	# Inventory is mutated ONLY by subsequent authoritative server updates.
-	return transport.call("send_fields", 34, {
-		"Time": clock_ms(), "Position": pending_position,
-		"SlotObject1": {"ObjectId": source_id, "SlotId": source_slot, "ObjectType": source_type & 65535},
-		"SlotObject2": {"ObjectId": destination_id, "SlotId": destination_slot, "ObjectType": destination_type & 65535},
-	})
+	return send_gameplay(Commands.inv_swap(clock_ms(), pending_position,
+		Commands.slot_record(source_id, source_slot, source_type),
+		Commands.slot_record(destination_id, destination_slot, destination_type)))
 
 
 func _slot_stat(slot: int) -> int:
@@ -313,10 +347,34 @@ func use_item(slot: int, target_position: Vector2, use_type: int = 0) -> Error:
 	var type := int(player_stats.get(_slot_stat(slot), -1))
 	if type < 0:
 		return ERR_DOES_NOT_EXIST
-	return transport.call("send_fields", 48, {
-		"Time": clock_ms(), "SlotObject": {"ObjectId": player_id, "SlotId": slot, "ObjectType": type},
-		"ItemUsePos": target_position, "UseType": use_type,
-	})
+	return send_gameplay(Commands.use_item(clock_ms(), Commands.slot_record(player_id, slot, type), target_position, use_type))
+
+
+func send_gameplay(command: Dictionary) -> Error:
+	if state != "playing" or command.is_empty():
+		return ERR_INVALID_PARAMETER
+	return transport.call("send_packet", int(command.id), command.payload)
+
+
+func _on_ability(target_position: Vector2) -> void:
+	use_item(1, target_position)
+
+
+func consume_potion(kind: String) -> Error:
+	if state != "playing" or kind not in ["health", "magic"]:
+		return ERR_INVALID_PARAMETER
+	var health := kind == "health"
+	var counter := 69 if health else 70
+	if int(player_stats.get(counter, 0)) <= 0:
+		return ERR_DOES_NOT_EXIST # Empty hotkey does not silently buy with virtual credits.
+	var slot := 254 if health else 255
+	var item_type := 2594 if health else 2595 # Original Health Potion0xa22 / Magic Potion0xa23.
+	return send_gameplay(Commands.use_item(clock_ms(), Commands.slot_record(player_id, slot, item_type), pending_position))
+
+
+func _on_ground_damage(position_tiles: Vector2) -> void:
+	if state == "playing" and position_tiles.is_finite():
+		transport.call("send_fields", 59, {"Time": clock_ms(), "Position": position_tiles})
 
 
 func _on_projectile_hit(owner_id: int, bullet_id: int, target_id: int, hit_kind: String) -> void:

@@ -11,7 +11,10 @@ signal move_requested(pos: Dictionary, records: Array)
 signal shoot_requested(angle: float)
 signal escape_requested
 signal interact_requested(entity: int, slot: int)
-# Emitted only with injected, source-derived hit_radius_tiles metadata; no damage.
+signal ability_requested(position: Vector2)
+signal potion_requested(kind: String)
+signal ground_damage_requested(position: Vector2)
+# Contact geometry comes from recovered original-client facts; no local damage.
 signal projectile_hit_requested(owner_id: int, bullet_id: int, target_id: int, hit_kind: String)
 
 # Supplied by the original-client/session bridge, NOT guessed backend defaults.
@@ -38,6 +41,7 @@ var _prediction: Vector2 = Vector2.ZERO
 var _move_clock: float = 0.0
 var _shoot_clock: float = 0.0
 var _mouse_held: bool = false
+var _ground_contact_times: Dictionary = {}
 var _last_move: bool = false
 var _ready_built: bool = false
 
@@ -71,7 +75,7 @@ func _ensure_nodes() -> void:
 	column.add_theme_constant_override("separation", 16)
 	margin.add_child(column)
 	var title := Label.new()
-	title.text = "GRAVEBAG / FSoD"
+	title.text = "GRAVEBAG"
 	title.add_theme_color_override("font_color", Color("efcf7a"))
 	column.add_child(title)
 	_minimap = Control.new()
@@ -87,7 +91,7 @@ func _ensure_nodes() -> void:
 	_inventory.add_theme_font_size_override("font_size", 12)
 	column.add_child(_inventory)
 	var keys := Label.new()
-	keys.text = "WASD  move\nMouse  aim / shoot\nR  escape     E  interact\n\nServer owns all game state"
+	keys.text = "WASD  move · Mouse  aim / shoot\nSpace  ability · F / V  potions\nR  escape · E  interact\n\nServer owns all game state"
 	keys.add_theme_color_override("font_color", Color("8996af"))
 	keys.add_theme_font_size_override("font_size", 12)
 	column.add_child(keys)
@@ -116,6 +120,7 @@ func apply_map(packet: Dictionary) -> void:
 	_ensure_nodes()
 	for id: Variant in entities.keys(): remove_entity(int(id))
 	projectiles.clear()
+	_ground_contact_times.clear()
 	tiles.clear()
 	map_width = clampi(_integer(packet.get("width", 0)), 0, 65535)
 	map_height = clampi(_integer(packet.get("height", 0)), 0, 65535)
@@ -244,18 +249,29 @@ func _physics_process(delta: float) -> void:
 	if _mouse_held and _shoot_clock <= 0.0 and is_finite(shot_request_interval) and shot_request_interval > 0.0:
 		shoot_requested.emit(player.aim_angle)
 		_shoot_clock = maxf(0.001, shot_request_interval)
+	_check_ground_contact()
 	var size: Vector2 = get_viewport_rect().size
 	_world.position = Vector2(maxf(0.0, size.x - RAIL_WIDTH) / 2.0, size.y / 2.0) - player.position
 
 
-# Testable input/prediction boundary. No collision, backend updates, damage, or RNG.
+# Client prediction uses streamed source solid-tile flags; no backend mutation/damage/RNG.
 func predict_motion(input_vector: Vector2, delta: float) -> void:
 	var player: Variant = _player()
 	if player == null or not is_finite(delta) or delta <= 0.0: return
 	if not is_finite(input_vector.x) or not is_finite(input_vector.y): return
 	var moving: bool = input_vector.length_squared() > 0.0 and is_finite(prediction_speed_tiles) and prediction_speed_tiles > 0.0
 	if moving:
-		_prediction += input_vector.limit_length(1.0) * prediction_speed_tiles * minf(delta, 0.25)
+		var offset := input_vector.limit_length(1.0) * prediction_speed_tiles * minf(delta, 0.25)
+		# Original client checks displacement in dominant-axis steps no larger than0.4tiles.
+		var steps := maxi(1, ceili(maxf(absf(offset.x), absf(offset.y)) / 0.4))
+		var step := offset / float(steps)
+		for index in steps:
+			var next_x := _prediction + Vector2(step.x, 0.0)
+			if _can_walk(next_x):
+				_prediction.x = next_x.x
+			var next_y := _prediction + Vector2(0.0, step.y)
+			if _can_walk(next_y):
+				_prediction.y = next_y.y
 	# Visual smoothing of authoritative corrections. Player position remains server-owned.
 	player.predict_position(player.position.lerp(_prediction * TILE_PIXELS, minf(1.0, delta * 20.0)) / TILE_PIXELS)
 	_move_clock += delta
@@ -265,6 +281,31 @@ func predict_motion(input_vector: Vector2, delta: float) -> void:
 		var timestamp: int = int(clock_ms.call()) if clock_ms.is_valid() else Time.get_ticks_msec()
 		move_requested.emit(pos, [{"time": timestamp, "position": pos.duplicate()}])
 	_last_move = moving
+
+
+func _can_walk(position_tiles: Vector2) -> bool:
+	if not position_tiles.is_finite() or position_tiles.x < 0.0 or position_tiles.y < 0.0 or position_tiles.x >= map_width or position_tiles.y >= map_height:
+		return false
+	# Source neighbor-cell checks use half-cell boundaries, not the art's silhouette.
+	var lower := Vector2i(floori(position_tiles.x - 0.5 + 0.000001), floori(position_tiles.y - 0.5 + 0.000001))
+	var upper := Vector2i(floori(position_tiles.x + 0.5 - 0.000001), floori(position_tiles.y + 0.5 - 0.000001))
+	for y in range(lower.y, upper.y + 1):
+		for x in range(lower.x, upper.x + 1):
+			var cell := Vector2i(x, y)
+			if not tiles.has(cell) or int(tiles[cell]) == 255:
+				return false
+			var tile_type := int(tiles[cell])
+			var tile_meta: Dictionary = descriptors.get("tiles", {}).get(str(tile_type), descriptors.get("tiles", {}).get(tile_type, {}))
+			if bool(tile_meta.get("source_descriptor", {}).get("NoWalk", false)):
+				return false
+			for id in entities:
+				var entity: Variant = entities[id]
+				if not _live(entity) or int(id) == player_id:
+					continue
+				var meta: Dictionary = _object_descriptor(entity.object_type).get("source_descriptor", {})
+				if bool(meta.get("OccupySquare", false)) and Vector2i(floori(entity.authoritative_position.x), floori(entity.authoritative_position.y)) == cell:
+					return false
+	return true
 
 
 func _input(event: InputEvent) -> void:
@@ -281,8 +322,38 @@ func _unhandled_input(event: InputEvent) -> void:
 			_shoot_clock = maxf(0.001, shot_request_interval)
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode == KEY_R: escape_requested.emit()
+		if event.physical_keycode == KEY_SPACE:
+			ability_requested.emit(_world.to_local(get_global_mouse_position()) / TILE_PIXELS)
+		if event.physical_keycode == KEY_F: potion_requested.emit("health")
+		if event.physical_keycode == KEY_V: potion_requested.emit("magic")
 		if event.physical_keycode == KEY_E and interaction_target_id >= 0:
 			interact_requested.emit(interaction_target_id, inventory_slot)
+
+
+func _check_ground_contact() -> void:
+	var player: Variant = _player()
+	if player == null:
+		return
+	var cell := Vector2i(floori(_prediction.x), floori(_prediction.y))
+	if not tiles.has(cell):
+		return
+	var tile_meta: Dictionary = descriptors.get("tiles", {}).get(str(tiles[cell]), descriptors.get("tiles", {}).get(tiles[cell], {}))
+	var ground: Dictionary = tile_meta.get("source_descriptor", {})
+	# Server GroundDamageHandler ignores these effects; don't advance contact clocks.
+	if int(player.stats.get(29, 0)) & ((1 << 15) | (1 << 23)):
+		return
+	if int(ground.get("MaxDamage", 0)) <= 0:
+		return
+	for id in entities:
+		var entity: Variant = entities[id]
+		if not _live(entity):
+			continue
+		if Vector2i(floori(entity.authoritative_position.x), floori(entity.authoritative_position.y)) == cell and bool(_object_descriptor(entity.object_type).get("source_descriptor", {}).get("ProtectFromGroundDamage", false)):
+			return
+	var now := int(clock_ms.call()) if clock_ms.is_valid() else Time.get_ticks_msec()
+	if now > int(_ground_contact_times.get(cell, 0)) + 500:
+		_ground_contact_times[cell] = now
+		ground_damage_requested.emit(_prediction)
 
 
 func advance_visuals(delta: float) -> void:
@@ -298,7 +369,7 @@ func advance_visuals(delta: float) -> void:
 		var expires: bool = bullet["age"] + delta > bullet["lifetime"]
 		bullet["age"] = minf(bullet["age"] + delta, bullet["lifetime"])
 		_request_visual_hits(bullet, previous, projectile_position(bullet))
-		if expires: projectiles.erase(key)
+		if expires or bullet.get("consumed", false): projectiles.erase(key)
 	_redraw()
 
 
@@ -307,19 +378,32 @@ func _request_visual_hits(bullet: Dictionary, from: Vector2, to: Vector2) -> voi
 	var local_shot: bool = bullet["owner_id"] == player_id
 	var hostile_shot: bool = _live(owner) and owner.kind == "enemy"
 	if not local_shot and not hostile_shot: return
+	var closest_id := -1
+	var closest_kind := ""
+	var closest_distance := INF
 	for id: Variant in entities.keys():
 		var target: Variant = entities.get(id)
 		if not _live(target) or int(id) == bullet["owner_id"] or bullet["reported_hits"].has(id): continue
 		var hit_kind: String = "enemy" if local_shot and target.kind == "enemy" else "player" if hostile_shot and int(id) == player_id else ""
 		if hit_kind.is_empty(): continue
-		# No inferred radius from art, XML Size, or tile size. Parent must supply
-		# legacy-client geometry; the server descriptors do not define that radius.
 		var radius: float = _number(_object_descriptor(target.object_type).get("hit_radius_tiles", 0))
 		if radius <= 0.0: continue
-		var nearest: Vector2 = Geometry2D.get_closest_point_to_segment(target.authoritative_position, from, to)
-		if nearest.distance_squared_to(target.authoritative_position) <= radius * radius:
-			bullet["reported_hits"][id] = true
-			projectile_hit_requested.emit(bullet["owner_id"], bullet["bullet_id"], int(id), hit_kind)
+		var center: Vector2 = target.position / TILE_PIXELS
+		var offset := (to - center).abs()
+		var hit := offset.x <= radius and offset.y <= radius
+		# Keep synthetic-fixture circle geometry explicit; live metadata uses recovered AABB.
+		if _object_descriptor(target.object_type).get("hit_shape", "circle") == "circle":
+			hit = offset.length_squared() <= radius * radius
+		if hit and offset.length_squared() < closest_distance:
+			closest_id = int(id)
+			closest_kind = hit_kind
+			closest_distance = offset.length_squared()
+	# Original client samples the current point and selects ONE nearest eligible target.
+	if closest_id >= 0:
+		bullet["reported_hits"][closest_id] = true
+		projectile_hit_requested.emit(bullet["owner_id"], bullet["bullet_id"], closest_id, closest_kind)
+		if not bool(bullet["descriptor"].get("MultiHit", false)):
+			bullet["consumed"] = true
 
 
 # Purely visual source trajectory (no hit detection). Handles source descriptor
@@ -333,8 +417,9 @@ func projectile_position(bullet: Dictionary) -> Vector2:
 	var distance: float = age * bullet["speed"]
 	var period: float = 0.0 if id % 2 == 0 else PI
 	if desc.get("wavy", false) == true:
-		# C# source's elapsedTicks/1000 is INTEGER division in this branch.
-		return bullet["start"] + Vector2.from_angle(angle + PI * 64.0 * sin(period + 6.0 * PI * int(age))) * distance
+		# Original Flash client's projection uses PI/64 and fractional seconds.
+		# C# server's PI*64/integer-seconds expression is NOT client rendering math.
+		return bullet["start"] + Vector2.from_angle(angle + PI / 64.0 * sin(period + 6.0 * PI * age)) * distance
 	if desc.get("parametric", false) == true:
 		var theta: float = age / lifetime * TAU
 		var a: float = sin(theta) * (1.0 if id % 2 != 0 else -1.0)
@@ -376,7 +461,14 @@ func _draw_minimap() -> void:
 	for id: Variant in entities:
 		var view: Variant = entities[id]
 		if _live(view):
-			_minimap.draw_rect(Rect2(view.authoritative_position * scale - Vector2.ONE * 2, Vector2.ONE * 4), Color("f9de86") if int(id) == player_id else Color("d36573"))
+			var marker := Color("8993a2")
+			if int(id) == player_id:
+				marker = Color("f9de86")
+			elif view.kind == "enemy":
+				marker = Color("d36573")
+			elif view.kind == "portal":
+				marker = Color("64cbd3")
+			_minimap.draw_rect(Rect2(view.authoritative_position * scale - Vector2.ONE * 2, Vector2.ONE * 4), marker)
 
 
 func _refresh_rail() -> void:
@@ -384,6 +476,7 @@ func _refresh_rail() -> void:
 	var player: Variant = _player()
 	var stats: Dictionary = player.stats if player != null else {}
 	_summary.text = "%s\n\nHP  %s / %s\nMP  %s / %s\nLevel  %s" % [map_name, _stat_text(stats, 1), _stat_text(stats, 0), _stat_text(stats, 4), _stat_text(stats, 3), _stat_text(stats, 7)]
+	_summary.text += "\nXP  %s / %s\nFame  %s" % [_stat_text(stats, 6), _stat_text(stats, 5), _stat_text(stats, 57)]
 	var lines: PackedStringArray = ["INVENTORY (server)"]
 	for slot: int in 12:
 		var wire_id: int = 8 + slot

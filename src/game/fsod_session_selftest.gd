@@ -1,5 +1,6 @@
 extends SceneTree
 const Session := preload("res://src/game/fsod_session.gd")
+const Codec := preload("res://src/net/fsod/codec.gd")
 
 class Network extends Node:
 	signal connected
@@ -12,9 +13,17 @@ class Network extends Node:
 	func connect_to_server(host: String, port: int) -> Error:
 		sent.append({"method": "connect", "host": host, "port": port})
 		return OK
-	func send_hello() -> void: sent.append({"method": "hello"})
+	func send_hello() -> Error:
+		sent.append({"method": "hello"})
+		return OK
 	func send_fields(id: int, fields: Dictionary) -> Error:
-		sent.append({"id": id, "fields": fields})
+		var encoded := Codec.encode_client(id, fields)
+		if not encoded.error.is_empty():
+			return ERR_INVALID_PARAMETER
+		sent.append({"id": id, "fields": fields, "payload": encoded.payload})
+		return OK
+	func send_packet(id: int, payload: PackedByteArray) -> Error:
+		sent.append({"id": id, "payload": payload})
 		return OK
 	func send_move(tick: int, time: int, position: Vector2, records: Array) -> void: sent.append({"method": "move", "tick": tick, "time": time, "position": position, "records": records})
 	func send_shoot(time: int, bullet: int, weapon: int, position: Vector2, angle: float) -> void: sent.append({"method": "shoot", "time": time, "bullet": bullet, "weapon": weapon, "position": position, "angle": angle})
@@ -25,6 +34,9 @@ class Frontend extends Node:
 	signal escape_requested
 	signal interact_requested(entity: int, slot: int)
 	signal projectile_hit_requested(owner: int, bullet: int, target: int, kind: String)
+	signal ability_requested(position: Vector2)
+	signal potion_requested(kind: String)
+	signal ground_damage_requested(position: Vector2)
 	var clock_ms: Callable
 	var interaction_target_id := -1
 	var prediction_speed_tiles := 0.0
@@ -77,8 +89,13 @@ func _init() -> void:
 	session.receive_packet(7, {"Tiles": [], "NewObjects": [{"ObjectType": 900, "Stats": bag}], "RemovedObjectIds": []})
 	assert(view.interaction_target_id == 99)
 	assert(session.pickup(99, 0) == OK and network.sent[-1].id == 34)
-	assert(network.sent[-1].fields.SlotObject1.ObjectType == 123)
-	assert(network.sent[-1].fields.SlotObject2.SlotId == 4)
+	var swap_bytes := StreamPeerBuffer.new()
+	swap_bytes.big_endian = true
+	swap_bytes.data_array = network.sent[-1].payload
+	swap_bytes.get_32() # Time
+	assert(swap_bytes.get_float() == 20.0 and swap_bytes.get_float() == 22.0)
+	assert(swap_bytes.get_32() == 99 and swap_bytes.get_u8() == 0 and swap_bytes.get_u16() == 123)
+	assert(swap_bytes.get_32() == 1234 and swap_bytes.get_u8() == 4 and swap_bytes.get_u16() == 65535)
 	assert(session.entity_states[99].stats[8] == 123, "no optimistic item destruction")
 	for slot in range(4, 12):
 		session.player_stats[8 + slot] = 1
@@ -90,6 +107,27 @@ func _init() -> void:
 	view.projectile_hit_requested.emit(100, 3, 1234, "player")
 	assert(network.sent[-1].id == 17 and network.sent[-1].fields.ObjectId == 100)
 	assert(session._slot_stat(12) == 71 and session._slot_stat(19) == 78)
+	var normalized := Session.normalize_login({"GameId": -2.0, "IgnoredInt": 0.0, "Key": [0.0, 255.0], "MapInfo": []})
+	assert(normalized.GameId is int and normalized.Key == PackedByteArray([0, 255]) and normalized.MapInfo is PackedByteArray)
+	assert(Session.normalize_login({"GameId": 1.5}).is_empty())
+	assert(Session.normalize_login({"Key": [256.0]}).is_empty())
+	session.player_stats[69] = 1
+	view.potion_requested.emit("health")
+	assert(network.sent[-1].id == 48 and network.sent[-1].payload[8] == 254)
+	assert(session.player_stats[69] == 1, "only source server consumes potions")
+	session.player_stats[70] = 0
+	var before_empty_potion := network.sent.size()
+	view.potion_requested.emit("magic")
+	assert(network.sent.size() == before_empty_potion, "empty potion hotkey cannot silently purchase credits")
+	session.player_stats[9] = 101
+	view.ability_requested.emit(Vector2(21, 22))
+	assert(network.sent[-1].id == 48 and network.sent[-1].payload[8] == 1)
+	view.ground_damage_requested.emit(Vector2(21, 22))
+	assert(network.sent[-1].id == 59 and network.sent[-1].fields.Position == Vector2(21, 22))
+	session.player_stats[96] = 1 << 15
+	session._update_input_rates()
+	assert(is_equal_approx(view.prediction_speed_tiles, 14.4), "NinjaSpeedy comes from second source condition word")
+	session.player_stats[96] = 0
 	session.receive_packet(63, {"AccountId": "42"})
 	assert(session.state == "dead" and session.character_id == -1)
 	var messages := network.sent.size()
