@@ -133,6 +133,8 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_pulse += delta
+	if _sprite == null or not is_instance_valid(_sprite):
+		return
 	if _state == State.DEAD:
 		if respawn_delay > 0.0:
 			_respawn -= delta
@@ -178,7 +180,15 @@ func reform() -> void:
 	_timer = initial_delay
 	_flash = 0.0
 	visible = true
-	_shape.set_deferred("disabled", false)
+	# Stuck-telegraph fix: a corpse that died mid-windup kept its red pulse
+	# + swell + warning ring on the first visible reform frame. Reset to clean.
+	if _sprite != null and is_instance_valid(_sprite):
+		_sprite.modulate = Color.WHITE
+		_sprite.scale = Vector2.ONE
+	_telegraph_drawn = false
+	queue_redraw()
+	if _shape != null and is_instance_valid(_shape):
+		_shape.set_deferred("disabled", false)
 	set_physics_process(true)
 
 
@@ -186,7 +196,10 @@ func _die() -> void:
 	_state = State.DEAD
 	_respawn = respawn_delay
 	visible = false
-	_shape.set_deferred("disabled", true)
+	_telegraph_drawn = false
+	queue_redraw()
+	if _shape != null and is_instance_valid(_shape):
+		_shape.set_deferred("disabled", true)
 	set_physics_process(false)
 	died.emit(self)
 

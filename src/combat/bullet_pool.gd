@@ -47,7 +47,7 @@ func spawn(
 	damage: float = 8.0
 ) -> Bullet:
 	for b in _bullets:
-		if not b.active:
+		if is_instance_valid(b) and not b.active:
 			b.fire(origin, direction, speed, team, radius, curve, damage)
 			return b
 	dropped_shots += 1
@@ -77,7 +77,7 @@ func spawn_volley(
 func active_count() -> int:
 	var n := 0
 	for b in _bullets:
-		if b.active:
+		if is_instance_valid(b) and b.active:
 			n += 1
 	return n
 
@@ -85,5 +85,6 @@ func active_count() -> int:
 ## Park every bullet (scene transitions, test teardown). Never allocates.
 func clear_all() -> void:
 	for b in _bullets:
-		b.deactivate()
+		if is_instance_valid(b):
+			b.deactivate()
 	dropped_shots = 0

@@ -4,9 +4,9 @@ extends Area2D
 ##
 ## One instance flies one shot at a time; a [CombatBulletPool] owns the
 ## instances and reuses them, so gameplay never allocates mid-volley.
-## Look (rotmg-feel: dense bright enemy shots with white cores vs thin cyan
-## player needle) is code-generated — see [method make_texture], dark outlines
-## included, no external assets.
+## Look (rotmg-feel: dense bright enemy shots with warm orange/red cores vs
+## thin cyan player needle + cool white/cyan loot) is code-generated — see
+## [method make_texture], dark outlines included, no external assets.
 ##
 ## Collision convention (no player files touched; player side must match):
 ## layer 1 = player body, layer 2 = enemies,
@@ -40,7 +40,7 @@ static var _tex_cache: Dictionary = {}
 
 ## True while flying. False while parked in the pool.
 var active := false
-## Team.PLAYER (thin cyan needle) or Team.ENEMY (dense bright orb, white core).
+## Team.PLAYER (thin cyan needle) or Team.ENEMY (dense warm orb, orange/red core).
 var team: int = Team.ENEMY
 ## Collision radius in pixels. Also scales the sprite.
 var radius := BASE_RADIUS
@@ -123,9 +123,16 @@ func _physics_process(delta: float) -> void:
 		deactivate()
 		return
 	if is_inside_tree():
-		var bounds: Rect2 = get_viewport_rect().grow(DESPAWN_MARGIN)
-		if not bounds.has_point(global_position):
-			deactivate()
+		var vp := get_viewport()
+		if vp != null:
+			# Camera-aware despawn: viewport rect is screen space, so map
+			# it back to world space. The old raw has_point(global_position)
+			# check killed off-screen-world bullets the moment the camera
+			# scrolled (world y != screen y) and thinned real fights.
+			var screen := get_viewport_rect().grow(DESPAWN_MARGIN)
+			var world_rect: Rect2 = vp.get_canvas_transform().affine_inverse() * screen
+			if not world_rect.has_point(global_position):
+				deactivate()
 
 
 ## Team look: collision layer/mask, texture (cached), needle faces travel dir.
@@ -151,8 +158,10 @@ func _face_velocity() -> void:
 
 
 ## Code-generated bullet art (dark outlines, no assets). Enemy orbs are dense
-## and bright with white cores; player shots are thin cyan needles with a
-## white-hot center stripe. Results are cached by team + rounded radius.
+## warm shots with orange/red cores (danger reads instantly); player shots
+## are thin cyan needles with a white-hot center stripe. Loot/XP pips stay
+## cool white/cyan so they never read as danger. Results are cached by team +
+## rounded radius.
 static func make_texture(p_team: int, p_radius: float) -> ImageTexture:
 	var key: String = "%d_%d" % [p_team, int(roundf(p_radius))]
 	if _tex_cache.has(key):
@@ -172,8 +181,9 @@ static func make_texture(p_team: int, p_radius: float) -> ImageTexture:
 	return tex
 
 
-## Dense bright orb: near-black high-contrast outline, hot yellow-orange
-## band, big pure-white core. Reads instantly on a 1280x720 frame.
+## Warm danger orb: near-black high-contrast outline, orange-red band, hot
+## orange core with a yellow-hot heart. Reads instantly on a 1280x720 frame
+## and never confuses with cool white/cyan loot pips.
 static func _orb_pixel(p: Vector2) -> Color:
 	var d: float = p.length()
 	if d > 15.0:
@@ -182,8 +192,10 @@ static func _orb_pixel(p: Vector2) -> Color:
 		return Color(0.02, 0.0, 0.05, 1.0)
 	if d > 9.5:
 		var t: float = (d - 9.5) / 3.5  # 0 core-side .. 1 outline-side
-		return Color(1.0, lerpf(1.0, 0.25, t), lerpf(0.95, 0.1, t), 1.0)
-	return Color(1.0, 1.0, 1.0, 1.0)
+		return Color(1.0, lerpf(0.55, 0.25, t), lerpf(0.25, 0.1, t), 1.0)
+	if d > 4.5:
+		return Color(1.0, 0.38, 0.08, 1.0)
+	return Color(1.0, 0.72, 0.2, 1.0)
 
 
 ## Thin cyan needle, drawn pointing up: dark outline, cyan body, white core.

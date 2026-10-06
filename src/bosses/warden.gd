@@ -76,7 +76,13 @@ func _ready() -> void:
 	hp = max_hp
 	phase = Phase.ONE
 	fire_left = volley_interval_p1
+	# Ghost drift like CombatEnemy (damage travels via bullets, never
+	# contact): without this a code-spawned warden keeps default 1/1 layers
+	# and can wedge against realm prop blockers or shove the player.
+	collision_layer = 2
+	collision_mask = 0
 	_ensure_sprite()
+	_ensure_shape()
 
 
 func _process(_delta: float) -> void:
@@ -329,9 +335,32 @@ func _flash_taunt() -> void:
 
 
 func _ensure_sprite() -> void:
+	# Dive spawns the warden via WardenScript.new() (no scene), so there is
+	# no Body child: create one or the boss fights invisible with no taunt
+	# flash. Scene-spawned wardens already have Body; just fill its texture.
 	var spr := get_node_or_null("Body") as Sprite2D
-	if spr != null and spr.texture == null:
+	if spr == null:
+		spr = Sprite2D.new()
+		spr.name = "Body"
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		spr.scale = Vector2(3, 3)
 		spr.texture = make_brute_texture()
+		add_child(spr)
+	elif spr.texture == null:
+		spr.texture = make_brute_texture()
+
+
+func _ensure_shape() -> void:
+	# Code-spawned wardens have no CollisionShape2D (scene provides it).
+	# Ghost shape keeps move_and_slide stable without adding new blockers.
+	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col == null:
+		col = CollisionShape2D.new()
+		col.name = "CollisionShape2D"
+		var circle := CircleShape2D.new()
+		circle.radius = 20.0
+		col.shape = circle
+		add_child(col)
 
 
 static func _px(img: Image, x: int, y: int, c: Color) -> void:

@@ -99,7 +99,9 @@ class BagMarker extends Node2D:
 		draw_rect(Rect2(Vector2(-9, -9), Vector2(18, 18)), tint, true)
 		draw_rect(Rect2(Vector2(-9, -9), Vector2(18, 18)), Color(0.05, 0.04, 0.08, 1.0), false, 2.0)
 		draw_rect(Rect2(Vector2(-9, -2), Vector2(18, 4)), Color(0, 0, 0, 0.25), true)
-		draw_circle(Vector2.ZERO, 3.0, Color.WHITE)
+		# Cool loot knot (pale cyan-white) vs warm enemy bullets: danger reads
+		# instantly, loot never does.
+		draw_circle(Vector2.ZERO, 3.0, Color(0.7, 1.0, 1.0))
 
 
 ## Grave marker: dark stone with pale cross. Persists for the dive.
@@ -361,6 +363,9 @@ func _spawn_enemy(at: Vector2) -> void:
 		foe.set("bullet_damage", 8.0 * dmg_mult)
 		foe.set("preferred_range", 240.0)
 		foe.set("move_speed", 150.0)
+	# Dive owns population (fresh spawn on a timer); the enemy self-respawn
+	# clock would reform a queue-free corpse for one stale frame.
+	foe.set("respawn_delay", 0.0)
 	foe.set("windup_time", 0.5)
 	foe.set("cooldown_time", 1.15)
 	foe.set("initial_delay", 0.35)
@@ -519,11 +524,31 @@ func _clamp_player() -> void:
 
 
 func _track_minions() -> void:
+	for m in minions.duplicate():
+		if not is_instance_valid(m):
+			minions.erase(m)
 	for c in get_children():
 		if c.get_script() == MinionScript and not minions.has(c):
 			minions.append(c)
+			_ensure_minion_sprite(c)
 			if (c as Node).has_signal("died") and not (c as Node).is_connected("died", _on_minion_died):
 				(c as Node).connect("died", _on_minion_died)
+
+
+func _ensure_minion_sprite(m: Node) -> void:
+	# Minion stubs spawned via Minion.new() have no Body child (the scene
+	# provides it): build one or phase-2 adds fight invisible.
+	if m == null or not is_instance_valid(m):
+		return
+	if (m as Node).get_node_or_null("Body") != null:
+		return
+	var spr := Sprite2D.new()
+	spr.name = "Body"
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.scale = Vector2(2, 2)
+	if MinionScript.has_method("make_stub_texture"):
+		spr.texture = MinionScript.make_stub_texture()
+	m.add_child(spr)
 
 
 # ── Loot / XP / death ─────────────────────────────────────────────────
@@ -568,6 +593,8 @@ func _on_enemy_died(enemy: Node) -> void:
 	var at := PLAYER_SPAWN
 	if enemy is Node2D and is_instance_valid(enemy):
 		at = (enemy as Node2D).global_position
+	_hud_spawn_damage(at, _xp_for_tier(tier), Color(1.0, 0.85, 0.3))
+	_hud_notify_kill()
 	_spawn_bag(at, tier)
 	# Corpse cleanup: wave-1 enemies reform on their own timer, but the dive
 	# owns population, so free the corpse and schedule a fresh spawn.
@@ -585,6 +612,8 @@ func _on_warden_died(grade: int) -> void:
 	var at := PORTAL_POS
 	if is_instance_valid(warden):
 		at = (warden as Node2D).global_position
+	_hud_spawn_damage(at, 220, Color(1.0, 0.6, 0.2))
+	_hud_notify_kill()
 	_spawn_bag(at, tier)
 	_grant_xp(220)
 	if is_instance_valid(warden):
@@ -597,6 +626,11 @@ func _on_minion_died(_minion: Node) -> void:
 	minions.erase(_minion)
 	kills += 1
 	_play_sfx("kill")
+	var mat := PORTAL_POS
+	if _minion is Node2D and is_instance_valid(_minion):
+		mat = (_minion as Node2D).global_position
+	_hud_spawn_damage(mat, 20, Color(1.0, 0.85, 0.3))
+	_hud_notify_kill()
 	_grant_xp(20)
 
 
@@ -608,6 +642,7 @@ func _pickup_bag(bag: Node) -> void:
 	(bag as Node).queue_free()
 	pickups += 1
 	_grant_xp(_xp_for_tier(tier))
+	_hud_bag_pickup(tier)
 	_play_sfx("pickup")
 	_capture("pickup", "04-pickup-moment")
 
@@ -621,12 +656,15 @@ func _grant_xp(amount: int) -> void:
 	var after: int = int(ledger.get("level"))
 	if after > before or after > _last_level:
 		_play_sfx("levelup")
+		_hud_level_up(after)
+		if before < 20 and after >= 20:
+			_hud_fame_flip()
 	_last_level = maxi(_last_level, after)
 
 
 func _on_player_died() -> void:
 	deaths += 1
-	_play_sfx("death")
+	_play_sfx("death_sting")
 	var pos := PLAYER_SPAWN
 	if is_instance_valid(player):
 		pos = (player as Node2D).global_position
@@ -650,6 +688,10 @@ func _respawn_player() -> void:
 	if is_instance_valid(player):
 		(player as Node).queue_free()
 	player = null
+	# Fresh diver must not eat a stale volley on frame one: park all live
+	# enemy bullets with the old diver.
+	if pool != null and is_instance_valid(pool) and pool.has_method("clear_all"):
+		pool.call("clear_all")
 	ledger = XpLedgerScript.new()
 	_last_level = 1
 	_pot_hp = 2
@@ -724,10 +766,54 @@ func _on_autofire_toggled(_enabled: bool) -> void:
 	_play_sfx("ui_click")
 
 
+func _hud_spawn_damage(at: Vector2, amount: Variant, color: Color) -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	if not hud.has_method("spawn_damage"):
+		return
+	hud.call("spawn_damage", at, amount, color)
+
+
+func _hud_notify_kill() -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	if not hud.has_method("notify_kill"):
+		return
+	hud.call("notify_kill")
+
+
+func _hud_level_up(level: int) -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	if not hud.has_method("show_level_up"):
+		return
+	hud.call("show_level_up", level)
+
+
+func _hud_bag_pickup(tier: String) -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	if hud.has_method("notify_bag_pickup"):
+		hud.call("notify_bag_pickup", tier)
+	if hud.has_method("show_toast"):
+		hud.call("show_toast", "PICKED UP  %s" % tier.to_upper())
+
+
+func _hud_fame_flip() -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	if not hud.has_method("play_fame_flip"):
+		return
+	hud.call("play_fame_flip")
+
+
 func _play_sfx(kind: String) -> void:
-	if sfx_player == null or not sfx_player.has_method("play"):
+	if sfx_player == null or not is_instance_valid(sfx_player):
+		return
+	if not sfx_player.has_method("play_varied"):
 		return
 	var stream: AudioStreamWAV = null
+	var sound_name := kind
 	match kind:
 		"shoot":
 			stream = SfxScript.shoot()
@@ -745,11 +831,18 @@ func _play_sfx(kind: String) -> void:
 			stream = SfxScript.levelup()
 		"death":
 			stream = SfxScript.death()
+		"death_sting":
+			stream = SfxScript.death_sting()
 		"extract":
 			stream = SfxScript.extract()
+		"fame_tick":
+			stream = SfxScript.fame_tick()
 		_:
 			stream = SfxScript.ui_click()
-	sfx_player.call("play", stream)
+			sound_name = "ui_click"
+	if stream == null:
+		return
+	sfx_player.call("play_varied", stream, sound_name)
 
 
 func _tick_respawns(delta: float) -> void:
