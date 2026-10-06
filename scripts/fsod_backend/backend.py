@@ -49,6 +49,31 @@ def sandbox(argv, cwd="/state"):
     return args + argv
 
 
+def lifecycle_control(command):
+    """Absent crash-cleaned control is a state result, not a missing-file error.
+
+    Never infer stopped from a socket alone: startup may not have bound it yet.
+    Only inspect the recorded launch's exact state-bound supervisor identity;
+    never signal a stale/reused PID or touch another runtime.
+    """
+    try:
+        return control(command)
+    except (FileNotFoundError, ConnectionRefusedError):
+        supervisor_alive = False
+        try:
+            launch = json.loads((STATE / "launch.json").read_text())
+            pid = launch["pid"]
+            if isinstance(pid, int) and pid > 0:
+                argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+                supervisor_alive = os.fsencode(STATE) in argv and b"/state/supervisor.py" in argv
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+        result = {"control": "unavailable", "supervisor_alive": supervisor_alive}
+        if command == "verify":
+            return {"ready": False, **result}
+        return {"stop": "unavailable" if supervisor_alive else "already_stopped", **result}
+
+
 def require_state():
     if not (STATE / "manifest.json").is_file():
         raise RuntimeError("run build first")
@@ -118,8 +143,10 @@ def build(source, dependencies):
             raise RuntimeError("missing/hash-mismatched dependency: " + entry["relative_dll"])
         shutil.copy2(artifact, dependency_dir / artifact.name)
     patch = HERE / "linux-isolation.patch"
-    with patch.open("rb") as stream:
-        run(["patch", "--batch", "--forward", "-p1"], cwd=checkout, stdin=stream, capture_output=True)
+    lifecycle_patch = HERE / "lifecycle.patch"
+    for overlay in (patch, lifecycle_patch):
+        with overlay.open("rb") as stream:
+            run(["patch", "--batch", "--forward", "-p1"], cwd=checkout, stdin=stream, capture_output=True)
     # Project content items still require empty fixture placeholders before
     # compilation. Never restore the excluded source credential/data files.
     (checkout / "db" / "UnlockedAccounts.txt").write_text("# Empty isolated fixture\n")
@@ -185,6 +212,7 @@ def build(source, dependencies):
         raise RuntimeError("original XmlData.Dispose did not persist autoId.cfg")
     manifest = {"source_revision": revision, "projects": list(PROJECTS), "build_logs": build_logs,
                 "schema_tables": len(declarations), "patch_sha256": hashlib.sha256(patch.read_bytes()).hexdigest(),
+                "lifecycle_patch_sha256": hashlib.sha256(lifecycle_patch.read_bytes()).hexdigest(),
                 "network": "private-loopback-only", "db_port": DB_PORT,
                 "account_port": ACCOUNT_PORT, "realm_port": REALM_PORT, "policy_port": POLICY_PORT}
     (STATE / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
@@ -444,9 +472,11 @@ def main():
         print(json.dumps(result))
         return 0 if result.get("exec") == "launched" else 1
     elif args.command == "stop":
-        print(json.dumps(control("stop")))
+        result = lifecycle_control("stop")
+        print(json.dumps(result))
+        return 0 if result.get("stop") in ("accepted", "already_stopped") else 1
     elif args.command == "verify":
-        result = control("verify")
+        result = lifecycle_control("verify")
         print(json.dumps(result))
         return 0 if result.get("ready") else 1
     else:
