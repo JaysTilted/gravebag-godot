@@ -1,8 +1,10 @@
 # Complete FSoD descriptor metadata export
 
 This is a data export for the original C# backend / Godot client bridge, not a
-GDScript gameplay rewrite. Do not integrate the earlier loot-prototype commit
-`c0775d5`; cherry-pick only the descriptor-export commit from this branch.
+GDScript gameplay rewrite. Prototype commit `c0775d5` remains in history only:
+`19575fc` restores its four system files to `5ace1f3`. Descriptor data is in
+`1e6d1f8`. The final branch tree keeps the original loot APIs/behavior active;
+parent may integrate the final tree, or cherry-pick the descriptor export alone.
 
 ## Provenance / reproduction
 
