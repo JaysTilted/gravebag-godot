@@ -14,9 +14,11 @@ fi
 pass=0
 fail=0
 failed=()
+echo "--- importing project (rebuilds class cache) ---"
+"$GODOT" --headless --path "$ROOT" --import > /dev/null 2>&1 || { echo "run_all: import failed"; exit 1; }
 for t in "${TESTS[@]}"; do
   echo "=== ${t} ==="
-  if "$GODOT" --headless -s "$t" 2>&1; then
+  if "$GODOT" --headless --path "$ROOT" -s "$t" 2>&1; then
     echo "PASS: ${t}"
     pass=$((pass + 1))
   else
