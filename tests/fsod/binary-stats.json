@@ -1,0 +1,341 @@
+{
+  "provenance": {
+    "revision": "6fd20aad4a7905b13f25389c68368a942a2b68cb",
+    "sources": [
+      "wServer/Structures.cs:ObjectStats.Write",
+      "wServer/realm/Stats.cs:IsUTF",
+      "db/NWriter.cs",
+      "wServer/networking/svrPackets/NewTickPacket.cs",
+      "wServer/networking/Packet.cs"
+    ]
+  },
+  "transport": "Plaintext pre-RC4 fixture. Header BE int32 total length including 5 bytes; packet id byte unencrypted; body uses persistent directional RC4 state in live transport.",
+  "stat_types": {
+    "MaximumHP": 0,
+    "HP": 1,
+    "Size": 2,
+    "MaximumMP": 3,
+    "MP": 4,
+    "ExperienceGoal": 5,
+    "Experience": 6,
+    "Level": 7,
+    "Inventory0": 8,
+    "Inventory1": 9,
+    "Inventory2": 10,
+    "Inventory3": 11,
+    "Inventory4": 12,
+    "Inventory5": 13,
+    "Inventory6": 14,
+    "Inventory7": 15,
+    "Inventory8": 16,
+    "Inventory9": 17,
+    "Inventory10": 18,
+    "Inventory11": 19,
+    "Attack": 20,
+    "Defense": 21,
+    "Speed": 22,
+    "Vitality": 26,
+    "Wisdom": 27,
+    "Dexterity": 28,
+    "Effects": 29,
+    "Stars": 30,
+    "Name": 31,
+    "Texture1": 32,
+    "Texture2": 33,
+    "MerchantMerchandiseType": 34,
+    "Credits": 35,
+    "SellablePrice": 36,
+    "PortalUsable": 37,
+    "AccountId": 38,
+    "CurrentFame": 39,
+    "SellablePriceCurrency": 40,
+    "ObjectConnection": 41,
+    "MerchantRemainingCount": 42,
+    "MerchantRemainingMinute": 43,
+    "MerchantDiscount": 44,
+    "SellableRankRequirement": 45,
+    "HPBoost": 46,
+    "MPBoost": 47,
+    "AttackBonus": 48,
+    "DefenseBonus": 49,
+    "SpeedBonus": 50,
+    "VitalityBonus": 51,
+    "WisdomBonus": 52,
+    "DexterityBonus": 53,
+    "OwnerAccountId": 54,
+    "NameChangerStar": 55,
+    "NameChosen": 56,
+    "Fame": 57,
+    "FameGoal": 58,
+    "Glowing": 59,
+    "SinkOffset": 60,
+    "AltTextureIndex": 61,
+    "Guild": 62,
+    "GuildRank": 63,
+    "OxygenBar": 64,
+    "XpBoosterActive": 65,
+    "XpBoosterTime": 66,
+    "LootDropBoostTimer": 67,
+    "LootTierBoostTimer": 68,
+    "HealStackCount": 69,
+    "MagicStackCount": 70,
+    "Backpack0": 71,
+    "Backpack1": 72,
+    "Backpack2": 73,
+    "Backpack3": 74,
+    "Backpack4": 75,
+    "Backpack5": 76,
+    "Backpack6": 77,
+    "Backpack7": 78,
+    "Has_Backpack": 79,
+    "Skin": 80,
+    "PetId": 81,
+    "PetSkin": 82,
+    "PetType": 83,
+    "PetRarity": 84,
+    "PetMaximumLevel": 85,
+    "PetNothing": 86,
+    "PetPoints0": 87,
+    "PetPoints1": 88,
+    "PetPoints2": 89,
+    "PetLevel0": 90,
+    "PetLevel1": 91,
+    "PetLevel2": 92,
+    "PetAbilityType0": 93,
+    "PetAbilityType1": 94,
+    "PetAbilityType2": 95,
+    "Effects2": 96,
+    "Tokens": 97
+  },
+  "utf_stat_names": [
+    "Name",
+    "AccountId",
+    "OwnerAccountId",
+    "Guild",
+    "PetSkin"
+  ],
+  "packet_ids": {
+    "FAILURE": 0,
+    "CREATE_SUCCESS": 33,
+    "CREATE": 78,
+    "PLAYERSHOOT": 13,
+    "MOVE": 87,
+    "PLAYERTEXT": 39,
+    "TEXT": 67,
+    "SHOOT2": 84,
+    "DAMAGE": 51,
+    "UPDATE": 7,
+    "UPDATEACK": 45,
+    "NOTIFICATION": 53,
+    "NEW_TICK": 80,
+    "INVSWAP": 34,
+    "USEITEM": 48,
+    "SHOW_EFFECT": 28,
+    "HELLO": 35,
+    "GOTO": 3,
+    "INVDROP": 90,
+    "INVRESULT": 58,
+    "RECONNECT": 21,
+    "PING": 46,
+    "PONG": 52,
+    "MAPINFO": 65,
+    "LOAD": 8,
+    "PIC": 60,
+    "SETCONDITION": 91,
+    "TELEPORT": 40,
+    "USEPORTAL": 9,
+    "DEATH": 63,
+    "BUY": 75,
+    "BUYRESULT": 10,
+    "AOE": 69,
+    "GROUNDDAMAGE": 59,
+    "PLAYERHIT": 17,
+    "ENEMYHIT": 42,
+    "AOEACK": 95,
+    "SHOOTACK": 36,
+    "OTHERHIT": 14,
+    "SQUAREHIT": 86,
+    "GOTOACK": 12,
+    "EDITACCOUNTLIST": 93,
+    "ACCOUNTLIST": 20,
+    "QUESTOBJID": 77,
+    "CHOOSENAME": 82,
+    "NAMERESULT": 62,
+    "CREATEGUILD": 44,
+    "CREATEGUILDRESULT": 4,
+    "GUILDREMOVE": 24,
+    "GUILDINVITE": 23,
+    "ALLYSHOOT": 92,
+    "SHOOT": 96,
+    "REQUESTTRADE": 41,
+    "TRADEREQUESTED": 94,
+    "TRADESTART": 64,
+    "CHANGETRADE": 1,
+    "TRADECHANGED": 56,
+    "ACCEPTTRADE": 6,
+    "CANCELTRADE": 5,
+    "TRADEDONE": 25,
+    "TRADEACCEPTED": 22,
+    "CLIENTSTAT": 66,
+    "CHECKCREDITS": 19,
+    "ESCAPE": 47,
+    "FILE": 88,
+    "INVITEDTOGUILD": 79,
+    "JOINGUILD": 61,
+    "CHANGEGUILDRANK": 89,
+    "PLAYSOUND": 50,
+    "GLOBAL_NOTIFICATION": 30,
+    "RESKIN": 68,
+    "PETYARDCOMMAND": 85,
+    "PETCOMMAND": 57,
+    "UPDATEPET": 83,
+    "NEWABILITYUNLOCKED": 97,
+    "UPGRADEPETYARDRESULT": 55,
+    "EVOLVEPET": 76,
+    "REMOVEPET": 26,
+    "HATCHEGG": 81,
+    "ENTER_ARENA": 27,
+    "ARENANEXTWAVE": 31,
+    "ARENADEATH": 15,
+    "LEAVEARENA": 49,
+    "VERIFYEMAILDIALOG": 98,
+    "RESKIN2": 11,
+    "PASSWORDPROMPT": 74,
+    "VIEWQUESTS": 16,
+    "TINKERQUEST": 38,
+    "QUESTFETCHRESPONSE": 37,
+    "QUESTREDEEMRESPONSE": 18
+  },
+  "new_tick": {
+    "packet_id": 80,
+    "tick_id": 7,
+    "tick_time": 100,
+    "statuses": [
+      {
+        "object_id": 42,
+        "position": [
+          1024.5,
+          320.25
+        ],
+        "stats": [
+          {
+            "name": "MaximumHP",
+            "type": 0,
+            "value": 670
+          },
+          {
+            "name": "HP",
+            "type": 1,
+            "value": 575
+          },
+          {
+            "name": "MaximumMP",
+            "type": 3,
+            "value": 385
+          },
+          {
+            "name": "MP",
+            "type": 4,
+            "value": 100
+          },
+          {
+            "name": "ExperienceGoal",
+            "type": 5,
+            "value": 1950
+          },
+          {
+            "name": "Experience",
+            "type": 6,
+            "value": 1950
+          },
+          {
+            "name": "Level",
+            "type": 7,
+            "value": 20
+          },
+          {
+            "name": "Attack",
+            "type": 20,
+            "value": 50
+          },
+          {
+            "name": "Inventory0",
+            "type": 8,
+            "value": -1
+          },
+          {
+            "name": "Effects",
+            "type": 29,
+            "value": -2147483648
+          },
+          {
+            "name": "CurrentFame",
+            "type": 39,
+            "value": 500
+          },
+          {
+            "name": "Fame",
+            "type": 57,
+            "value": 20
+          },
+          {
+            "name": "FameGoal",
+            "type": 58,
+            "value": 150
+          },
+          {
+            "name": "Name",
+            "type": 31,
+            "value": "Diver ☠"
+          },
+          {
+            "name": "AccountId",
+            "type": 38,
+            "value": "123"
+          },
+          {
+            "name": "OwnerAccountId",
+            "type": 54,
+            "value": "456"
+          },
+          {
+            "name": "Guild",
+            "type": 62,
+            "value": "GRAVEBAG"
+          },
+          {
+            "name": "PetSkin",
+            "type": 82,
+            "value": "猫"
+          }
+        ]
+      }
+    ],
+    "body_hex": "000000070000006400010000002a4480100043a020000012000000029e010000023f03000001810400000064050000079e060000079e0700000014140000003208ffffffff1d8000000027000001f439000000143a000000961f0009446976657220e298a02600033132333600033435363e00084752415645424147520003e78cab",
+    "frame_hex": "0000008750000000070000006400010000002a4480100043a020000012000000029e010000023f03000001810400000064050000079e060000079e0700000014140000003208ffffffff1d8000000027000001f439000000143a000000961f0009446976657220e298a02600033132333600033435363e00084752415645424147520003e78cab"
+  },
+  "map_info": {
+    "width": 128,
+    "height": 128,
+    "name": "Nexus",
+    "client_world_name": "nexus.Nexus",
+    "seed": 4026597891,
+    "background": 0,
+    "difficulty": 0,
+    "allow_teleport": true,
+    "show_displays": false,
+    "client_xml": [
+      "<Objects/>"
+    ],
+    "extra_xml": [
+      "<GroundTypes/>"
+    ],
+    "packet_id": 65,
+    "body_hex": "000000800000008000054e65787573000b6e657875732e4e65787573f00102030000000000000000010000010000000a3c4f626a656374732f3e00010000000e3c47726f756e6454797065732f3e"
+  },
+  "known_source_asymmetries": [
+    "ObjectStats.Read supports only Guild/Name UTF; follow SERVER Write + IsUTF for AccountId/OwnerAccountId/PetSkin too.",
+    "HelloPacket.Write order is asymmetric with Read. Client HELLO must follow SERVER Read, not mirror Write.",
+    "MapInfoPacket.Write uses 32-bit byte lengths for XML elements; its Read uses 16-bit UTF lengths. Follow SERVER Write."
+  ]
+}

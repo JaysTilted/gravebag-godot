@@ -1,0 +1,535 @@
+{
+  "revision": "6fd20aad4a7905b13f25389c68368a942a2b68cb",
+  "url": "https://github.com/ossimc82/fabiano-swagger-of-doom",
+  "license": "AGPL-3.0",
+  "scope": "Source-only outbound client requirements, not implementation coverage of another worker's client branch",
+  "client_packets": [
+    {
+      "packet": "ACCEPTTRADE",
+      "id": 6,
+      "schema": "wServer/networking/cliPackets/AcceptTradePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/TradeHandler.cs",
+        "class": "AcceptTradeHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => client.Player.AcceptTrade(t, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "AOEACK",
+      "id": 95,
+      "schema": "wServer/networking/cliPackets/AoEAckPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/AoEAckHandler.cs",
+        "class": "AOEAckHandler",
+        "handler_body": "//TODO: Implement something.",
+        "stub": true
+      }
+    },
+    {
+      "packet": "BUY",
+      "id": 75,
+      "schema": "wServer/networking/cliPackets/BuyPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/BuyHandler.cs",
+        "class": "BuyHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                if (client.Player.Owner == null) return;\n                SellableObject obj = client.Player.Owner.GetEntity(packet.ObjectId) as SellableObject;\n                if (obj != null)\n                    obj.Buy(client.Player);\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "CANCELTRADE",
+      "id": 5,
+      "schema": "wServer/networking/cliPackets/CancelTradePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/TradeHandler.cs",
+        "class": "CancelTradeHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => client.Player.CancelTrade(t, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "CHANGEGUILDRANK",
+      "id": 89,
+      "schema": "wServer/networking/cliPackets/ChangeGuildRankPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/ChangeGuildRankPacketHandler.cs",
+        "class": "ChangeGuildRankPacketHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => Handle(client, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "CHANGETRADE",
+      "id": 1,
+      "schema": "wServer/networking/cliPackets/ChangeTradePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/TradeHandler.cs",
+        "class": "ChangeTradeHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => client.Player.ChangeTrade(t, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "CHECKCREDITS",
+      "id": 19,
+      "schema": "wServer/networking/cliPackets/CheckCreditsPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/CheckCreditsHandler.cs",
+        "class": "CheckCreditsHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                using (Database db = new Database())\n                {\n                    db.ReadStats(client.Account);\n                    client.Player.Credits = client.Account.Credits;\n                    client.Player.UpdateCount++;\n                }\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "CHOOSENAME",
+      "id": 82,
+      "schema": "wServer/networking/cliPackets/ChooseNamePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/ChooseNameHandler.cs",
+        "class": "ChooseNameHandler",
+        "handler_body": "string[] bannednames = { \"Dick\", \"Fuck\", \"Pussy\", \"Cunt\", \"Bitch\", \"Nigger\", \"Nigga\", \"Niqqa\", \"Cunt\", \"Shit\", \"Penis\", \"Vagina\", \"Chent\", \"Niqqer\", \"Negro\", \"Ngr\", \"Chink\", \"Fag\", \"Faggot\", \"Fgt\", \"Fagot\", \"Fagit\", \"Ass\", \"Autistic\", \"Autism\", \"Schlong\", \"vag\", \"damn\", \"tits\", \"tlts\", \"retard\", \"asd\", \"Kalle\", \"Kaile\", \"Kalie\", \"xDalla\", \"xDalia\", \"xDaila\", \"McFarvo\", \"Pixl\", \"TheHangman\", \"White\", \"DrMini\", \"TEEBQNE\", \"TBQNEE\", \"FloFlorian\", \"Lore\", \"Dalla\", \"Daila\", \"Dalia\", \"Clocking\", \"Ciocking\", \"IArkani\", \"lArkani\", \"BunnyBomb\", \"Liinkii\", \"Gamingland\", \"GamingIand\", \"TheRegal\", \"TheRegaI\", \"ParagonX\", \"Cantplay\", \"Billyhendr\", \"Nilly\", \"Trapped\", \"Botmaker\", \"JustANoob\", \"JustANoobROTMG\", \"Niiiy\", \"niily\", \"niliy\", \"Lucifer\", \"Kithio\", \"Case\", \"Travoos\", \"XD\", \"DX\", \"Trol\", \"Troll\", \"lol\", \"lel\", \"OMG\", \"suck\" };\n\n            foreach (string i in bannednames)\n            {\n                if (i.ToLower().Equals(packet.Name) || packet.Name.ToLower().Contains(i.ToLower()))\n                {\n                    client.SendPacket(new NameResultPacket\n                    {\n                        Success = false,\n                        ErrorText = \"Error.nameAlreadyInUse\"\n                    });\n                    return;\n                }\n            }\n                \n            using (Database db = new Database())\n            {\n                MySqlCommand cmdx = db.CreateQuery();\n                cmdx.CommandText = \"SELECT namechosen FROM accounts WHERE id=@accId\";\n                cmdx.Parameters.AddWithValue(\"@accId\", client.Account.AccountId);\n                object execx = cmdx.ExecuteScalar();\n                bool namechosen = bool.Parse(execx.ToString());\n                if (String.IsNullOrEmpty(packet.Name) || packet.Name.Length > 10)\n                {\n                    client.SendPacket(new NameResultPacket\n                    {\n                        Success = false,\n                        ErrorText = \"Error.nameIsNotAlpha\"\n                    });\n                }\n                else\n                {\n                    MySqlCommand cmd = db.CreateQuery();\n                    cmd.CommandText = \"SELECT COUNT(name) FROM accounts WHERE name=@name;\";\n                    cmd.Parameters.AddWithValue(\"@name\", packet.Name);\n                    object x = cmd.ExecuteScalar();\n                    if (int.Parse(x.ToString()) > 0)\n                    {\n                        client.SendPacket(new NameResultPacket\n                        {\n                            Success = false,\n                            ErrorText = \"Error.nameAlreadyInUse\"\n                        });\n                    }\n                    else\n                    {\n                        db.ReadStats(client.Account);\n                        if (client.Account.Credits < 1000 && namechosen)\n                            client.SendPacket(new NameResultPacket\n                            {\n                                Success = false,\n                                ErrorText = \"server.not_enough_gold\"\n                            });\n                        else\n                        {\n                            if (client.Account.NameChosen == false)\n                            {\n                                cmd = db.CreateQuery();\n                                cmd.CommandText = \"UPDATE accounts SET name=@name, namechosen=TRUE WHERE id=@accId;\";\n                                cmd.Parameters.AddWithValue(\"@accId\", client.Account.AccountId);\n                                cmd.Parameters.AddWithValue(\"@name\", packet.Name);\n                                if (cmd.ExecuteNonQuery() > 0)\n                                {\n                                    client.Player.Name = packet.Name;\n                                    client.Player.NameChosen = true;\n                                    client.Player.UpdateCount++;\n                                    client.SendPacket(new NameResultPacket\n                                    {\n                                        Success = true,\n                                        ErrorText = \"server.buy_success\"\n                                    });\n                                }\n                                else\n                                {\n                                    client.SendPacket(new NameResultPacket\n                                    {\n                                        Success = false,\n                                        ErrorText = \"GuildChronicle.left\"\n                                    });\n                                }\n                            }\n                            else\n                            {\n                                cmd = db.CreateQuery();\n                                cmd.CommandText = \"UPDATE accounts SET name=@name, namechosen=TRUE WHERE id=@accId;\";\n                                cmd.Parameters.AddWithValue(\"@accId\", client.Account.AccountId);\n                                cmd.Parameters.AddWithValue(\"@name\", packet.Name);\n                                if (cmd.ExecuteNonQuery() > 0)\n                                {\n                                    client.Player.Credits = db.UpdateCredit(client.Account, -1000);\n                                    client.Player.Name = packet.Name;\n                                    client.Player.NameChosen = true;\n                                    client.Player.UpdateCount++;\n                                    client.SendPacket(new NameResultPacket\n                                    {\n                                        Success = true,\n                                        ErrorText = \"server.buy_success\"\n                                    });\n                                }\n                                else\n                                {\n                                    client.SendPacket(new NameResultPacket\n                                    {\n                                        Success = false,\n                                        ErrorText = \"GuildChronicle.left\"\n                                    });\n                                }\n                            }\n                        }\n                    }\n                }\n            }",
+        "stub": false
+      }
+    },
+    {
+      "packet": "CREATEGUILD",
+      "id": 44,
+      "schema": "wServer/networking/cliPackets/CreateGuildPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/CreateGuildHandler.cs",
+        "class": "CreateGuildHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => Handle(client, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "CREATE",
+      "id": 78,
+      "schema": "wServer/networking/cliPackets/CreatePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/CreateHandler.cs",
+        "class": "CreateHandler",
+        "handler_body": "using (Database dbx = new Database())\n            {\n                MySqlCommand cmd = dbx.CreateQuery();\n                int nextCharId = 1;\n                if (!client.Account.IsGuestAccount)\n                {\n                    nextCharId = dbx.GetNextCharId(client.Account);\n\n                    cmd.CommandText = \"SELECT maxCharSlot FROM accounts WHERE id=@accId;\";\n                    cmd.Parameters.AddWithValue(\"@accId\", client.Account.AccountId);\n                    int maxChar = (int) cmd.ExecuteScalar();\n\n                    cmd = dbx.CreateQuery();\n                    cmd.CommandText = \"SELECT COUNT(id) FROM characters WHERE accId=@accId AND dead = FALSE;\";\n                    cmd.Parameters.AddWithValue(\"@accId\", client.Account.AccountId);\n                    int currChar = (int) (long) cmd.ExecuteScalar();\n\n                    if (currChar >= maxChar)\n                    {\n                        client.Disconnect();\n                        return;\n                    }\n                }\n                client.Character = Database.CreateCharacter(client.Manager.GameData, (ushort) packet.ClassType,\n                    nextCharId);\n\n                int[] stats = new[]\n                {\n                    client.Character.MaxHitPoints,\n                    client.Character.MaxMagicPoints,\n                    client.Character.Attack,\n                    client.Character.Defense,\n                    client.Character.Speed,\n                    client.Character.Dexterity,\n                    client.Character.HpRegen,\n                    client.Character.MpRegen\n                };\n\n                int skin = client.Account.OwnedSkins.Contains(packet.SkinType) ? packet.SkinType : 0;\n                client.Character.Skin = skin;\n                cmd = dbx.CreateQuery();\n                cmd.Parameters.AddWithValue(\"@accId\", client.Account.AccountId);\n                cmd.Parameters.AddWithValue(\"@charId\", nextCharId);\n                cmd.Parameters.AddWithValue(\"@charType\", packet.ClassType);\n                cmd.Parameters.AddWithValue(\"@items\", Utils.GetCommaSepString(client.Character.EquipSlots()));\n                cmd.Parameters.AddWithValue(\"@stats\", Utils.GetCommaSepString(stats));\n                cmd.Parameters.AddWithValue(\"@fameStats\", client.Character.FameStats.ToString());\n                cmd.Parameters.AddWithValue(\"@skin\", skin);\n                cmd.CommandText =\n                    \"INSERT INTO characters (accId, charId, charType, level, exp, fame, items, hp, mp, stats, dead, pet, fameStats, skin) VALUES (@accId, @charId, @charType, 1, 0, 0, @items, 100, 100, @stats, FALSE, -1, @fameStats, @skin);\";\n\n                if (cmd.ExecuteNonQuery() > 0)\n                {\n                    World target = client.Manager.Worlds[client.TargetWorld];\n                    client.SendPacket(new Create_SuccessPacket\n                    {\n                        CharacterID = client.Character.CharacterId,\n                        ObjectID =\n                            client.Manager.Worlds[client.TargetWorld].EnterWorld(\n                                client.Player = new Player(client.Manager, client))\n                    });\n                    client.Stage = ProtocalStage.Ready;\n                }\n                else\n                {\n                    client.SendPacket(new FailurePacket\n                    {\n                        ErrorDescription = \"Failed to Load character.\"\n                    });\n                }\n            }",
+        "stub": false
+      }
+    },
+    {
+      "packet": "EDITACCOUNTLIST",
+      "id": 93,
+      "schema": "wServer/networking/cliPackets/EditAccountListPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/EditAccountListHandler.cs",
+        "class": "EditAccountListHandler",
+        "handler_body": "Player target;\n            if(client.Player.Owner == null) return;\n            client.Manager.Logic.AddPendingAction(t =>\n            {\n                using (Database db = new Database())\n                {\n                    target = client.Player.Owner.GetEntity(packet.ObjectId) is Player ? client.Player.Owner.GetEntity(packet.ObjectId) as Player : null;\n                    if (target == null) return;\n                    if(client.Account.AccountId == target.AccountId)\n                    {\n                        SendFailure(\"You cannot do that with yourself.\");\n                        return;\n                    }\n                    switch (packet.AccountListId)\n                    {\n                        case AccountListPacket.LOCKED_LIST_ID:\n                            if (packet.Add)\n                            {\n                                db.AddLock(client.Account.AccountId, target.AccountId);\n                                client.Player.Locked.Add(target.AccountId);\n                            }\n                            else\n                            {\n                                db.RemoveLock(client.Account.AccountId, target.AccountId);\n                                client.Player.Locked.Remove(target.AccountId);\n                            }\n                            break;\n                        case AccountListPacket.IGNORED_LIST_ID:\n                            if (packet.Add)\n                            {\n                                db.AddIgnore(client.Account.AccountId, target.AccountId);\n                                client.Player.Ignored.Add(target.AccountId);\n                            }\n                            else\n                            {\n                                db.RemoveIgnore(client.Account.AccountId, target.AccountId);\n                                client.Player.Ignored.Remove(target.AccountId);\n                            }\n                            break;\n                    }\n                            \n                    //List<string> list;\n                    //if (packet.AccountListId == LOCKED_LIST_ID)\n                    //    list = client.Player.Locked;\n                    //else if (packet.AccountListId == IGNORED_LIST_ID)\n                    //    list = client.Player.Ignored;\n                    //else return;\n                    //if (list == null)\n                    //    list = new List<string>();\n                    //Player player = client.Player.Owner.GetEntity(packet.ObjectId) as Player;\n                    //if (player == null) return;\n                    //int accId = client.Account.AccountId;\n                    //if (packet.Add && list.Count < 6)\n                    //    list.Add(accId.ToString());\n                    //else\n                    //    list.Remove(accId.ToString());\n\n                    //if (packet.Add)\n                    //{\n                    //    list.Add(accId.ToString());\n                    //    if (packet.AccountListId == LOCKED_LIST_ID)\n                    //        db.AddLock(client.Account.AccountId, accId);\n                    //    if (packet.AccountListId == IGNORED_LIST_ID)\n                    //        db.AddIgnore(client.Account.AccountId, accId);\n                    //}\n                    //else\n                    //{\n                    //    list.Remove(accId.ToString());\n                    //    if (packet.AccountListId == LOCKED_LIST_ID)\n                    //        db.RemoveLock(client.Account.AccountId, accId);\n                    //    if (packet.AccountListId == IGNORED_LIST_ID)\n                    //        db.RemoveIgnore(client.Account.AccountId, accId);\n                    //}\n\n                    //client.Player.SendAccountList(list, packet.AccountListId);\n                }\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "ENEMYHIT",
+      "id": 42,
+      "schema": "wServer/networking/cliPackets/EnemyHitPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/EnemyHitHandler.cs",
+        "class": "EnemyHitHandler",
+        "handler_body": "if (client.Player.Owner == null) return;\n\n            client.Manager.Logic.AddPendingAction(t =>\n            {\n                Entity entity = client.Player.Owner.GetEntity(packet.TargetId);\n                if (entity != null) //Tolerance\n                {\n                    Projectile prj = (client.Player as IProjectileOwner).Projectiles[packet.BulletId];\n                    if (prj != null)\n                        prj.ForceHit(entity, t);\n                }\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "ENTER_ARENA",
+      "id": 27,
+      "schema": "wServer/networking/cliPackets/EnterArenaPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/EnterArenaPacketHandler.cs",
+        "class": "EnterArenaPacketHandler",
+        "handler_body": "using (Database db = new Database())\n            {\n                if (packet.Currency == 1)\n                {\n                    client.Player.CurrentFame = client.Account.Stats.Fame = db.UpdateFame(client.Account, -500);\n                    client.Player.UpdateCount++;\n                }\n                else\n                {\n                    client.Player.Credits = client.Account.Credits = db.UpdateCredit(client.Account, -50);\n                    client.SendPacket(new BuyResultPacket\n                    {\n                        Result = 0,\n                        Message = \"{server.buy_success}\"\n                    });\n                    client.Player.UpdateCount++;\n                }\n            }\n            client.Save();\n\n            World world = client.Player.Manager.AddWorld(new Arena());\n\n            client.Reconnect(new ReconnectPacket\n            {\n                Host = \"\",\n                Port = Program.Settings.GetValue<int>(\"port\"),\n                GameId = world.Id,\n                Name = world.Name,\n                Key = Empty<byte>.Array,\n            });",
+        "stub": false
+      }
+    },
+    {
+      "packet": "ESCAPE",
+      "id": 47,
+      "schema": "wServer/networking/cliPackets/EscapePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/EscapeHander.cs",
+        "class": "EscapeHander",
+        "handler_body": "if (client.Player.Owner == null) return;\n            World world = client.Manager.GetWorld(client.Player.Owner.Id);\n            if (world.Id == World.NEXUS_ID)\n            {\n                client.SendPacket(new TextPacket\n                {\n                    Stars = -1,\n                    BubbleTime = 0,\n                    Name = \"\",\n                    Text = \"server.already_nexus\"\n                });\n                return;\n            }\n            client.Reconnect(new ReconnectPacket\n            {\n                Host = \"\",\n                Port = Program.Settings.GetValue<int>(\"port\"),\n                GameId = World.NEXUS_ID,\n                Name = \"nexus.Nexus\",\n                Key = Empty<byte>.Array,\n            });",
+        "stub": false
+      }
+    },
+    {
+      "packet": "FAILURE",
+      "id": 0,
+      "schema": "wServer/networking/cliPackets/FailurePacket.cs",
+      "handler": null
+    },
+    {
+      "packet": "GOTOACK",
+      "id": 12,
+      "schema": "wServer/networking/cliPackets/GotoAckPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/GotoAckHandler.cs",
+        "class": "GotoAckHandler",
+        "handler_body": "//TODO: Implement something.",
+        "stub": true
+      }
+    },
+    {
+      "packet": "GROUNDDAMAGE",
+      "id": 59,
+      "schema": "wServer/networking/cliPackets/GroundDamagePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/GroundDamageHandler.cs",
+        "class": "GroundDamageHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                if (client.Player.HasConditionEffect(ConditionEffectIndex.Paused) ||\n                    client.Player.HasConditionEffect(ConditionEffectIndex.Invincible))\n                    return;\n\n                try\n                {\n                    if (client.Player.Owner == null) return;\n                    WmapTile tile = client.Player.Owner.Map[(int)packet.Position.X, (int)packet.Position.Y];\n                    ObjectDesc objDesc = tile.ObjType == 0 ? null : client.Manager.GameData.ObjectDescs[tile.ObjType];\n                    TileDesc tileDesc = client.Manager.GameData.Tiles[tile.TileId];\n                    if (tileDesc.Damaging && (objDesc == null || !objDesc.ProtectFromGroundDamage))\n                    {\n                        int dmg = (int)client.Player.StatsManager.Random.obf6((uint)tileDesc.MinDamage, (uint)tileDesc.MaxDamage);\n                        dmg = (int) client.Player.StatsManager.GetDefenseDamage(dmg, true);\n\n                        client.Player.HP -= dmg;\n                        client.Player.UpdateCount++;\n                        if (client.Player.HP <= 0)\n                            client.Player.Death(tileDesc.ObjectId);\n                    }\n                }\n                catch (Exception ex)\n                {\n                    log.Error(ex);\n                }\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "GUILDINVITE",
+      "id": 23,
+      "schema": "wServer/networking/cliPackets/GuildInvitePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/GuildInvitePacketHandler.cs",
+        "class": "GuildInvitePacketHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => Handle(client.Player, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "GUILDREMOVE",
+      "id": 24,
+      "schema": "wServer/networking/cliPackets/GuildRemovePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/GuildRemovePacketHandler.cs",
+        "class": "GuildRemovePacketHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => Handle(client, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "HELLO",
+      "id": 35,
+      "schema": "wServer/networking/cliPackets/HelloPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/HelloHandler.cs",
+        "class": "HelloHandler",
+        "handler_body": "if (Client.SERVER_VERSION != packet.BuildVersion)\n            {\n                client.SendPacket(new FailurePacket\n                {\n                    ErrorId = 0,\n                    ErrorDescription = \"server.update_client\"\n                });\n                client.SendPacket(new FailurePacket\n                {\n                    ErrorId = 4,\n                    ErrorDescription = Client.SERVER_VERSION\n                });\n                client.Disconnect();\n                return;\n            }\n            client.Manager.Database.DoActionAsync(db =>\n            {\n                if ((client.Account = db.Verify(packet.GUID, packet.Password, Manager.GameData)) == null)\n                {\n                    log.Info(@\"Account not verified.\");\n                    client.Account = Database.CreateGuestAccount(packet.GUID);\n\n                    if (client.Account == null)\n                    {\n                        log.Info(@\"Account is null!\");\n                        client.SendPacket(new FailurePacket\n                        {\n                            ErrorDescription = \"Invalid account.\"\n                        });\n                        client.Disconnect();\n                        return;\n                    }\n                }\n                if (!client.Account.IsGuestAccount)\n                {\n                    int? timeout = null;\n\n                    if (DateTime.Now <= Program.WhiteListTurnOff)\n                    {\n                        if (!IsWhiteListed(client.Account.Rank))\n                        {\n                            client.SendPacket(new FailurePacket\n                            {\n                                ErrorId = 0,\n                                ErrorDescription = \"You are not whitelisted!\"\n                            });\n                            client.Disconnect();\n                            return;\n                        }\n                    }\n                    if (db.CheckAccountInUse(client.Account, ref timeout))\n                    {\n                        if (timeout == null)\n                        {\n                            client.SendPacket(new FailurePacket\n                            {\n                                ErrorId = 0,\n                                ErrorDescription = \"Account in use.\"\n                            });\n                        }\n                        else\n                        {\n                            client.SendPacket(new FailurePacket\n                            {\n                                ErrorId = 0,\n                                ErrorDescription = \"Account in use. (\" + timeout + \" seconds until timeout.)\"\n                            });\n                        }\n                        client.Disconnect();\n                        return;\n                    }\n                }\n                log.Info(@\"Client trying to connect!\");\n                client.ConnectedBuild = packet.BuildVersion;\n                if (!client.Manager.TryConnect(client))\n                {\n                    client.Account = null;\n                    client.SendPacket(new FailurePacket\n                    {\n                        ErrorDescription = \"Failed to connect.\"\n                    });\n                    client.Disconnect();\n                    log.Warn(@\"Failed to connect.\");\n                }\n                else\n                {\n                    log.Info(@\"Client loading world\");\n                    if (packet.GameId == World.NEXUS_LIMBO) packet.GameId = World.NEXUS_ID;\n                    World world = client.Manager.GetWorld(packet.GameId);\n                    if (world == null && packet.GameId == World.TUT_ID) world = client.Manager.AddWorld(new Tutorial(false));\n                    if (world == null)\n                    {\n                        client.SendPacket(new FailurePacket\n                        {\n                            ErrorId = 1,\n                            ErrorDescription = \"Invalid world.\"\n                        });\n                        client.Disconnect();\n                        return;\n                    }\n                    if (world.NeedsPortalKey)\n                    {\n                        if (!world.PortalKey.SequenceEqual(packet.Key))\n                        {\n                            client.SendPacket(new FailurePacket\n                            {\n                                ErrorId = 1,\n                                ErrorDescription = \"Invalid Portal Key\"\n                            });\n                            client.Disconnect();\n                            return;\n                        }\n                        if (world.PortalKeyExpired)\n                        {\n                            client.SendPacket(new FailurePacket\n                            {\n                                ErrorId = 1,\n                                ErrorDescription = \"Portal key expired.\"\n                            });\n                            client.Disconnect();\n                            return;\n                        }\n                    }\n                    log.Info(@\"Client joined world \" + world.Id);\n                    if (packet.MapInfo.Length > 0) //Test World\n                        (world as Test).LoadJson(Encoding.Default.GetString(packet.MapInfo));\n\n                    if (world.IsLimbo)\n                        world = world.GetInstance(client);\n                    client.Random = new wRandom(world.Seed);\n                    client.TargetWorld = world.Id;\n                    client.SendPacket(new MapInfoPacket\n                    {\n                        Width = world.Map.Width,\n                        Height = world.Map.Height,\n                        Name = world.Name,\n                        Seed = world.Seed,\n                        ClientWorldName = world.ClientWorldName,\n                        Difficulty = world.Difficulty,\n                        Background = world.Background,\n                        AllowTeleport = world.AllowTeleport,\n                        ShowDisplays = world.ShowDisplays,\n                        ClientXML = world.ClientXml,\n                        ExtraXML = Manager.GameData.AdditionXml\n                    });\n                    client.Stage = ProtocalStage.Handshaked;\n                }\n            });",
+        "stub": false
+      }
+    },
+    {
+      "packet": "INVDROP",
+      "id": 90,
+      "schema": "wServer/networking/cliPackets/InvDropPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/InvDropHandler.cs",
+        "class": "InvDropHandler",
+        "handler_body": "if (client.Player.Owner == null) return;\n\n            if (client.Player.Owner is PetYard)\n            {\n                client.SendPacket(new InvResultPacket\n                {\n                    Result = 0\n                });\n            }\n\n            client.Manager.Logic.AddPendingAction(t =>\n            {\n                //TODO: locker again\n                const ushort NORM_BAG = 0x0500;\n                const ushort SOUL_BAG = 0x0507;\n\n                Entity entity = client.Player.Owner.GetEntity(packet.SlotObject.ObjectId);\n                IContainer con = entity as IContainer;\n                Item item = null;\n                if (packet.SlotObject.SlotId == 254)\n                {\n                    client.Player.HealthPotions--;\n                    item = client.Player.Manager.GameData.Items[0xa22];\n                }\n                else if (packet.SlotObject.SlotId == 255)\n                {\n                    client.Player.MagicPotions--;\n                    item = client.Player.Manager.GameData.Items[0xa23];\n                }\n                else\n                {\n                    if (con.Inventory[packet.SlotObject.SlotId] == null) return;\n\n                    item = con.Inventory[packet.SlotObject.SlotId];\n                    con.Inventory[packet.SlotObject.SlotId] = null;\n                }\n                entity.UpdateCount++;\n\n                if (item != null)\n                {\n                    Container container;\n                    if (item.Soulbound)\n                    {\n                        container = new Container(client.Player.Manager, SOUL_BAG, 1000*30, true)\n                        {\n                            BagOwners = new string[1] { client.Player.AccountId }\n                        };\n                    }\n                    else\n                    {\n                        container = new Container(client.Player.Manager, NORM_BAG, 1000*30, true);\n                    }\n                    float bagx = entity.X + (float) ((invRand.NextDouble()*2 - 1)*0.5);\n                    float bagy = entity.Y + (float) ((invRand.NextDouble()*2 - 1)*0.5);\n                    try\n                    {\n                        container.Inventory[0] = item;\n                        container.Move(bagx, bagy);\n                        container.Size = 75;\n                        client.Player.Owner.EnterWorld(container);\n\n                        if (entity is Player)\n                        {\n                            (entity as Player).CalcBoost();\n                            (entity as Player).Client.SendPacket(new InvResultPacket\n                            {\n                                Result = 0\n                            });\n                            (entity as Player).Client.Save();\n                        }\n\n                        if (client.Player.Owner is Vault)\n                            if ((client.Player.Owner as Vault).PlayerOwnerName == client.Account.Name)\n                                return;\n                    }\n                    catch (Exception ex)\n                    {\n                        log.Error(ex);\n                        log.InfoFormat(client.Player.Name + \" just attempted to dupe.\");\n                    }\n                }\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "INVSWAP",
+      "id": 34,
+      "schema": "wServer/networking/cliPackets/InvSwapPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/InvSwapHandler.cs",
+        "class": "InvSwapHandler",
+        "handler_body": "if (client.Player.Owner == null) return;\n\n            if (client.Player.Owner is PetYard)\n            {\n                client.SendPacket(new InvResultPacket\n                {\n                    Result = 0\n                });\n            }\n\n            client.Manager.Logic.AddPendingAction(t =>\n            {\n                Entity en1 = client.Player.Owner.GetEntity(packet.SlotObject1.ObjectId);\n                Entity en2 = client.Player.Owner.GetEntity(packet.SlotObject2.ObjectId);\n                IContainer con1 = en1 as IContainer;\n                IContainer con2 = en2 as IContainer;\n\n                if (packet.SlotObject1.SlotId == 254 || packet.SlotObject1.SlotId == 255 ||\n                    packet.SlotObject2.SlotId == 254 || packet.SlotObject2.SlotId == 255)\n                {\n                    if (packet.SlotObject2.SlotId == 254)\n                        if (client.Player.HealthPotions < 6)\n                        {\n                            client.Player.HealthPotions++;\n                            con1.Inventory[packet.SlotObject1.SlotId] = null;\n                        }\n                    if (packet.SlotObject2.SlotId == 255)\n                        if (client.Player.MagicPotions < 6)\n                        {\n                            client.Player.MagicPotions++;\n                            con1.Inventory[packet.SlotObject1.SlotId] = null;\n                        }\n                    if (packet.SlotObject1.SlotId == 254)\n                        if (client.Player.HealthPotions > 0)\n                        {\n                            client.Player.HealthPotions--;\n                            con2.Inventory[packet.SlotObject2.SlotId] = null;\n                        }\n                    if (packet.SlotObject1.SlotId == 255)\n                        if (client.Player.MagicPotions > 0)\n                        {\n                            client.Player.MagicPotions--;\n                            con2.Inventory[packet.SlotObject1.SlotId] = null;\n                        }\n                    if (en1 is Player)\n                        (en1 as Player).Client.SendPacket(new InvResultPacket {Result = 0});\n                    else if (en2 is Player)\n                        (en2 as Player).Client.SendPacket(new InvResultPacket {Result = 0});\n                    return;\n                }\n                //TODO: locker\n                Item item1 = con1.Inventory[packet.SlotObject1.SlotId];\n                Item item2 = con2.Inventory[packet.SlotObject2.SlotId];\n                List<ushort> publicbags = new List<ushort>\n                {\n                    0x0500,\n                    0x0506,\n                    0x0501\n                };\n\n                if (en1.Dist(en2) > 1)\n                {\n                    if (en1 is Player)\n                        (en1 as Player).Client.SendPacket(new InvResultPacket\n                        {\n                            Result = -1\n                        });\n                    else if (en2 is Player)\n                        (en2 as Player).Client.SendPacket(new InvResultPacket\n                        {\n                            Result = -1\n                        });\n                    en1.UpdateCount++;\n                    en2.UpdateCount++;\n                    return;\n                }\n\n                if (!IsValid(item1, item2, con1, con2, packet, client))\n                {\n                    client.Disconnect();\n                    return;\n                }\n\n                if (con2 is OneWayContainer)\n                {\n                    con1.Inventory[packet.SlotObject1.SlotId] = null;\n                    con2.Inventory[packet.SlotObject2.SlotId] = null;\n                    client.Player.DropBag(item1);\n                    en1.UpdateCount++;\n                    en2.UpdateCount++;\n                    return;\n                }\n                if (con1 is OneWayContainer)\n                {\n                    if (con2.Inventory[packet.SlotObject2.SlotId] != null)\n                    {\n                        (en2 as Player)?.Client.SendPacket(new InvResultPacket {Result = -1});\n                        (con1 as OneWayContainer).UpdateCount++;\n                        en2.UpdateCount++;\n                        return;\n                    }\n\n                    using (Database db = new Database())\n                    {\n                        try\n                        {\n                            Account acc = db.GetAccount(client.Account.AccountId, Manager.GameData);\n                            acc.Gifts.Remove(con1.Inventory[packet.SlotObject1.SlotId].ObjectType);\n\n                            MySqlCommand cmd = db.CreateQuery();\n                            cmd.CommandText = @\"UPDATE accounts SET gifts=@gifts WHERE id=@accId;\";\n                            cmd.Parameters.AddWithValue(\"@accId\", acc.AccountId);\n                            cmd.Parameters.AddWithValue(\"@gifts\", Utils.GetCommaSepString(acc.Gifts.ToArray()));\n                            cmd.ExecuteNonQuery();\n                        }\n                        catch (Exception ex)\n                        {\n                            log.Error(ex);\n                        }\n                    }\n                    con1.Inventory[packet.SlotObject1.SlotId] = null;\n                    con2.Inventory[packet.SlotObject2.SlotId] = item1;\n                    (en2 as Player).CalcBoost();\n                    client.Player.SaveToCharacter();\n                    client.Save();\n                    en1.UpdateCount++;\n                    en2.UpdateCount++;\n                    (en2 as Player).Client.SendPacket(new InvResultPacket {Result = 0});\n                    return;\n                }\n\n                if (en1 is Player && en2 is Player & en1.Id != en2.Id)\n                {\n                    client.Manager.Chat.Announce($\"{en1.Name} just tried to steal items from {en2.Name}'s inventory, GTFO YOU GOD DAMN FEGIT!!!!11111oneoneoneeleven\");\n                    return;\n                };\n\n                con1.Inventory[packet.SlotObject1.SlotId] = item2;\n                con2.Inventory[packet.SlotObject2.SlotId] = item1;\n\n                if (item2 != null)\n                {\n                    if (publicbags.Contains(en1.ObjectType) && item2.Soulbound)\n                    {\n                        client.Player.DropBag(item2);\n                        con1.Inventory[packet.SlotObject1.SlotId] = null;\n                    }\n                }\n                if (item1 != null)\n                {\n                    if (publicbags.Contains(en2.ObjectType) && item1.Soulbound)\n                    {\n                        client.Player.DropBag(item1);\n                        con2.Inventory[packet.SlotObject2.SlotId] = null;\n                    }\n                }\n\n                en1.UpdateCount++;\n                en2.UpdateCount++;\n\n                if (en1 is Player)\n                {\n                    if (en1.Owner.Name == \"Vault\")\n                        (en1 as Player).Client.Save();\n                    (en1 as Player).CalcBoost();\n                    (en1 as Player).Client.SendPacket(new InvResultPacket {Result = 0});\n                }\n                if (en2 is Player)\n                {\n                    if (en2.Owner.Name == \"Vault\")\n                        (en2 as Player).Client.Save();\n                    (en2 as Player).CalcBoost();\n                    (en2 as Player).Client.SendPacket(new InvResultPacket {Result = 0});\n                }\n\n                if (client.Player.Owner is Vault)\n                    if ((client.Player.Owner as Vault).PlayerOwnerName == client.Account.Name)\n                        return;\n\n                client.Player.SaveToCharacter();\n                client.Save();\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "JOINGUILD",
+      "id": 61,
+      "schema": "wServer/networking/cliPackets/JoinGuildPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/JoinGuildPacketHandler.cs",
+        "class": "JoinGuildPacketHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => Handle(client, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "LEAVEARENA",
+      "id": 49,
+      "schema": "wServer/networking/cliPackets/LeaveArenaPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/LeaveArenaHandler.cs",
+        "class": "LeaveArenaHandler",
+        "handler_body": "if (client.Player.Owner == null) return;\n            World world = client.Manager.GetWorld(client.Player.Owner.Id);\n            if (world.Id == World.NEXUS_ID)\n            {\n                client.SendPacket(new TextPacket\n                {\n                    Stars = -1,\n                    BubbleTime = 0,\n                    Name = \"\",\n                    Text = \"server.already_nexus\"\n                });\n                return;\n            }\n            client.Reconnect(new ReconnectPacket\n            {\n                Host = \"\",\n                Port = Program.Settings.GetValue<int>(\"port\"),\n                GameId = World.NEXUS_ID,\n                Name = \"nexus.Nexus\",\n                Key = Empty<byte>.Array,\n            });",
+        "stub": false
+      }
+    },
+    {
+      "packet": "LOAD",
+      "id": 8,
+      "schema": "wServer/networking/cliPackets/LoadPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/LoadHandler.cs",
+        "class": "LoadHandler",
+        "handler_body": "using (Database db = new Database())\n            {\n                client.Character = db.LoadCharacter(client.Account, packet.CharacterId);\n                if (client.Character != null)\n                {\n                    if (client.Character.Dead)\n                    {\n                        client.SendPacket(new FailurePacket\n                        {\n                            ErrorId = 0,\n                            ErrorDescription = \"Character is dead.\"\n                        });\n                    }\n                    else\n                    {\n                        World target = client.Manager.Worlds[client.TargetWorld];\n                        client.SendPacket(new Create_SuccessPacket\n                        {\n                            CharacterID = client.Character.CharacterId,\n                            ObjectID =\n                                client.Manager.Worlds[client.TargetWorld].EnterWorld(\n                                    client.Player = new Player(client.Manager, client))\n                        });\n                        client.Stage = ProtocalStage.Ready;\n                    }\n                }\n                else\n                {\n                    client.SendPacket(new FailurePacket\n                    {\n                        ErrorId = 0,\n                        ErrorDescription = \"Failed to Load character.\"\n                    });\n                    client.Disconnect();\n                }\n            }",
+        "stub": false
+      }
+    },
+    {
+      "packet": "MOVE",
+      "id": 87,
+      "schema": "wServer/networking/cliPackets/MovePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/MoveHandler.cs",
+        "class": "MoveHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                if (client.Player?.Owner == null) return;\n\n                client.Player.Flush();\n\n                if (client.Player.HasConditionEffect(ConditionEffectIndex.Paralyzed)) return;\n                if (packet.Position.X == -1 || packet.Position.Y == -1) return;\n\n                double newX = client.Player.X;\n                double newY = client.Player.Y;\n                \n                if (newX != packet.Position.X)\n                {\n                    newX = packet.Position.X;\n                    client.Player.UpdateCount++;\n                }\n                if (newY != packet.Position.Y)\n                {\n                    newY = packet.Position.Y;\n                    client.Player.UpdateCount++;\n                }\n\n                CheckLabConditions(client.Player, packet);\n\n                client.Player.Move((float)newX, (float)newY);\n\n                client.Player.ClientTick(t, packet);\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "OTHERHIT",
+      "id": 14,
+      "schema": "wServer/networking/cliPackets/OtherHitPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/OtherHitHandler.cs",
+        "class": "OtherHitHandler",
+        "handler_body": "//TODO: Implement something",
+        "stub": true
+      }
+    },
+    {
+      "packet": "PETCOMMAND",
+      "id": 57,
+      "schema": "wServer/networking/cliPackets/PetCommandPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/PetCommandHandler.cs",
+        "class": "PetCommandHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                client.Manager.Database.DoActionAsync(db =>\n                {\n                    if (!(client.Player.Owner is PetYard)) return;\n                    var pet = ((PetYard)client.Player.Owner).FindPetById((int)packet.PetId);\n\n                    switch (packet.CommandId)\n                    {\n                        case PetCommandPacket.FOLLOW_PET:\n                            if (client.Player.Pet != null) client.Player.Pet.PlayerOwner = null;\n                            client.Player.Pet = pet;\n                            pet.PlayerOwner = client.Player;\n                            var cmd = db.CreateQuery();\n                            cmd.CommandText = \"UPDATE characters SET petId=@petId WHERE charId=@charId AND accId=@accId;\";\n                            cmd.Parameters.AddWithValue(\"@charId\", client.Character.CharacterId);\n                            cmd.Parameters.AddWithValue(\"@accId\", client.Player.AccountId);\n                            cmd.Parameters.AddWithValue(\"@petId\", pet.PetId);\n                            cmd.ExecuteNonQuery();\n                            client.SendPacket(new UpdatePetPacket\n                            {\n                                PetId = pet.PetId\n                            });\n                            client.Player.SaveToCharacter();\n                            break;\n                        case PetCommandPacket.UNFOLLOW_PET:\n                            cmd = db.CreateQuery();\n                            cmd.CommandText = \"UPDATE characters SET petId=-1 WHERE charId=@charId AND accId=@accId;\";\n                            cmd.Parameters.AddWithValue(\"@charId\", client.Character.CharacterId);\n                            cmd.Parameters.AddWithValue(\"@accId\", client.Player.AccountId);\n                            cmd.ExecuteNonQuery();\n                            client.Player.Pet.PlayerOwner = null;\n                            client.Player.Pet = null;\n                            client.SendPacket(new UpdatePetPacket\n                            {\n                                PetId = -1\n                            });\n                            break;\n                        case PetCommandPacket.RELEASE_PET:\n                            cmd = db.CreateQuery();\n                            cmd.CommandText = \"DELETE FROM pets WHERE petId=@petId AND accId=@accId;\";\n                            cmd.Parameters.AddWithValue(\"@accId\", client.Player.AccountId);\n                            cmd.Parameters.AddWithValue(\"@petId\", pet.PetId);\n                            cmd.ExecuteNonQuery();\n                            client.SendPacket(new RemovePetFromListPacket\n                            {\n                                PetId = pet.PetId\n                            });\n                            client.Player.SaveToCharacter();\n                            client.Player.Owner.LeaveWorld(pet);\n                            if (client.Player.Pet != null)\n                                client.Player.Pet.PlayerOwner = client.Player;\n                            break;\n                        default:\n                            client.Player.SendError(\"Unknown CommandId\");\n                            break;\n                    }\n                });\n            });",
+        "stub": false
+      }
+    },
+    {
+      "packet": "PETYARDCOMMAND",
+      "id": 85,
+      "schema": "wServer/networking/cliPackets/PetYardCommandPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/PetYardCommandHandler.cs",
+        "class": "PetYardCommandHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                switch (packet.CommandId)\n                {\n                    case PetYardCommandPacket.UPGRADE_PET_YARD:\n                        UpgradePetYard(client, packet);\n                        break;\n                    case PetYardCommandPacket.FEED_PET:\n                        FeedPet(client, packet);\n                        break;\n                    case PetYardCommandPacket.FUSE_PET:\n                        FusePet(client, packet);\n                        break;\n                }\n\n                if (client.Player.Pet != null)\n                    client.Player.Pet.PlayerOwner = client.Player;\n            });",
+        "stub": false
+      }
+    },
+    {
+      "packet": "PLAYERHIT",
+      "id": 17,
+      "schema": "wServer/networking/cliPackets/PlayerHitPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/PlayerHitHander.cs",
+        "class": "PlayerHitHander",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => Handle(client, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "PLAYERSHOOT",
+      "id": 13,
+      "schema": "wServer/networking/cliPackets/PlayerShootPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/PlayerShootHandler.cs",
+        "class": "PlayerShootPacketHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                if (client.Player.Owner == null) return;\n\n                Item item = client.Player.Manager.GameData.Items[(ushort)packet.ContainerType];\n                int stype = 0;\n\n                for (int i = 0; i < 4; i++)\n                {\n                    if (client.Player.Inventory[i]?.ObjectType == packet.ContainerType)\n                    {\n                        stype = i;\n                        break;\n                    }\n                }\n\n                if (client.Player.SlotTypes[stype] != item.SlotType && client.Account.Rank < 2)\n                {\n                    log.FatalFormat(\"{0} is trying to cheat (Weapon doesnt match the slot type)\", client.Player.Name);\n                    client.Player.SendError(\"This cheating attempt has beed logged and a message was send to all online admins.\");\n                    client.Disconnect();\n                    foreach (Player player in client.Player.Owner.Players.Values)\n                        if (player.Client.Account.Rank >= 2)\n                            player.SendInfo(String.Format(\"Player {0} is shooting with a weapon that doesnt match the class slot type.\", client.Player.Name));\n                    return;\n                }\n                ProjectileDesc prjDesc = item.Projectiles[0]; //Assume only one\n                Projectile prj = client.Player.PlayerShootProjectile(\n                    packet.BulletId, prjDesc, item.ObjectType,\n                    packet.Time, packet.Position, packet.Angle);\n                client.Player.Owner.EnterWorld(prj);\n                client.Player.BroadcastSync(new AllyShootPacket\n                {\n                    OwnerId = client.Player.Id,\n                    Angle = packet.Angle,\n                    ContainerType = packet.ContainerType,\n                    BulletId = packet.BulletId,\n                }, p => p != client.Player && client.Player.Dist(p) < 25);\n                client.Player.FameCounter.Shoot(prj);\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "PLAYERTEXT",
+      "id": 39,
+      "schema": "wServer/networking/cliPackets/PlayerTextPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/PlayerTextHandler.cs",
+        "class": "PlayerTextHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                if (client.Player.Owner == null) return;\n\n                if (packet.Text[0] == '/')\n                    client.Player.Manager.Commands.Execute(client.Player, t, packet.Text);\n                else\n                {\n                    if (client.Player.Muted)\n                    {\n                        client.Player.SendInfo(\"{\\\"key\\\":\\\"server.muted\\\"}\");\n                        return;\n                    }\n                    if (!client.Player.NameChosen)\n                    {\n                        client.Player.SendInfo(\"{\\\"key\\\":\\\"server.must_be_named\\\"}\");\n                        return;\n                    }\n                    if (!String.IsNullOrWhiteSpace(packet.Text))\n                        client.Player.Manager.Chat.Say(client.Player, packet.Text);\n                    else\n                        client.Player.SendInfo(\"{\\\"key\\\":\\\"server.invalid_chars\\\"}\");\n                }\n            });",
+        "stub": false
+      }
+    },
+    {
+      "packet": "PONG",
+      "id": 52,
+      "schema": "wServer/networking/cliPackets/PongPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/PongHandler.cs",
+        "class": "PongHandler",
+        "handler_body": "client.Player.Pong(packet.Time, packet);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "REQUESTTRADE",
+      "id": 41,
+      "schema": "wServer/networking/cliPackets/RequestTradePacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/TradeHandler.cs",
+        "class": "RequestTradeHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t => client.Player.RequestTrade(t, packet));",
+        "stub": false
+      }
+    },
+    {
+      "packet": "RESKIN",
+      "id": 68,
+      "schema": "wServer/networking/cliPackets/ReskinPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/ReskinHandler.cs",
+        "class": "ReskinHandler",
+        "handler_body": "client.Manager.Logic.AddPendingAction(t =>\n            {\n                if (packet.SkinId == 0)\n                    client.Player.PlayerSkin = 0;\n                else if (client.Account.OwnedSkins.Contains(packet.SkinId))\n                    client.Player.PlayerSkin = packet.SkinId;\n                else\n                    client.Player.SendError(\"You do not have this skin\");\n                client.Player.UpdateCount++;\n                client.Player.SaveToCharacter();\n                client.Save();\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "SETCONDITION",
+      "id": 91,
+      "schema": "wServer/networking/cliPackets/SetConditionPacket.cs",
+      "handler": null
+    },
+    {
+      "packet": "SHOOTACK",
+      "id": 36,
+      "schema": "wServer/networking/cliPackets/ShootAckPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/ShootAckHandler.cs",
+        "class": "ShootAckHandler",
+        "handler_body": "//TODO: Implement something",
+        "stub": true
+      }
+    },
+    {
+      "packet": "SQUAREHIT",
+      "id": 86,
+      "schema": "wServer/networking/cliPackets/SquareHitPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/SquareHitHandler.cs",
+        "class": "SquareHitHandler",
+        "handler_body": "//TODO: Implement something",
+        "stub": true
+      }
+    },
+    {
+      "packet": "TELEPORT",
+      "id": 40,
+      "schema": "wServer/networking/cliPackets/TeleportPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/TeleportHandler.cs",
+        "class": "TeleportHandler",
+        "handler_body": "if (client.Player.Owner == null) return;\n\n            client.Manager.Logic.AddPendingAction(t => client.Player.Teleport(t, packet),\n                PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "TINKERQUEST",
+      "id": 38,
+      "schema": "wServer/networking/cliPackets/TinkerQuestPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/TinkerQuestHandler.cs",
+        "class": "TinkerQuestHandler",
+        "handler_body": "using (Database db = new Database())\n            {\n                if (packet.Object.ObjectType == client.Player.Inventory[packet.Object.SlotId].ObjectType &&\n                    (int)client.Player.Inventory[packet.Object.SlotId].ObjectType == Utils.FromString(client.Player.DailyQuest.Goal))\n                {\n                    client.SendPacket(new QuestRedeemResponsePacket\n                    {\n                        Success = true,\n                        Message = client.Player.GetLanguageString(\"server.quest_complete\")\n                    });\n                    client.Player.Inventory[packet.Object.SlotId] = null;\n                    GiveRewards(db, client.Player.DailyQuest.Tier - 1);\n                    var cmd = db.CreateQuery();\n                    int tier = client.Player.DailyQuest.Tier == DailyQuestConstants.QuestsPerDay ? -1 : (client.Player.DailyQuest.Tier + 1);\n                    cmd.CommandText = \"UPDATE dailyquests SET tier=@tier WHERE accId=@accId;\";\n                    cmd.Parameters.AddWithValue(\"@accId\", client.Account.AccountId);\n                    cmd.Parameters.AddWithValue(\"@tier\", tier);\n                    int v = cmd.ExecuteNonQuery();\n                    client.Player.DailyQuest = db.GetDailyQuest(client.Account.AccountId, Manager.GameData);\n                    client.Player.UpdateCount++;\n                    client.Player.SaveToCharacter();\n                }\n            }",
+        "stub": false
+      }
+    },
+    {
+      "packet": "UPDATEACK",
+      "id": 45,
+      "schema": "wServer/networking/cliPackets/UpdateAckPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/UpdateAckHandler.cs",
+        "class": "UpdateAckHandler",
+        "handler_body": "client.Player.UpdatesReceived++;",
+        "stub": false
+      }
+    },
+    {
+      "packet": "USEITEM",
+      "id": 48,
+      "schema": "wServer/networking/cliPackets/UseItemPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/UseItemHandler.cs",
+        "class": "UseItemHandler",
+        "handler_body": "if (client.Player.Owner == null) return;\n\n            client.Manager.Logic.AddPendingAction(t =>\n            {\n                var container = client.Player.Owner.GetEntity(packet.SlotObject.ObjectId) as IContainer;\n                if(container == null) return;\n                Item item;\n                switch (packet.SlotObject.SlotId)\n                {\n                    case 254:\n                        item = client.Player.Manager.GameData.Items[packet.SlotObject.ObjectType];\n\n                        if (item.ObjectId != \"Health Potion\")\n                        {\n                            log.FatalFormat(\"Cheat engine detected for player {0},\\nItem should be a Health Potion, but its {1}.\",\n                                client.Player.Name, item.ObjectId);\n                            foreach (Player player in client.Player.Owner.Players.Values)\n                                if (player.Client.Account.Rank >= 2)\n                                    player.SendInfo(String.Format(\"Cheat engine detected for player {0},\\nItem should be a Health Potion, but its {1}.\",\n                                        client.Player.Name, item.ObjectId));\n                            client.Disconnect();\n                            return;\n                        }\n\n                        if (client.Player.HealthPotions > 0)\n                            client.Player.HealthPotions--;\n                        else\n                        {\n                            if (client.Account.Credits > client.Player.HpPotionPrice)\n                            {\n                                switch (client.Player.HpPotionPrice)\n                                {\n                                    case 5:\n                                        if (client.Player.HpFirstPurchaseTime)\n                                        {\n                                            client.Player.HpPotionPrice = 5;\n                                            client.Player.HpFirstPurchaseTime = false;\n                                        }\n                                        client.Player.HpPotionPrice = 10;\n                                        break;\n                                    case 10:\n                                        client.Player.HpPotionPrice = 20;\n                                        break;\n                                    case 20:\n                                        client.Player.HpPotionPrice = 40;\n                                        break;\n                                    case 40:\n                                        client.Player.HpPotionPrice = 80;\n                                        break;\n                                    case 80:\n                                        client.Player.HpPotionPrice = 120;\n                                        break;\n                                    case 120:\n                                        client.Player.HpPotionPrice = 200;\n                                        break;\n                                    case 200:\n                                        client.Player.HpPotionPrice = 300;\n                                        break;\n                                    case 300:\n                                        client.Player.HpPotionPrice = 450;\n                                        break;\n                                    case 450:\n                                        client.Player.HpPotionPrice = 600;\n                                        break;\n                                    case 600:\n                                        break;\n                                }\n                                client.Player.Owner.Timers.Add(new WorldTimer(8000, (world, j) =>\n                                {\n                                    switch (client.Player.HpPotionPrice)\n                                    {\n                                        case 5:\n                                            break;\n                                        case 10:\n                                            client.Player.HpFirstPurchaseTime = true;\n                                            client.Player.HpPotionPrice = 5;\n                                            break;\n                                        case 20:\n                                            client.Player.HpPotionPrice = 10;\n                                            break;\n                                        case 40:\n                                            client.Player.HpPotionPrice = 20;\n                                            break;\n                                        case 80:\n                                            client.Player.HpPotionPrice = 40;\n                                            break;\n                                        case 120:\n                                            client.Player.HpPotionPrice = 80;\n                                            break;\n                                        case 200:\n                                            client.Player.HpPotionPrice = 120;\n                                            break;\n                                        case 300:\n                                            client.Player.HpPotionPrice = 200;\n                                            break;\n                                        case 450:\n                                            client.Player.HpPotionPrice = 300;\n                                            break;\n                                        case 600:\n                                            client.Player.HpPotionPrice = 450;\n                                            break;\n                                    }\n                                }));\n                                using (var db = new Database())\n                                {\n                                    client.Player.Credits = client.Account.Credits = db.UpdateCredit(client.Account, -client.Player.HpPotionPrice);\n                                }\n                                client.Character.HitPoints += 100;\n                                client.Player.SaveToCharacter();\n                            }\n                        }\n                        break;\n                    case 255:\n                        item = client.Player.Manager.GameData.Items[packet.SlotObject.ObjectType];\n\n                        if (item.ObjectId != \"Magic Potion\")\n                        {\n                            log.FatalFormat(\"Cheat engine detected for player {0},\\nItem should be a Magic Potion, but its {1}.\",\n                                client.Player.Name, item.ObjectId);\n                            foreach (var player in client.Player.Owner.Players.Values.Where(player => player.Client.Account.Rank >= 2))\n                                player.SendInfo($\"Cheat engine detected for player {client.Player.Name},\\nItem should be a Magic Potion, but its {item.ObjectId}.\");\n                            client.Disconnect();\n                            return;\n                        }\n\n                        if (client.Player.MagicPotions > 0)\n                            client.Player.MagicPotions--;\n                        else\n                        {\n                            if (client.Account.Credits > client.Player.MpPotionPrice)\n                            {\n                                switch (client.Player.MpPotionPrice)\n                                {\n                                    case 5:\n                                        if (client.Player.MpFirstPurchaseTime)\n                                        {\n                                            client.Player.MpPotionPrice = 5;\n                                            client.Player.MpFirstPurchaseTime = false;\n                                        }\n                                        client.Player.MpPotionPrice = 10;\n                                        break;\n                                    case 10:\n                                        client.Player.MpPotionPrice = 20;\n                                        break;\n                                    case 20:\n                                        client.Player.MpPotionPrice = 40;\n                                        break;\n                                    case 40:\n                                        client.Player.MpPotionPrice = 80;\n                                        break;\n                                    case 80:\n                                        client.Player.MpPotionPrice = 120;\n                                        break;\n                                    case 120:\n                                        client.Player.MpPotionPrice = 200;\n                                        break;\n                                    case 200:\n                                        client.Player.MpPotionPrice = 300;\n                                        break;\n                                    case 300:\n                                        client.Player.MpPotionPrice = 450;\n                                        break;\n                                    case 450:\n                                        client.Player.MpPotionPrice = 600;\n                                        break;\n                                    case 600:\n                                        break;\n                                }\n                                client.Player.Owner.Timers.Add(new WorldTimer(10000, (world, j) =>\n                                {\n                                    switch (client.Player.MpPotionPrice)\n                                    {\n                                        case 5:\n                                            break;\n                                        case 10:\n                                            client.Player.MpFirstPurchaseTime = true;\n                                            client.Player.MpPotionPrice = 5;\n                                            break;\n                                        case 20:\n                                            client.Player.MpPotionPrice = 10;\n                                            break;\n                                        case 40:\n                                            client.Player.MpPotionPrice = 20;\n                                            break;\n                                        case 80:\n                                            client.Player.MpPotionPrice = 40;\n                                            break;\n                                        case 120:\n                                            client.Player.MpPotionPrice = 80;\n                                            break;\n                                        case 200:\n                                            client.Player.MpPotionPrice = 120;\n                                            break;\n                                        case 300:\n                                            client.Player.MpPotionPrice = 200;\n                                            break;\n                                        case 450:\n                                            client.Player.MpPotionPrice = 300;\n                                            break;\n                                        case 600:\n                                            client.Player.MpPotionPrice = 450;\n                                            break;\n                                    }\n                                }));\n                                using (var db = new Database())\n                                    client.Player.Credits = client.Account.Credits = db.UpdateCredit(client.Account, -client.Player.MpPotionPrice);\n                                client.Character.MagicPoints += 100;\n                                client.Player.SaveToCharacter();\n                            }\n                        }\n                        break;\n                    default:\n                        item = container.Inventory[packet.SlotObject.SlotId];\n                        break;\n                }\n                if (item != null)\n                {\n                    if (!client.Player.Activate(t, item, packet))\n                    {\n                        if (item.Consumable)\n                        {\n                            if (item.SuccessorId != null)\n                            {\n                                if (item.SuccessorId != item.ObjectId)\n                                {\n                                    if (packet.SlotObject.SlotId != 254 && packet.SlotObject.SlotId != 255)\n                                    {\n                                        container.Inventory[packet.SlotObject.SlotId] =\n                                            client.Player.Manager.GameData.Items[\n                                                client.Player.Manager.GameData.IdToObjectType[item.SuccessorId]];\n                                        client.Player.Owner.GetEntity(packet.SlotObject.ObjectId).UpdateCount++;\n                                    }\n                                }\n                            }\n                            else\n                            {\n                                if (packet.SlotObject.SlotId != 254 && packet.SlotObject.SlotId != 255)\n                                {\n                                    container.Inventory[packet.SlotObject.SlotId] = null;\n                                    client.Player.Owner.GetEntity(packet.SlotObject.ObjectId).UpdateCount++;\n                                }\n                            }\n\n                            if (container is OneWayContainer)\n                            {\n                                using (Database db = new Database())\n                                {\n                                    Account acc = db.GetAccount(client.Account.AccountId, Manager.GameData);\n                                    acc.Gifts.Remove(packet.SlotObject.ObjectType);\n\n                                    MySqlCommand cmd = db.CreateQuery();\n                                    cmd.CommandText = @\"UPDATE accounts SET gifts=@gifts WHERE id=@accId;\";\n                                    cmd.Parameters.AddWithValue(\"@accId\", acc.AccountId);\n                                    cmd.Parameters.AddWithValue(\"@gifts\", Utils.GetCommaSepString(acc.Gifts.ToArray()));\n                                    cmd.ExecuteNonQuery();\n                                }\n                            }\n                        }\n                    }\n                }\n                if (packet.SlotObject.SlotId != 254 && packet.SlotObject.SlotId != 255)\n                    if (container.SlotTypes[packet.SlotObject.SlotId] != -1)\n                        client.Player.FameCounter.UseAbility();\n\n                ((Entity)container).UpdateCount++;\n                client.Player.UpdateCount++;\n                client.Player.SaveToCharacter();\n                client.Save();\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "USEPORTAL",
+      "id": 9,
+      "schema": "wServer/networking/cliPackets/UsePortalPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/UsePortalHandler.cs",
+        "class": "UsePortalHandler",
+        "handler_body": "if (client.Player.Owner == null) return;\n\n            client.Manager.Logic.AddPendingAction(t =>\n            {\n                Portal portal = client.Player.Owner.GetEntity(packet.ObjectId) as Portal;\n                if (portal == null) return;\n                if (!portal.Usable)\n                {\n                    client.Player.SendError(\"{\\\"key\\\":\\\"server.realm_full\\\"}\");\n                    return;\n                }\n                World world = portal.WorldInstance;\n\n                if (world == null)\n                {\n                    bool setWorldInstance = true;\n                    var desc = portal.ObjectDesc;\n                    if (desc == null)\n                    {\n                        client.SendPacket(new FailurePacket\n                        {\n                            ErrorId = 0,\n                            ErrorDescription = \"Portal not found!\"\n                        });\n                    }\n                    else\n                    {\n                        switch (portal.ObjectType)\n                        {\n                            case 0x0720:\n                                world = client.Player.Manager.PlayerVault(client);\n                                setWorldInstance = false;\n                                break;\n                            case 0x0704:\n                            case 0x0703: //portal of cowardice\n                            case 0x0d40:\n                            case 0x070d:\n                            case 0x070e:\n                            {\n                                if (client.Player.Manager.LastWorld.ContainsKey(client.Player.AccountId))\n                                {\n                                    World w = client.Player.Manager.LastWorld[client.Player.AccountId];\n                                    if (w != null && client.Player.Manager.Worlds.ContainsKey(w.Id))\n                                        world = w;\n                                    else\n                                        world = client.Player.Manager.GetWorld(World.NEXUS_ID);\n                                }\n                                else\n                                    world = client.Player.Manager.GetWorld(World.NEXUS_ID);\n                                setWorldInstance = false;\n                            }\n                                break;\n                            case 0x0750:\n                                world = client.Player.Manager.GetWorld(World.MARKET);\n                                break;\n                            case 0x071d:\n                                world = client.Player.Manager.GetWorld(World.NEXUS_ID);\n                                break;\n                            case 0x0753:\n                                world = client.Manager.AddWorld(new PetYard(client.Player));\n                                setWorldInstance = false;\n                                break;\n                            case 0x0712:\n                                world = client.Player.Manager.GetWorld(World.NEXUS_ID);\n                                break;\n                            case 0x1756:\n                                world = client.Player.Manager.GetWorld(World.DAILY_QUEST_ID);\n                                break;\n                            case 0x072f:\n                                if (client.Player.Guild != null)\n                                {\n                                    //client.Player.SendInfo(\n                                    //    \"Sorry, you are unable to enter the GuildHall because of a possible memory leak, check back later\");\n                                    //client.Player.SendInfo(\"Thanks.\");\n                                    world = client.Player.Guild.GuildHall;\n                                }\n                                break;\n                            default:\n                                Type worldType =\n                                    Type.GetType(\"wServer.realm.worlds.\" +\n                                                 desc.DungeonName.Replace(\" \", String.Empty).Replace(\"'\", String.Empty));\n                                if (worldType != null)\n                                {\n                                    try\n                                    {\n                                        world = client.Manager.AddWorld((World) Activator.CreateInstance(worldType,\n                                            System.Reflection.BindingFlags.CreateInstance, null, null,\n                                            CultureInfo.InvariantCulture, null));\n                                    }\n                                    catch (Exception ex)\n                                    {\n                                        client.Player.SendError(\"Error while creating world instance:\");\n                                        client.Player.SendError(ex.ToString());\n                                        log.Error(ex);\n                                    }\n                                }\n                                else\n                                    client.Player.SendError(\"WorldClass for \" + desc.DungeonName +\n                                                            \" not found, can not load world.\");\n                                break;\n                        }\n                    }\n                    if (setWorldInstance)\n                        portal.WorldInstance = world;\n                }\n\n                if (world != null)\n                {\n                    if (world.IsFull)\n                    {\n                        client.Player.SendError(\"{\\\"key\\\":\\\"server.dungeon_full\\\"}\");\n                        return;\n                    }\n\n                    if (client.Player.Manager.LastWorld.ContainsKey(client.Player.AccountId))\n                    {\n                        World dummy;\n                        client.Player.Manager.LastWorld.TryRemove(client.Player.AccountId, out dummy);\n                    }\n                    if (client.Player.Owner is Nexus || client.Player.Owner is GameWorld)\n                        client.Player.Manager.LastWorld.TryAdd(client.Player.AccountId, client.Player.Owner);\n\n                    client.Reconnect(new ReconnectPacket\n                    {\n                        Host = \"\",\n                        Port = Program.Settings.GetValue<int>(\"port\"),\n                        GameId = world.Id,\n                        Name = world.Name,\n                        Key = world.PortalKey,\n                    });\n                }\n            }, PendingPriority.Networking);",
+        "stub": false
+      }
+    },
+    {
+      "packet": "VIEWQUESTS",
+      "id": 16,
+      "schema": "wServer/networking/cliPackets/ViewQuestsPacket.cs",
+      "handler": {
+        "path": "wServer/networking/handlers/ViewQuestsHandler.cs",
+        "class": "ViewQuestsHandler",
+        "handler_body": "client.Manager.Database.DoActionAsync(db =>\n            {\n                client.Player.DailyQuest = db.GetDailyQuest(client.Account.AccountId, Manager.GameData);\n\n                if (client.Player.DailyQuest.Tier == -1)\n                {\n                    client.SendPacket(AllQuestsCompleted());\n                    client.Player.SendInfo(\"No available quests found.\");\n                    return;\n                }\n\n                client.SendPacket(new QuestFetchResponsePacket\n                {\n                    Description = client.Player.DailyQuest.Description,\n                    Goal = client.Player.DailyQuest.Goal,\n                    Tier = client.Player.DailyQuest.Tier,\n                    Image = client.Player.DailyQuest.Image\n                });\n                //1 token image: http://rotmg.kabamcdn.com/DailyQuest1FortuneToken.png\n                //2 token image: http://rotmg.kabamcdn.com/DailyQuest2FortuneToken.png\n            });",
+        "stub": false
+      }
+    }
+  ],
+  "no_registered_handler": [
+    "FAILURE",
+    "SETCONDITION"
+  ],
+  "stub_handlers": [
+    "AOEACK",
+    "GOTOACK",
+    "OTHERHIT",
+    "SHOOTACK",
+    "SQUAREHIT"
+  ],
+  "collision_contract": [
+    {
+      "packet": "PLAYERSHOOT",
+      "client": "Report actual shot with Time:i32, BulletId:u8, ContainerType:i16, Position:2*f32, Angle:f32; preserve bullet-ID generation/ownership and XML projectile trajectories.",
+      "server": "PlayerShootHandler creates authoritative damage/projectile and records FameCounter.Shoot; do not grant damage/XP locally."
+    },
+    {
+      "packet": "ENEMYHIT",
+      "client": "Detect own projectile/enemy contact and report Time:i32, BulletId:u8, TargetId:i32, Killed:bool. Killed is ignored by this handler; deduplicate contacts per target and respect MultiHit/PassesCover/lifetime.",
+      "server": "EnemyHitHandler resolves player's projectile and calls ForceHit(target); Enemy.HitByProjectile applies defense/effects, DamageCounter and death/loot. Projectile.TickCore only advances/blocks/expires; it does not perform entity-hit collision."
+    },
+    {
+      "packet": "PLAYERHIT",
+      "client": "Detect enemy projectile/self contact; report BulletId:u8 plus shooter ObjectId:i32. Use owner+bullet-generation identity, not bullet ID alone; avoid duplicate collision reports.",
+      "server": "PlayerHitHander resolves owner Projectiles[(ObjectId,BulletId)], applies descriptor effects and player.Damage. Handler has no per-player-hit deduplication or projectile Destroy call: duplicate reports can cause repeat damage."
+    },
+    {
+      "packet": "GROUNDDAMAGE",
+      "client": "Report Time:i32 and Position:2*f32 for damaging ground contact. Determine original-client emission cadence in runtime oracle; no source-defined cadence is invented here.",
+      "server": "GroundDamageHandler checks tile damage/protection/Paused/Invincible, rolls damage, applies no-defense damage and death; packet Time is not used."
+    },
+    {
+      "packet": "UPDATEACK",
+      "client": "Emit empty acknowledgment after applying UPDATE.",
+      "server": "UpdateAckHandler increments UpdatesReceived; Player.cs enforcement check is commented out. Do not claim ACK timeout enforcement."
+    },
+    {
+      "packet": "PONG",
+      "client": "Echo PING Serial:i32 plus client Time:i32.",
+      "server": "PongHandler calls Player.Pong; original method updates last-seen after 60 pongs and has rare gift-code behavior; no RTT/timeout validation is active there."
+    },
+    {
+      "packet": "MOVE",
+      "client": "Respond to tick with TickId:i32, Time:i32, Position:2*f32, count:i16 and TimedPosition records (Time:i32,Position).",
+      "server": "MoveHandler flushes/moves player, handles paralysis and Lab tile effects; ClientTick timing/speed checks are commented out."
+    },
+    {
+      "packet": "AOEACK/GOTOACK/SHOOTACK/OTHERHIT/SQUAREHIT",
+      "client": "Keep source wire schemas for original-client compatibility, but do not treat these packets as active damage or validation mechanisms.",
+      "server": "All five registered handlers contain TODO-only HandlePacket bodies at this revision. SETCONDITION and client FAILURE have no registered handler."
+    }
+  ]
+}

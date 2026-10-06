@@ -1,0 +1,1268 @@
+{
+  "provenance": {
+    "url": "https://github.com/ossimc82/fabiano-swagger-of-doom",
+    "revision": "6fd20aad4a7905b13f25389c68368a942a2b68cb",
+    "license": "AGPL-3.0",
+    "date": "2026-10-06"
+  },
+  "authority": "Static source-derived golden fixtures, NOT executed C# integration proof",
+  "sources": [
+    "wServer/realm/entities/player/Player.Leveling.cs",
+    "wServer/realm/StatsManager.cs",
+    "wServer/logic/DamageCounter.cs",
+    "wServer/logic/FameCounter.cs",
+    "db/FameStats.cs",
+    "db/data/dat1.xml",
+    "db/DailyQuestConstants.cs"
+  ],
+  "levels": [
+    {
+      "level": 1,
+      "xp_goal": 50,
+      "lifetime_xp_threshold": 0
+    },
+    {
+      "level": 2,
+      "xp_goal": 150,
+      "lifetime_xp_threshold": 50
+    },
+    {
+      "level": 3,
+      "xp_goal": 250,
+      "lifetime_xp_threshold": 200
+    },
+    {
+      "level": 4,
+      "xp_goal": 350,
+      "lifetime_xp_threshold": 450
+    },
+    {
+      "level": 5,
+      "xp_goal": 450,
+      "lifetime_xp_threshold": 800
+    },
+    {
+      "level": 6,
+      "xp_goal": 550,
+      "lifetime_xp_threshold": 1250
+    },
+    {
+      "level": 7,
+      "xp_goal": 650,
+      "lifetime_xp_threshold": 1800
+    },
+    {
+      "level": 8,
+      "xp_goal": 750,
+      "lifetime_xp_threshold": 2450
+    },
+    {
+      "level": 9,
+      "xp_goal": 850,
+      "lifetime_xp_threshold": 3200
+    },
+    {
+      "level": 10,
+      "xp_goal": 950,
+      "lifetime_xp_threshold": 4050
+    },
+    {
+      "level": 11,
+      "xp_goal": 1050,
+      "lifetime_xp_threshold": 5000
+    },
+    {
+      "level": 12,
+      "xp_goal": 1150,
+      "lifetime_xp_threshold": 6050
+    },
+    {
+      "level": 13,
+      "xp_goal": 1250,
+      "lifetime_xp_threshold": 7200
+    },
+    {
+      "level": 14,
+      "xp_goal": 1350,
+      "lifetime_xp_threshold": 8450
+    },
+    {
+      "level": 15,
+      "xp_goal": 1450,
+      "lifetime_xp_threshold": 9800
+    },
+    {
+      "level": 16,
+      "xp_goal": 1550,
+      "lifetime_xp_threshold": 11250
+    },
+    {
+      "level": 17,
+      "xp_goal": 1650,
+      "lifetime_xp_threshold": 12800
+    },
+    {
+      "level": 18,
+      "xp_goal": 1750,
+      "lifetime_xp_threshold": 14450
+    },
+    {
+      "level": 19,
+      "xp_goal": 1850,
+      "lifetime_xp_threshold": 16200
+    },
+    {
+      "level": 20,
+      "xp_goal": 1950,
+      "lifetime_xp_threshold": 18050
+    }
+  ],
+  "base_fame": [
+    {
+      "lifetime_xp": 0,
+      "fame": 0
+    },
+    {
+      "lifetime_xp": 999,
+      "fame": 0
+    },
+    {
+      "lifetime_xp": 1000,
+      "fame": 1
+    },
+    {
+      "lifetime_xp": 18050,
+      "fame": 18
+    },
+    {
+      "lifetime_xp": 20000,
+      "fame": 20
+    },
+    {
+      "lifetime_xp": 199999,
+      "fame": 199
+    },
+    {
+      "lifetime_xp": 200000,
+      "fame": 200
+    },
+    {
+      "lifetime_xp": 201000,
+      "fame": 201
+    }
+  ],
+  "fame_goals": [
+    {
+      "fame": 0,
+      "goal": 0
+    },
+    {
+      "fame": 19,
+      "goal": 0
+    },
+    {
+      "fame": 20,
+      "goal": 150
+    },
+    {
+      "fame": 150,
+      "goal": 400
+    },
+    {
+      "fame": 400,
+      "goal": 800
+    },
+    {
+      "fame": 800,
+      "goal": 2000
+    },
+    {
+      "fame": 2000,
+      "goal": 0
+    }
+  ],
+  "attack": [
+    {
+      "attack": 0,
+      "multiplier": 0.5
+    },
+    {
+      "attack": 12,
+      "multiplier": 0.74
+    },
+    {
+      "attack": 50,
+      "multiplier": 1.5
+    },
+    {
+      "attack": 75,
+      "multiplier": 2.0
+    }
+  ],
+  "kill_xp": [
+    {
+      "max_hp": 1000,
+      "exp_multiplier": 1,
+      "damage": 100,
+      "total_damage": 100,
+      "participants": 1,
+      "level": 1,
+      "quest": false,
+      "xp": 5
+    },
+    {
+      "max_hp": 1000,
+      "exp_multiplier": 1,
+      "damage": 100,
+      "total_damage": 100,
+      "participants": 1,
+      "level": 1,
+      "quest": true,
+      "xp": 25
+    },
+    {
+      "max_hp": 1000,
+      "exp_multiplier": 1,
+      "damage": 100,
+      "total_damage": 100,
+      "participants": 1,
+      "level": 20,
+      "quest": false,
+      "xp": 100
+    },
+    {
+      "max_hp": 10000,
+      "exp_multiplier": 1,
+      "damage": 1,
+      "total_damage": 1000,
+      "participants": 2,
+      "level": 20,
+      "quest": false,
+      "xp": 100
+    },
+    {
+      "max_hp": 100000,
+      "exp_multiplier": 1,
+      "damage": 1,
+      "total_damage": 1000,
+      "participants": 2,
+      "level": 20,
+      "quest": false,
+      "xp": 195
+    },
+    {
+      "max_hp": 100000,
+      "exp_multiplier": 1,
+      "damage": 1000,
+      "total_damage": 1000,
+      "participants": 1,
+      "level": 20,
+      "quest": true,
+      "xp": 975
+    },
+    {
+      "max_hp": 123,
+      "exp_multiplier": 1,
+      "damage": 100,
+      "total_damage": 100,
+      "participants": 1,
+      "level": 20,
+      "quest": false,
+      "xp": 12
+    }
+  ],
+  "classes": {
+    "Rogue": {
+      "object_type": 768,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        150,
+        100,
+        10,
+        0,
+        15,
+        15,
+        10,
+        15
+      ],
+      "caps": [
+        720,
+        252,
+        50,
+        25,
+        75,
+        40,
+        50,
+        75
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "Archer": {
+      "object_type": 775,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        130,
+        100,
+        12,
+        0,
+        12,
+        12,
+        10,
+        12
+      ],
+      "caps": [
+        700,
+        252,
+        75,
+        25,
+        50,
+        40,
+        50,
+        50
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Wizard": {
+      "object_type": 782,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        100,
+        100,
+        12,
+        0,
+        10,
+        12,
+        12,
+        15
+      ],
+      "caps": [
+        670,
+        385,
+        75,
+        25,
+        50,
+        40,
+        60,
+        75
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          5,
+          15
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "Priest": {
+      "object_type": 784,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        100,
+        100,
+        12,
+        0,
+        12,
+        10,
+        15,
+        12
+      ],
+      "caps": [
+        670,
+        385,
+        50,
+        25,
+        55,
+        40,
+        75,
+        55
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          5,
+          15
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Warrior": {
+      "object_type": 797,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        200,
+        100,
+        15,
+        0,
+        7,
+        10,
+        10,
+        10
+      ],
+      "caps": [
+        770,
+        252,
+        75,
+        25,
+        50,
+        75,
+        50,
+        50
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Knight": {
+      "object_type": 798,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        200,
+        100,
+        15,
+        0,
+        7,
+        10,
+        10,
+        10
+      ],
+      "caps": [
+        770,
+        252,
+        50,
+        40,
+        50,
+        75,
+        50,
+        50
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Paladin": {
+      "object_type": 799,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        200,
+        100,
+        12,
+        0,
+        12,
+        10,
+        10,
+        10
+      ],
+      "caps": [
+        770,
+        252,
+        50,
+        30,
+        55,
+        40,
+        75,
+        45
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Assassin": {
+      "object_type": 800,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        150,
+        100,
+        12,
+        0,
+        15,
+        15,
+        10,
+        15
+      ],
+      "caps": [
+        720,
+        252,
+        60,
+        25,
+        75,
+        40,
+        60,
+        75
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "Necromancer": {
+      "object_type": 801,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        100,
+        100,
+        12,
+        0,
+        10,
+        10,
+        12,
+        15
+      ],
+      "caps": [
+        670,
+        385,
+        60,
+        25,
+        50,
+        30,
+        75,
+        60
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          5,
+          15
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "Huntress": {
+      "object_type": 802,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        130,
+        100,
+        12,
+        0,
+        12,
+        12,
+        10,
+        12
+      ],
+      "caps": [
+        700,
+        252,
+        75,
+        25,
+        50,
+        40,
+        50,
+        50
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Mystic": {
+      "object_type": 803,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        100,
+        100,
+        10,
+        0,
+        12,
+        15,
+        15,
+        10
+      ],
+      "caps": [
+        670,
+        385,
+        60,
+        25,
+        60,
+        40,
+        75,
+        55
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          5,
+          15
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Trickster": {
+      "object_type": 804,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        150,
+        100,
+        10,
+        0,
+        12,
+        12,
+        12,
+        15
+      ],
+      "caps": [
+        720,
+        252,
+        65,
+        25,
+        75,
+        40,
+        60,
+        75
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "Sorcerer": {
+      "object_type": 805,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        100,
+        100,
+        10,
+        0,
+        12,
+        10,
+        15,
+        12
+      ],
+      "caps": [
+        670,
+        385,
+        60,
+        25,
+        60,
+        75,
+        60,
+        60
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          5,
+          15
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "Ninja": {
+      "object_type": 806,
+      "stat_order": [
+        "MaxHitPoints",
+        "MaxMagicPoints",
+        "Attack",
+        "Defense",
+        "Speed",
+        "HpRegen",
+        "MpRegen",
+        "Dexterity"
+      ],
+      "base": [
+        150,
+        100,
+        15,
+        0,
+        10,
+        10,
+        12,
+        12
+      ],
+      "caps": [
+        720,
+        252,
+        70,
+        25,
+        60,
+        40,
+        70,
+        70
+      ],
+      "gains_inclusive": [
+        [
+          20,
+          30
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    }
+  },
+  "death_fame": [
+    {
+      "base": 100,
+      "character_id": 2,
+      "account_best": 0,
+      "counters": {},
+      "equipment": [],
+      "total": 293
+    },
+    {
+      "base": 100,
+      "character_id": 1,
+      "account_best": 0,
+      "counters": {},
+      "equipment": [],
+      "total": 380
+    },
+    {
+      "base": 100,
+      "character_id": 2,
+      "account_best": 100,
+      "counters": {
+        "Shots": 4,
+        "ShotsThatDamage": 1,
+        "PotionsDrunk": 1,
+        "SpecialAbilityUses": 1,
+        "Teleports": 1,
+        "CubeKills": 1
+      },
+      "equipment": [],
+      "total": 100
+    },
+    {
+      "base": 100,
+      "character_id": 2,
+      "account_best": 100,
+      "counters": {
+        "Shots": 4,
+        "ShotsThatDamage": 3,
+        "PotionsDrunk": 1,
+        "SpecialAbilityUses": 1,
+        "Teleports": 1,
+        "CubeKills": 1
+      },
+      "equipment": [],
+      "total": 133
+    }
+  ],
+  "daily_quest_rewards": [
+    "FortuneToken:1",
+    "FortuneToken:1",
+    "FortuneToken:2",
+    "FortuneToken:2"
+  ]
+}

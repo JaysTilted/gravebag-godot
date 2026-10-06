@@ -1,0 +1,736 @@
+{
+  "revision": "6fd20aad4a7905b13f25389c68368a942a2b68cb",
+  "license": "AGPL-3.0",
+  "url": "https://github.com/ossimc82/fabiano-swagger-of-doom",
+  "meaning": "All concrete packet serializers, including unused/asymmetric readers/writers. Direction determines authority.",
+  "packets": [
+    {
+      "path": "wServer/networking/cliPackets/AcceptTradePacket.cs",
+      "direction": "client_to_server",
+      "packet": "ACCEPTTRADE",
+      "id": 6,
+      "read": "MyOffers = new bool[rdr.ReadInt16()];\n            for (int i = 0; i < MyOffers.Length; i++)\n                MyOffers[i] = rdr.ReadBoolean();\n\n            YourOffers = new bool[rdr.ReadInt16()];\n            for (int i = 0; i < YourOffers.Length; i++)\n                YourOffers[i] = rdr.ReadBoolean();",
+      "write": "wtr.Write((ushort) MyOffers.Length);\n            foreach (bool i in MyOffers)\n                wtr.Write(i);\n            wtr.Write((ushort) YourOffers.Length);\n            foreach (bool i in YourOffers)\n                wtr.Write(i);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/AoEAckPacket.cs",
+      "direction": "client_to_server",
+      "packet": "AOEACK",
+      "id": 95,
+      "read": "Time = rdr.ReadInt32();\n            Position = Position.Read(psr, rdr);",
+      "write": "wtr.Write(Time);\n            Position.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/BuyPacket.cs",
+      "direction": "client_to_server",
+      "packet": "BUY",
+      "id": 75,
+      "read": "ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/CancelTradePacket.cs",
+      "direction": "client_to_server",
+      "packet": "CANCELTRADE",
+      "id": 5,
+      "read": "",
+      "write": ""
+    },
+    {
+      "path": "wServer/networking/cliPackets/ChangeGuildRankPacket.cs",
+      "direction": "client_to_server",
+      "packet": "CHANGEGUILDRANK",
+      "id": 89,
+      "read": "Name = rdr.ReadUTF();\n            GuildRank = rdr.ReadInt32();",
+      "write": "wtr.WriteUTF(Name);\n            wtr.Write(GuildRank);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/ChangeTradePacket.cs",
+      "direction": "client_to_server",
+      "packet": "CHANGETRADE",
+      "id": 1,
+      "read": "Offers = new bool[rdr.ReadInt16()];\n            for (int i = 0; i < Offers.Length; i++)\n                Offers[i] = rdr.ReadBoolean();",
+      "write": "wtr.Write((ushort) Offers.Length);\n            foreach (bool i in Offers)\n                wtr.Write(i);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/CheckCreditsPacket.cs",
+      "direction": "client_to_server",
+      "packet": "CHECKCREDITS",
+      "id": 19,
+      "read": "",
+      "write": ""
+    },
+    {
+      "path": "wServer/networking/cliPackets/ChooseNamePacket.cs",
+      "direction": "client_to_server",
+      "packet": "CHOOSENAME",
+      "id": 82,
+      "read": "Name = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/CreateGuildPacket.cs",
+      "direction": "client_to_server",
+      "packet": "CREATEGUILD",
+      "id": 44,
+      "read": "Name = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/CreatePacket.cs",
+      "direction": "client_to_server",
+      "packet": "CREATE",
+      "id": 78,
+      "read": "ClassType = rdr.ReadInt16();\n            SkinType = rdr.ReadInt16();",
+      "write": "wtr.Write((ushort) ClassType);\n            wtr.Write((ushort) SkinType);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/EditAccountListPacket.cs",
+      "direction": "client_to_server",
+      "packet": "EDITACCOUNTLIST",
+      "id": 93,
+      "read": "AccountListId = rdr.ReadInt32();\n            Add = rdr.ReadBoolean();\n            ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(AccountListId);\n            wtr.Write(Add);\n            wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/EnemyHitPacket.cs",
+      "direction": "client_to_server",
+      "packet": "ENEMYHIT",
+      "id": 42,
+      "read": "Time = rdr.ReadInt32();\n            BulletId = rdr.ReadByte();\n            TargetId = rdr.ReadInt32();\n            Killed = rdr.ReadBoolean();",
+      "write": "wtr.Write(Time);\n            wtr.Write(BulletId);\n            wtr.Write(TargetId);\n            wtr.Write(Killed);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/EnterArenaPacket.cs",
+      "direction": "client_to_server",
+      "packet": "ENTER_ARENA",
+      "id": 27,
+      "read": "Currency = rdr.ReadInt32();",
+      "write": "wtr.Write(Currency);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/EscapePacket.cs",
+      "direction": "client_to_server",
+      "packet": "ESCAPE",
+      "id": 47,
+      "read": "",
+      "write": ""
+    },
+    {
+      "path": "wServer/networking/cliPackets/FailurePacket.cs",
+      "direction": "client_to_server",
+      "packet": "FAILURE",
+      "id": 0,
+      "read": "ErrorId = rdr.ReadInt32();\n            ErrorDescription = rdr.ReadUTF();",
+      "write": "wtr.Write(ErrorId);\n            wtr.WriteUTF(ErrorDescription);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/GotoAckPacket.cs",
+      "direction": "client_to_server",
+      "packet": "GOTOACK",
+      "id": 12,
+      "read": "Time = rdr.ReadInt32();",
+      "write": "wtr.Write(Time);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/GroundDamagePacket.cs",
+      "direction": "client_to_server",
+      "packet": "GROUNDDAMAGE",
+      "id": 59,
+      "read": "Time = rdr.ReadInt32();\n            Position = Position.Read(psr, rdr);",
+      "write": "wtr.Write(Time);\n            Position.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/GuildInvitePacket.cs",
+      "direction": "client_to_server",
+      "packet": "GUILDINVITE",
+      "id": 23,
+      "read": "Name = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/GuildRemovePacket.cs",
+      "direction": "client_to_server",
+      "packet": "GUILDREMOVE",
+      "id": 24,
+      "read": "Name = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/HelloPacket.cs",
+      "direction": "client_to_server",
+      "packet": "HELLO",
+      "id": 35,
+      "read": "BuildVersion = rdr.ReadUTF();\n            GameId = rdr.ReadInt32();\n            GUID = RSA.Instance.Decrypt(rdr.ReadUTF());\n            rdr.ReadInt32();\n            Password = RSA.Instance.Decrypt(rdr.ReadUTF());\n            randomint1 = rdr.ReadInt32();\n            Secret = rdr.ReadUTF();\n            KeyTime = rdr.ReadInt32();\n            Key = rdr.ReadBytes(rdr.ReadInt16());\n            MapInfo = rdr.ReadBytes(rdr.ReadInt32());\n            obf1 = rdr.ReadUTF();\n            obf2 = rdr.ReadUTF();\n            obf3 = rdr.ReadUTF();\n            obf4 = rdr.ReadUTF();\n            obf5 = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(BuildVersion);\n            wtr.Write(GameId);\n            wtr.Write(0);\n            wtr.WriteUTF(RSA.Instance.Encrypt(GUID));\n            wtr.Write(randomint1);\n            wtr.WriteUTF(RSA.Instance.Encrypt(Password));\n            wtr.WriteUTF(Secret);\n            wtr.Write(KeyTime);\n            wtr.Write((ushort)Key.Length);\n            wtr.Write(Key);\n            wtr.Write(MapInfo.Length);\n            wtr.Write(MapInfo);\n            wtr.WriteUTF(obf1);\n            wtr.WriteUTF(obf2);\n            wtr.WriteUTF(obf3);\n            wtr.WriteUTF(obf4);\n            wtr.WriteUTF(obf5);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/InvDropPacket.cs",
+      "direction": "client_to_server",
+      "packet": "INVDROP",
+      "id": 90,
+      "read": "SlotObject = ObjectSlot.Read(psr, rdr);",
+      "write": "SlotObject.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/InvSwapPacket.cs",
+      "direction": "client_to_server",
+      "packet": "INVSWAP",
+      "id": 34,
+      "read": "Time = rdr.ReadInt32();\n            Position = Position.Read(psr, rdr);\n            SlotObject1 = ObjectSlot.Read(psr, rdr);\n            SlotObject2 = ObjectSlot.Read(psr, rdr);",
+      "write": "wtr.Write(Time);\n            Position.Write(psr, wtr);\n            SlotObject1.Write(psr, wtr);\n            SlotObject2.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/JoinGuildPacket.cs",
+      "direction": "client_to_server",
+      "packet": "JOINGUILD",
+      "id": 61,
+      "read": "GuildName = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(GuildName);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/LeaveArenaPacket.cs",
+      "direction": "client_to_server",
+      "packet": "LEAVEARENA",
+      "id": 49,
+      "read": "_li = rdr.ReadInt32();",
+      "write": "wtr.Write(_li);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/LoadPacket.cs",
+      "direction": "client_to_server",
+      "packet": "LOAD",
+      "id": 8,
+      "read": "CharacterId = rdr.ReadInt32();\n            IsFromArena = rdr.ReadBoolean();",
+      "write": "wtr.Write(CharacterId);\n            wtr.Write(IsFromArena);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/MovePacket.cs",
+      "direction": "client_to_server",
+      "packet": "MOVE",
+      "id": 87,
+      "read": "TickId = rdr.ReadInt32();\n            Time = rdr.ReadInt32();\n            Position = Position.Read(psr, rdr);\n            Records = new TimedPosition[rdr.ReadInt16()];\n            for (int i = 0; i < Records.Length; i++)\n                Records[i] = TimedPosition.Read(psr, rdr);",
+      "write": "wtr.Write(TickId);\n            wtr.Write(Time);\n            Position.Write(psr, wtr);\n            if (Records == null)\n            {\n                wtr.Write((ushort) 0);\n                return;\n            }\n            wtr.Write((ushort) Records.Length);\n            foreach (TimedPosition i in Records)\n                i.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/OtherHitPacket.cs",
+      "direction": "client_to_server",
+      "packet": "OTHERHIT",
+      "id": 14,
+      "read": "Time = rdr.ReadInt32();\n            BulletId = rdr.ReadByte();\n            ObjectId = rdr.ReadInt32();\n            TargetId = rdr.ReadInt32();",
+      "write": "wtr.Write(Time);\n            wtr.Write(BulletId);\n            wtr.Write(ObjectId);\n            wtr.Write(TargetId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/PetCommandPacket.cs",
+      "direction": "client_to_server",
+      "packet": "PETCOMMAND",
+      "id": 57,
+      "read": "CommandId = (int)rdr.ReadByte();\n            PetId = (uint)rdr.ReadInt32();",
+      "write": "wtr.Write((byte)CommandId);\n            wtr.Write((int)PetId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/PetYardCommandPacket.cs",
+      "direction": "client_to_server",
+      "packet": "PETYARDCOMMAND",
+      "id": 85,
+      "read": "CommandId = rdr.ReadByte();\n            PetId1 = rdr.ReadInt32();\n            PetId2 = rdr.ReadInt32();\n            ObjectId = rdr.ReadInt32();\n            ObjectSlot = ObjectSlot.Read(client, rdr);\n            Currency = (CurrencyType)rdr.ReadByte();",
+      "write": "wtr.Write(CommandId);\n            wtr.Write(PetId1);\n            wtr.Write(PetId2);\n            wtr.Write(ObjectId);\n            ObjectSlot.Write(client, wtr);\n            wtr.Write((byte)Currency);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/PlayerHitPacket.cs",
+      "direction": "client_to_server",
+      "packet": "PLAYERHIT",
+      "id": 17,
+      "read": "BulletId = rdr.ReadByte();\n            ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(BulletId);\n            wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/PlayerShootPacket.cs",
+      "direction": "client_to_server",
+      "packet": "PLAYERSHOOT",
+      "id": 13,
+      "read": "Time = rdr.ReadInt32();\n            BulletId = rdr.ReadByte();\n            ContainerType = rdr.ReadInt16();\n            Position = Position.Read(psr, rdr);\n            Angle = rdr.ReadSingle();",
+      "write": "wtr.Write(Time);\n            wtr.Write(BulletId);\n            wtr.Write(ContainerType);\n            Position.Write(psr, wtr);\n            wtr.Write(Angle);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/PlayerTextPacket.cs",
+      "direction": "client_to_server",
+      "packet": "PLAYERTEXT",
+      "id": 39,
+      "read": "Text = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Text);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/PongPacket.cs",
+      "direction": "client_to_server",
+      "packet": "PONG",
+      "id": 52,
+      "read": "Serial = rdr.ReadInt32();\n            Time = rdr.ReadInt32();",
+      "write": "wtr.Write(Serial);\n            wtr.Write(Time);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/RequestTradePacket.cs",
+      "direction": "client_to_server",
+      "packet": "REQUESTTRADE",
+      "id": 41,
+      "read": "Name = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/ReskinPacket.cs",
+      "direction": "client_to_server",
+      "packet": "RESKIN",
+      "id": 68,
+      "read": "SkinId = rdr.ReadInt32();",
+      "write": "wtr.Write(SkinId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/SetConditionPacket.cs",
+      "direction": "client_to_server",
+      "packet": "SETCONDITION",
+      "id": 91,
+      "read": "ConditionEffect = rdr.ReadInt32();\n            ConditionDuration = rdr.ReadSingle();",
+      "write": "wtr.Write(ConditionEffect);\n            wtr.Write(ConditionDuration);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/ShootAckPacket.cs",
+      "direction": "client_to_server",
+      "packet": "SHOOTACK",
+      "id": 36,
+      "read": "Time = rdr.ReadInt32();",
+      "write": "wtr.Write(Time);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/SquareHitPacket.cs",
+      "direction": "client_to_server",
+      "packet": "SQUAREHIT",
+      "id": 86,
+      "read": "Time = rdr.ReadInt32();\n            BulletId = rdr.ReadByte();\n            ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(Time);\n            wtr.Write(BulletId);\n            wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/TeleportPacket.cs",
+      "direction": "client_to_server",
+      "packet": "TELEPORT",
+      "id": 40,
+      "read": "ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/TinkerQuestPacket.cs",
+      "direction": "client_to_server",
+      "packet": "TINKERQUEST",
+      "id": 38,
+      "read": "Object = ObjectSlot.Read(client, rdr);",
+      "write": "Object.Write(client, wtr);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/UpdateAckPacket.cs",
+      "direction": "client_to_server",
+      "packet": "UPDATEACK",
+      "id": 45,
+      "read": "",
+      "write": ""
+    },
+    {
+      "path": "wServer/networking/cliPackets/UseItemPacket.cs",
+      "direction": "client_to_server",
+      "packet": "USEITEM",
+      "id": 48,
+      "read": "Time = rdr.ReadInt32();\n            SlotObject = ObjectSlot.Read(psr, rdr);\n            ItemUsePos = Position.Read(psr, rdr);\n            UseType = rdr.ReadByte();",
+      "write": "wtr.Write(Time);\n            SlotObject.Write(psr, wtr);\n            ItemUsePos.Write(psr, wtr);\n            wtr.Write(UseType);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/UsePortalPacket.cs",
+      "direction": "client_to_server",
+      "packet": "USEPORTAL",
+      "id": 9,
+      "read": "ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/cliPackets/ViewQuestsPacket.cs",
+      "direction": "client_to_server",
+      "packet": "VIEWQUESTS",
+      "id": 16,
+      "read": "",
+      "write": ""
+    },
+    {
+      "path": "wServer/networking/svrPackets/AccountListPacket.cs",
+      "direction": "server_to_client",
+      "packet": "ACCOUNTLIST",
+      "id": 20,
+      "read": "AccountListId = rdr.ReadInt32();\n            AccountIds = new string[rdr.ReadInt16()];\n            for (int i = 0; i < AccountIds.Length; i++)\n                AccountIds[i] = rdr.ReadUTF();\n            LockAction = rdr.ReadInt32();",
+      "write": "wtr.Write(AccountListId);\n            wtr.Write((ushort) AccountIds.Length);\n            foreach (string i in AccountIds)\n                wtr.WriteUTF(i);\n            wtr.Write(LockAction);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/AllyShootPacket.cs",
+      "direction": "server_to_client",
+      "packet": "ALLYSHOOT",
+      "id": 92,
+      "read": "BulletId = rdr.ReadByte();\n            OwnerId = rdr.ReadInt32();\n            ContainerType = rdr.ReadInt16();\n            Angle = rdr.ReadSingle();",
+      "write": "wtr.Write(BulletId);\n            wtr.Write(OwnerId);\n            wtr.Write(ContainerType);\n            wtr.Write(Angle);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/AoEPacket.cs",
+      "direction": "server_to_client",
+      "packet": "AOE",
+      "id": 69,
+      "read": "Position = Position.Read(psr, rdr);\n            Radius = rdr.ReadSingle();\n            Damage = rdr.ReadUInt16();\n            Effects = (ConditionEffectIndex) rdr.ReadByte();\n            EffectDuration = rdr.ReadSingle();\n            OriginType = rdr.ReadInt16();\n            //Color = ARGB.Read(psr, rdr);",
+      "write": "Position.Write(psr, wtr);\n            wtr.Write(Radius);\n            wtr.Write(Damage);\n            wtr.Write((byte) Effects);\n            wtr.Write(EffectDuration);\n            wtr.Write(OriginType);\n            //Color.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/ArenaDeathPacket.cs",
+      "direction": "server_to_client",
+      "packet": "ARENADEATH",
+      "id": 15,
+      "read": "RestartPrice = rdr.ReadInt32();",
+      "write": "wtr.Write(RestartPrice);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/ArenaNextWavePacket.cs",
+      "direction": "server_to_client",
+      "packet": "ARENANEXTWAVE",
+      "id": 31,
+      "read": "Type = rdr.ReadInt32();",
+      "write": "wtr.Write(Type);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/BuyResultPacket.cs",
+      "direction": "server_to_client",
+      "packet": "BUYRESULT",
+      "id": 10,
+      "read": "Result = rdr.ReadInt32();\n            Message = rdr.ReadUTF();",
+      "write": "wtr.Write(Result);\n            wtr.WriteUTF(Message);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/ClientStatPacket.cs",
+      "direction": "server_to_client",
+      "packet": "CLIENTSTAT",
+      "id": 66,
+      "read": "Name = rdr.ReadUTF();\n            Value = rdr.ReadInt32();",
+      "write": "wtr.WriteUTF(Name);\n            wtr.Write(Value);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/CreateGuildResultPacket.cs",
+      "direction": "server_to_client",
+      "packet": "CREATEGUILDRESULT",
+      "id": 4,
+      "read": "Success = rdr.ReadBoolean();\n            ErrorText = rdr.ReadUTF();",
+      "write": "wtr.Write(Success);\n            wtr.WriteUTF(ErrorText);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/Create_SuccessPacket.cs",
+      "direction": "server_to_client",
+      "packet": "CREATE_SUCCESS",
+      "id": 33,
+      "read": "ObjectID = rdr.ReadInt32();\n            CharacterID = rdr.ReadInt32();",
+      "write": "wtr.Write(ObjectID);\n            wtr.Write(CharacterID);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/DamagePacket.cs",
+      "direction": "server_to_client",
+      "packet": "DAMAGE",
+      "id": 51,
+      "read": "TargetId = rdr.ReadInt32();\n            byte c = rdr.ReadByte();\n            Effects = 0;\n            for (int i = 0; i < c; i++)\n                Effects |= (ConditionEffects) (1 << rdr.ReadByte());\n            Damage = rdr.ReadUInt16();\n            Killed = rdr.ReadBoolean();\n            BulletId = rdr.ReadByte();\n            ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(TargetId);\n            List<byte> eff = new List<byte>();\n            for (byte i = 1; i < 255; i++)\n                if ((Effects & (ConditionEffects) (1 << i)) != 0)\n                    eff.Add(i);\n            wtr.Write((byte) eff.Count);\n            foreach (byte i in eff) wtr.Write(i);\n            wtr.Write(Damage);\n            wtr.Write(Killed);\n            wtr.Write(BulletId);\n            wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/DeathPacket.cs",
+      "direction": "server_to_client",
+      "packet": "DEATH",
+      "id": 63,
+      "read": "AccountId = rdr.ReadUTF();\n            CharId = rdr.ReadInt32();\n            Killer = rdr.ReadUTF();\n            obf0 = rdr.ReadInt32();\n            obf1 = rdr.ReadInt32();",
+      "write": "wtr.WriteUTF(AccountId);\n            wtr.Write(CharId);\n            wtr.WriteUTF(Killer);\n            wtr.Write(obf0);\n            wtr.Write(obf1);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/FailurePacket.cs",
+      "direction": "server_to_client",
+      "packet": "FAILURE",
+      "id": 0,
+      "read": "ErrorId = rdr.ReadInt32();\n            ErrorDescription = rdr.ReadUTF();",
+      "write": "wtr.Write(ErrorId);\n            wtr.WriteUTF(ErrorDescription);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/FilePacket.cs",
+      "direction": "server_to_client",
+      "packet": "FILE",
+      "id": 88,
+      "read": "Name = rdr.ReadUTF();\n            Bytes = new byte[rdr.ReadInt32()];\n            Bytes = rdr.ReadBytes(Bytes.Length);",
+      "write": "wtr.WriteUTF(Name);\n            wtr.Write(Bytes.Length);\n            wtr.Write(Bytes);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/Global_NotificationPacket.cs",
+      "direction": "server_to_client",
+      "packet": "GLOBAL_NOTIFICATION",
+      "id": 30,
+      "read": "Type = rdr.ReadInt32();\n            Text = rdr.ReadUTF();",
+      "write": "wtr.Write(Type);\n            wtr.WriteUTF(Text);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/GotoPacket.cs",
+      "direction": "server_to_client",
+      "packet": "GOTO",
+      "id": 3,
+      "read": "ObjectId = rdr.ReadInt32();\n            Position = Position.Read(psr, rdr);",
+      "write": "wtr.Write(ObjectId);\n            Position.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/HatchEggPacket.cs",
+      "direction": "server_to_client",
+      "packet": "HATCHEGG",
+      "id": 81,
+      "read": "PetName = rdr.ReadUTF();\n            PetSkinId = rdr.ReadInt32();",
+      "write": "wtr.WriteUTF(PetName);\n            wtr.Write(PetSkinId);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/InvResultPacket.cs",
+      "direction": "server_to_client",
+      "packet": "INVRESULT",
+      "id": 58,
+      "read": "Result = rdr.ReadInt32();",
+      "write": "wtr.Write(Result);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/InvitedToGuildPacket.cs",
+      "direction": "server_to_client",
+      "packet": "INVITEDTOGUILD",
+      "id": 79,
+      "read": "Name = rdr.ReadUTF();\n            GuildName = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);\n            wtr.WriteUTF(GuildName);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/MapInfoPacket.cs",
+      "direction": "server_to_client",
+      "packet": "MAPINFO",
+      "id": 65,
+      "read": "Width = rdr.ReadInt32();\n            Height = rdr.ReadInt32();\n            Name = rdr.ReadUTF();\n            ClientWorldName = rdr.ReadUTF();\n            Seed = rdr.ReadUInt32();\n            Background = rdr.ReadInt32();\n            Difficulty = rdr.ReadInt32();\n            AllowTeleport = rdr.ReadBoolean();\n            ShowDisplays = rdr.ReadBoolean();\n\n            ClientXML = new string[rdr.ReadInt16()];\n            for (int i = 0; i < ClientXML.Length; i++)\n                ClientXML[i] = rdr.ReadUTF();\n\n            ExtraXML = new string[rdr.ReadInt16()];\n            for (int i = 0; i < ExtraXML.Length; i++)\n                ExtraXML[i] = rdr.ReadUTF();",
+      "write": "wtr.Write(Width);\n            wtr.Write(Height);\n            wtr.WriteUTF(Name);\n            wtr.WriteUTF(ClientWorldName);\n            wtr.Write(Seed);\n            wtr.Write(Background);\n            wtr.Write(Difficulty);\n            wtr.Write(AllowTeleport);\n            wtr.Write(ShowDisplays);\n\n            wtr.Write((ushort) ClientXML.Length);\n            foreach (string i in ClientXML)\n                wtr.Write32UTF(i);\n\n            wtr.Write((ushort) ExtraXML.Length);\n            foreach (string i in ExtraXML)\n                wtr.Write32UTF(i);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/NameResultPacket.cs",
+      "direction": "server_to_client",
+      "packet": "NAMERESULT",
+      "id": 62,
+      "read": "Success = rdr.ReadBoolean();\n            ErrorText = rdr.ReadUTF();",
+      "write": "wtr.Write(Success);\n            wtr.WriteUTF(ErrorText);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/NewAbilityUnlockedPacket.cs",
+      "direction": "server_to_client",
+      "packet": "NEWABILITYUNLOCKED",
+      "id": 97,
+      "read": "Type = (Ability)rdr.ReadInt32();",
+      "write": "wtr.Write((int)Type);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/NewTickPacket.cs",
+      "direction": "server_to_client",
+      "packet": "NEW_TICK",
+      "id": 80,
+      "read": "TickId = rdr.ReadInt32();\n            TickTime = rdr.ReadInt32();\n\n            UpdateStatuses = new ObjectStats[rdr.ReadInt16()];\n            for (int i = 0; i < UpdateStatuses.Length; i++)\n                UpdateStatuses[i] = ObjectStats.Read(psr, rdr);",
+      "write": "wtr.Write(TickId);\n            wtr.Write(TickTime);\n\n            wtr.Write((ushort) UpdateStatuses.Length);\n            foreach (ObjectStats i in UpdateStatuses)\n                i.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/NotificationPacket.cs",
+      "direction": "server_to_client",
+      "packet": "NOTIFICATION",
+      "id": 53,
+      "read": "ObjectId = rdr.ReadInt32();\n            Text = rdr.ReadUTF();\n            Color = ARGB.Read(psr, rdr);",
+      "write": "wtr.Write(ObjectId);\n            wtr.WriteUTF(Text);\n            Color.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/PasswordPromtPacket.cs",
+      "direction": "server_to_client",
+      "packet": "PASSWORDPROMPT",
+      "id": 74,
+      "read": "CleanPasswordStatus = rdr.ReadInt32();",
+      "write": "wtr.Write(CleanPasswordStatus);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/PetEvolveResultPacket.cs",
+      "direction": "server_to_client",
+      "packet": "EVOLVEPET",
+      "id": 76,
+      "read": "PetId1 = rdr.ReadInt32();\n            SkinId1 = rdr.ReadInt32();\n            SkinId2 = rdr.ReadInt32();",
+      "write": "wtr.Write(PetId1);\n            wtr.Write(SkinId1);\n            wtr.Write(SkinId2);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/PicPacket.cs",
+      "direction": "server_to_client",
+      "packet": "PIC",
+      "id": 60,
+      "read": "BitmapData = BitmapData.Read(psr, rdr);",
+      "write": "BitmapData.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/PingPacket.cs",
+      "direction": "server_to_client",
+      "packet": "PING",
+      "id": 46,
+      "read": "Serial = rdr.ReadInt32();",
+      "write": "wtr.Write(Serial);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/PlaySoundPacket.cs",
+      "direction": "server_to_client",
+      "packet": "PLAYSOUND",
+      "id": 50,
+      "read": "OwnerId = rdr.ReadInt32();\n            SoundId = rdr.ReadByte();",
+      "write": "wtr.Write(OwnerId);\n            wtr.Write((byte) SoundId);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/QuestFetchResponsePacket.cs",
+      "direction": "server_to_client",
+      "packet": "QUESTFETCHRESPONSE",
+      "id": 37,
+      "read": "Tier = rdr.ReadInt32();\n            Goal = rdr.ReadUTF();\n            Description = rdr.ReadUTF();\n            Image = rdr.ReadUTF();",
+      "write": "wtr.Write(Tier);\n            wtr.WriteUTF(Goal);\n            wtr.WriteUTF(Description);\n            wtr.WriteUTF(Image);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/QuestObjIdPacket.cs",
+      "direction": "server_to_client",
+      "packet": "QUESTOBJID",
+      "id": 77,
+      "read": "ObjectId = rdr.ReadInt32();",
+      "write": "wtr.Write(ObjectId);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/QuestRedeemResponsePacket.cs",
+      "direction": "server_to_client",
+      "packet": "QUESTREDEEMRESPONSE",
+      "id": 18,
+      "read": "Success = rdr.ReadBoolean();\n            Message = rdr.ReadUTF();",
+      "write": "wtr.Write(Success);\n            wtr.WriteUTF(Message);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/ReconnectPacket.cs",
+      "direction": "server_to_client",
+      "packet": "RECONNECT",
+      "id": 21,
+      "read": "Name = rdr.ReadUTF();\n            Host = rdr.ReadUTF();\n            Port = rdr.ReadInt32();\n            GameId = rdr.ReadInt32();\n            KeyTime = rdr.ReadInt32();\n            IsFromArena = rdr.ReadBoolean();\n            Key = new byte[rdr.ReadInt16()];\n            Key = rdr.ReadBytes(Key.Length);",
+      "write": "wtr.WriteUTF(Name);\n            wtr.WriteUTF(Host);\n            wtr.Write(Port);\n            wtr.Write(GameId);\n            wtr.Write(KeyTime);\n            wtr.Write(IsFromArena);\n            wtr.Write((ushort) Key.Length);\n            wtr.Write(Key);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/RemovePetFromListPacket.cs",
+      "direction": "server_to_client",
+      "packet": "REMOVEPET",
+      "id": 26,
+      "read": "PetId = rdr.ReadInt32();",
+      "write": "wtr.Write(PetId);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/Shoot2Packet.cs",
+      "direction": "server_to_client",
+      "packet": "SHOOT2",
+      "id": 84,
+      "read": "BulletId = rdr.ReadByte();\n            OwnerId = rdr.ReadInt32();\n            ContainerType = rdr.ReadInt32();\n            StartingPos = Position.Read(psr, rdr);\n            Angle = rdr.ReadSingle();\n            Damage = rdr.ReadInt16();",
+      "write": "wtr.Write(BulletId);\n            wtr.Write(OwnerId);\n            wtr.Write(ContainerType);\n            StartingPos.Write(psr, wtr);\n            wtr.Write(Angle);\n            wtr.Write(Damage);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/ShootPacket.cs",
+      "direction": "server_to_client",
+      "packet": "SHOOT",
+      "id": 96,
+      "read": "BulletId = rdr.ReadByte();\n            OwnerId = rdr.ReadInt32();\n            BulletType = rdr.ReadByte();\n            Position = Position.Read(psr, rdr);\n            Angle = rdr.ReadSingle();\n            Damage = rdr.ReadInt16();\n            if (rdr.BaseStream.Length - rdr.BaseStream.Position <= 0) return;\n            NumShots = rdr.ReadByte();\n            AngleInc = rdr.ReadSingle();",
+      "write": "wtr.Write(BulletId);\n            wtr.Write(OwnerId);\n            wtr.Write(BulletType);\n            Position.Write(psr, wtr);\n            wtr.Write(Angle);\n            wtr.Write(Damage);\n            if (NumShots == 1 || AngleInc == 0) return;\n            wtr.Write(NumShots);\n            wtr.Write(AngleInc);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/ShowEffectPacket.cs",
+      "direction": "server_to_client",
+      "packet": "SHOW_EFFECT",
+      "id": 28,
+      "read": "EffectType = (EffectType) rdr.ReadByte();\n            TargetId = rdr.ReadInt32();\n            PosA = Position.Read(psr, rdr);\n            PosB = Position.Read(psr, rdr);\n            Color = ARGB.Read(psr, rdr);",
+      "write": "wtr.Write((byte) EffectType);\n            wtr.Write(TargetId);\n            PosA.Write(psr, wtr);\n            PosB.Write(psr, wtr);\n            Color.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/TextPacket.cs",
+      "direction": "server_to_client",
+      "packet": "TEXT",
+      "id": 67,
+      "read": "Name = rdr.ReadUTF();\n            ObjectId = rdr.ReadInt32();\n            Stars = rdr.ReadInt32();\n            BubbleTime = rdr.ReadByte();\n            Recipient = rdr.ReadUTF();\n            Text = rdr.ReadUTF();\n            CleanText = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);\n            wtr.Write(ObjectId);\n            wtr.Write(Stars);\n            wtr.Write(BubbleTime);\n            wtr.WriteUTF(Recipient);\n            wtr.WriteUTF(Text);\n            wtr.WriteUTF(CleanText);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/TradeAcceptedPacket.cs",
+      "direction": "server_to_client",
+      "packet": "TRADEACCEPTED",
+      "id": 22,
+      "read": "MyOffers = new bool[rdr.ReadInt16()];\n            for (int i = 0; i < MyOffers.Length; i++)\n                MyOffers[i] = rdr.ReadBoolean();\n\n            YourOffers = new bool[rdr.ReadInt16()];\n            for (int i = 0; i < YourOffers.Length; i++)\n                YourOffers[i] = rdr.ReadBoolean();",
+      "write": "wtr.Write((ushort) MyOffers.Length);\n            foreach (bool i in MyOffers)\n                wtr.Write(i);\n            wtr.Write((ushort) YourOffers.Length);\n            foreach (bool i in YourOffers)\n                wtr.Write(i);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/TradeChangedPacket.cs",
+      "direction": "server_to_client",
+      "packet": "TRADECHANGED",
+      "id": 56,
+      "read": "Offers = new bool[rdr.ReadInt16()];\n            for (int i = 0; i < Offers.Length; i++)\n                Offers[i] = rdr.ReadBoolean();",
+      "write": "wtr.Write((ushort) Offers.Length);\n            foreach (bool i in Offers)\n                wtr.Write(i);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/TradeDonePacket.cs",
+      "direction": "server_to_client",
+      "packet": "TRADEDONE",
+      "id": 25,
+      "read": "Result = rdr.ReadInt32();\n            Message = rdr.ReadUTF();",
+      "write": "wtr.Write(Result);\n            wtr.WriteUTF(Message);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/TradeRequestedPacket.cs",
+      "direction": "server_to_client",
+      "packet": "TRADEREQUESTED",
+      "id": 94,
+      "read": "Name = rdr.ReadUTF();",
+      "write": "wtr.WriteUTF(Name);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/TradeStartPacket.cs",
+      "direction": "server_to_client",
+      "packet": "TRADESTART",
+      "id": 64,
+      "read": "MyItems = new TradeItem[rdr.ReadInt16()];\n            for (int i = 0; i < MyItems.Length; i++)\n                MyItems[i] = TradeItem.Read(psr, rdr);\n\n            YourName = rdr.ReadUTF();\n            YourItems = new TradeItem[rdr.ReadInt16()];\n            for (int i = 0; i < YourItems.Length; i++)\n                YourItems[i] = TradeItem.Read(psr, rdr);",
+      "write": "wtr.Write((ushort) MyItems.Length);\n            foreach (TradeItem i in MyItems)\n                i.Write(psr, wtr);\n\n            wtr.WriteUTF(YourName);\n            wtr.Write((ushort) YourItems.Length);\n            foreach (TradeItem i in YourItems)\n                i.Write(psr, wtr);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/UnlockedSkinPacket.cs",
+      "direction": "server_to_client",
+      "packet": "RESKIN2",
+      "id": 11,
+      "read": "SkinID = rdr.ReadInt32();",
+      "write": "wtr.Write(SkinID);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/UpdatePacket.cs",
+      "direction": "server_to_client",
+      "packet": "UPDATE",
+      "id": 7,
+      "read": "Tiles = new TileData[rdr.ReadInt16()];\n            for (int i = 0; i < Tiles.Length; i++)\n            {\n                Tiles[i] = new TileData\n                {\n                    X = rdr.ReadInt16(),\n                    Y = rdr.ReadInt16(),\n                    Tile = rdr.ReadUInt16()\n                };\n            }\n\n            NewObjects = new ObjectDef[rdr.ReadInt16()];\n            for (int i = 0; i < NewObjects.Length; i++)\n                NewObjects[i] = ObjectDef.Read(psr, rdr);\n\n            RemovedObjectIds = new int[rdr.ReadInt16()];\n            for (int i = 0; i < RemovedObjectIds.Length; i++)\n                RemovedObjectIds[i] = rdr.ReadInt32();",
+      "write": "wtr.Write((short) Tiles.Length);\n            foreach (TileData i in Tiles)\n            {\n                wtr.Write(i.X);\n                wtr.Write(i.Y);\n                wtr.Write((short) i.Tile);\n            }\n            wtr.Write((short) NewObjects.Length);\n            foreach (ObjectDef i in NewObjects)\n                i.Write(psr, wtr);\n\n            wtr.Write((short) RemovedObjectIds.Length);\n            foreach (int i in RemovedObjectIds)\n                wtr.Write(i);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/UpdatePetPacket.cs",
+      "direction": "server_to_client",
+      "packet": "UPDATEPET",
+      "id": 83,
+      "read": "PetId = rdr.ReadInt32();",
+      "write": "wtr.Write(PetId);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/UpgradePetYardResultPacket.cs",
+      "direction": "server_to_client",
+      "packet": "UPGRADEPETYARDRESULT",
+      "id": 55,
+      "read": "Type = rdr.ReadInt32();",
+      "write": "wtr.Write(Type);"
+    },
+    {
+      "path": "wServer/networking/svrPackets/VerifyEmailDialogPacket.cs",
+      "direction": "server_to_client",
+      "packet": "VERIFYEMAILDIALOG",
+      "id": 98,
+      "read": "",
+      "write": ""
+    }
+  ]
+}
