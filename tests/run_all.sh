@@ -5,7 +5,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 GODOT="${GODOT_BIN:-Godot_v4.6-stable_linux.x86_64}"
 
-mapfile -t TESTS < <(find "$ROOT/src" -name "selftest.gd" | sort)
+mapfile -t TESTS < <(find "$ROOT/src" -name "*selftest.gd" | sort)
 if [ "${#TESTS[@]}" -eq 0 ]; then
   echo "run_all: no selftest.gd files under src/ — nothing to run"
   exit 0
