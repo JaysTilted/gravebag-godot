@@ -7,6 +7,7 @@ const FRONTEND := "res://src/client/fsod/frontend.tscn"
 const DATA := "res://src/data/fsod/"
 var session: Node
 var _status: Label
+var _action: Button
 var _profile_path := ""
 var _profile: Dictionary = {}
 
@@ -18,7 +19,14 @@ func _ready() -> void:
 	_status.position = Vector2(16, 16)
 	_status.add_theme_font_size_override("font_size", 18)
 	canvas.add_child(_status)
+	_action = Button.new()
+	_action.position = Vector2(16, 48)
+	_action.add_theme_font_size_override("font_size", 18)
+	_action.visible = false
+	_action.disabled = true
+	canvas.add_child(_action)
 	add_child(canvas)
+	_action.pressed.connect(_on_action)
 	_status.text = "GRAVEBAG — connecting to original backend"
 	for required in [NETWORK, FRONTEND, DATA + "objects.json", DATA + "object_descriptors.json", DATA + "projectiles.json", DATA + "grounds.json", DATA + "items.json"]:
 		if not ResourceLoader.exists(required) and not FileAccess.file_exists(required):
@@ -74,6 +82,54 @@ func _on_state(state: String) -> void:
 		_profile["character_id"] = -1
 		_save_profile()
 		_status.text = "YOU DIED · character saved by server"
+	_refresh_action()
+
+
+## Playable-entry recovery buttons. Same layer/aesthetic, real Button nodes.
+## "New character" only after server DEATH (CREATE path, never LOADs dead id).
+## "Reconnect" only after offline/failed with saved encrypted credentials.
+## Hidden during connecting/authenticating/loading/playing and during normal
+## portal reconnecting. Original server creates/saves/authorizes; no delays.
+func _refresh_action() -> void:
+	if not is_instance_valid(_action):
+		return
+	if not is_instance_valid(session):
+		_action.visible = false
+		_action.disabled = true
+		return
+	if session.get("state") == "dead":
+		_action.text = "New character"
+		_action.visible = true
+		_action.disabled = false
+	elif session.get("state") in ["offline", "failed"]:
+		_action.text = "Reconnect"
+		_action.visible = true
+		_action.disabled = false
+	else:
+		_action.visible = false
+		_action.disabled = true
+
+
+func _on_action() -> void:
+	if not is_instance_valid(session) or not is_instance_valid(_action):
+		return
+	if _action.disabled or not _action.visible:
+		return
+	# Disable at press time so a double click cannot queue a second connect.
+	_action.disabled = true
+	var result: Error = ERR_INVALID_PARAMETER
+	if session.get("state") == "dead":
+		result = session.call("restart_as_new_character")
+	elif session.get("state") in ["offline", "failed"]:
+		result = session.call("retry_connection")
+	else:
+		_refresh_action()
+		return
+	# Session emits state_changed synchronously (connecting or failed); refresh
+	# covers an immediate refusal without inventing a second connect attempt.
+	_refresh_action()
+	if result != OK and is_instance_valid(session):
+		_refresh_action()
 
 
 func _save_profile() -> void:
@@ -88,3 +144,4 @@ func _fail(message: String) -> void:
 	_status.text = message
 	# Never log login profiles, packet fields or account credentials.
 	printerr("FSOD CLIENT NOT READY: ", message)
+	_refresh_action()
