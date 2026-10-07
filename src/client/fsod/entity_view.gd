@@ -81,6 +81,22 @@ func apply_status(status: Dictionary, seconds: float = 0.1) -> void:
 		_visual_size = clampf(float(stats[2]) / 100.0, 0.5, 3.0)
 	var parsed: Variant = parse_position(status.get("position"))
 	if parsed is Vector2:
+		if is_local_player and _initialized:
+			# Contact stays on the server echo. Render pose is owned by
+			# present_prediction and is not pulled back onto this tick.
+			authoritative_position = parsed
+			var contact: Vector2 = parsed * TILE_PIXELS
+			position = contact
+			_from = contact
+			_to = contact
+			_elapsed = _duration
+			if not _render_ready:
+				_render_pos = contact
+				_render_target = contact
+				_render_ready = true
+			_render_offset = _render_pos - position
+			queue_redraw()
+			return
 		authoritative_position = parsed
 		var target: Vector2 = parsed * TILE_PIXELS
 		var duration: float = clampf(seconds, 0.001, 2.0) if is_finite(seconds) else 0.1
@@ -104,7 +120,8 @@ func apply_status(status: Dictionary, seconds: float = 0.1) -> void:
 	queue_redraw()
 
 
-# Called by world controller: display/input prediction only, reconciled every tick.
+# Hard snap only (GOTO, teleport, immobilization, off-path). Contact and
+# render land together so a real correction is visible immediately.
 func predict_position(tile_position: Vector2) -> void:
 	if not is_finite(tile_position.x) or not is_finite(tile_position.y): return
 	_moving = position.distance_squared_to(tile_position * TILE_PIXELS) > 0.01
@@ -116,6 +133,22 @@ func predict_position(tile_position: Vector2) -> void:
 	_render_pos = position
 	_render_ready = true
 	_render_offset = Vector2.ZERO
+	queue_redraw()
+
+
+# Visual lead only. Node2D.position (projectile contact) is not moved.
+func present_prediction(tile_position: Vector2) -> void:
+	if not is_finite(tile_position.x) or not is_finite(tile_position.y):
+		return
+	var pixels: Vector2 = tile_position * TILE_PIXELS
+	if _render_ready:
+		_moving = _render_pos.distance_squared_to(pixels) > 0.01
+	else:
+		_moving = position.distance_squared_to(pixels) > 0.01
+	_render_target = pixels
+	_render_pos = pixels
+	_render_ready = true
+	_render_offset = _render_pos - position
 	queue_redraw()
 
 
@@ -146,9 +179,11 @@ func advance_presentation(delta: float) -> void:
 		_render_offset = Vector2.ZERO
 		return
 	if is_local_player:
-		_render_pos = position
-		_render_target = position
-		_render_offset = Vector2.ZERO
+		if not _render_ready:
+			_render_pos = position
+			_render_target = position
+			_render_ready = true
+		_render_offset = _render_pos - position
 		return
 	var rate: float = 1.0 - exp(-PRESENT_RATE * delta)
 	_render_pos = _render_pos.lerp(_render_target, rate)

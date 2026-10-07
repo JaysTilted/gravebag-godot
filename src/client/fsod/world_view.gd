@@ -43,6 +43,17 @@ var _inventory: Label # Hidden debug projection retained for fixture/diagnostic 
 var _inventory_panel: PanelContainer
 var _inventory_snapshot: Dictionary = {}
 var _prediction: Vector2 = Vector2.ZERO
+var _prediction_ready: bool = false
+# Sent MOVE samples, in order, not every physics step. A delayed NEW_TICK that
+# matches one of those samples is an echo: keep predicting. Anything else is a
+# correction. Contact/hit sampling stays on the authoritative Node position;
+# only the render pose follows the lead. Immobilization (condition bit 13)
+# always hard-corrects, including a 0.2-tile freeze inside the noise dead zone.
+const SENT_MOVE_MAX: int = 64
+const SENT_ECHO_EPSILON_TILES: float = 0.02
+const POSE_DEADZONE_TILES: float = 0.20
+const OFFPATH_SNAP_TILES: float = 0.50
+var _sent_moves: Array = []
 var _move_clock: float = 0.0
 var _shoot_clock: float = 0.0
 var _mouse_held: bool = false
@@ -124,6 +135,80 @@ func _ensure_nodes() -> void:
 	column.add_child(keys)
 
 
+func predicted_position() -> Vector2:
+	return _prediction
+
+
+func _prediction_snap(auth: Vector2) -> void:
+	_prediction = auth
+	_prediction_ready = true
+	_sent_moves.clear()
+	_sent_moves.append(auth)
+	var player: Variant = _player()
+	if player != null:
+		player.predict_position(auth)
+
+
+func _immobilized(player: Variant) -> bool:
+	# Source condition bit 13 (paralysis). Stat 29 holds the low condition word.
+	if not _live(player):
+		return false
+	return (int(player.stats.get(29, 0)) & (1 << 13)) != 0
+
+
+func _matches_sent_move(auth: Vector2) -> bool:
+	for point: Variant in _sent_moves:
+		if point is Vector2 and point.is_finite() and auth.distance_to(point) <= SENT_ECHO_EPSILON_TILES:
+			return true
+	return false
+
+
+func _record_sent_move(sample: Vector2) -> void:
+	if not sample.is_finite():
+		return
+	if not _sent_moves.is_empty() and _sent_moves[-1] is Vector2 and (_sent_moves[-1] as Vector2).distance_to(sample) <= SENT_ECHO_EPSILON_TILES:
+		return
+	_sent_moves.append(sample)
+	while _sent_moves.size() > SENT_MOVE_MAX:
+		_sent_moves.pop_front()
+
+
+# Reconcile a server authoritative position against sent MOVE samples.
+# Returns true when prediction hard-snapped. A delayed echo of a sent sample
+# leaves prediction alone. Occupied cells do not snap by themselves: an
+# OccupySquare overlap must not rewind onto the echo every tick.
+func _reconcile_prediction(auth: Variant, hard_snap: bool = false) -> bool:
+	if not (auth is Vector2) or not auth.is_finite():
+		return false
+	var player: Variant = _player()
+	if hard_snap or not _prediction_ready or _sent_moves.is_empty():
+		_prediction_snap(auth)
+		return true
+	if _prediction.distance_to(auth) > CAMERA_TELEPORT_TILES:
+		_prediction_snap(auth)
+		return true
+	if _immobilized(player):
+		_prediction_snap(auth)
+		return true
+	if _matches_sent_move(auth):
+		return false
+	if _prediction.distance_to(auth) <= POSE_DEADZONE_TILES:
+		return false
+	if _off_sent_trail(auth):
+		_prediction_snap(auth)
+		return true
+	_prediction_snap(auth)
+	return true
+
+
+func _off_sent_trail(auth: Vector2) -> bool:
+	var closest := INF
+	for point: Variant in _sent_moves:
+		if point is Vector2 and point.is_finite():
+			closest = minf(closest, auth.distance_to(point))
+	return closest >= OFFPATH_SNAP_TILES
+
+
 func set_descriptors(metadata: Dictionary) -> void:
 	descriptors = metadata.duplicate(true)
 	_inventory_snapshot.clear()
@@ -140,7 +225,11 @@ func set_player_id(id: int) -> void:
 		var view: Variant = entities[key]
 		if _live(view): view.is_local_player = int(key) == id
 	var player: Variant = _player()
-	if player != null: _prediction = player.authoritative_position
+	if player != null:
+		_prediction_snap(player.authoritative_position)
+	else:
+		_prediction_ready = false
+		_sent_moves.clear()
 	_camera_ready = false # Player identity discontinuity: next camera target hard-snaps.
 	_camera_hold_auth = false
 	_refresh_rail()
@@ -156,6 +245,8 @@ func apply_map(packet: Dictionary) -> void:
 	map_height = clampi(_integer(packet.get("height", 0)), 0, 65535)
 	map_name = str(packet.get("name", "Unnamed server map"))
 	_prediction = Vector2.ZERO
+	_prediction_ready = false
+	_sent_moves.clear()
 	_mouse_held = false
 	_move_clock = 0.0
 	_shoot_clock = 0.0
@@ -196,7 +287,7 @@ func apply_update(packet: Dictionary) -> void:
 			view.configure(id, type, _object_descriptor(type))
 			view.is_local_player = id == player_id
 			view.apply_status(status)
-			if id == player_id: _prediction = view.authoritative_position
+			if id == player_id: _reconcile_prediction(view.authoritative_position)
 	var removed: Variant = packet.get("removed_object_ids", [])
 	if removed is Array:
 		for id: Variant in removed: remove_entity(_integer(id, -1))
@@ -210,6 +301,7 @@ func apply_tick(packet: Dictionary) -> void:
 	var seconds: float = clampf(_number(packet.get("tick_time", 100)) / 1000.0, 0.001, 2.0)
 	var statuses: Variant = packet.get("update_statuses", [])
 	if not statuses is Array: return
+	var explicit_goto_tick := int(packet.get("tick_id", 0)) == -1 and float(packet.get("tick_time", 100)) <= 0.0
 	for status: Variant in statuses:
 		if not status is Dictionary: continue
 		var id: int = _integer(status.get("id", -1), -1)
@@ -218,7 +310,7 @@ func apply_tick(packet: Dictionary) -> void:
 			entities.erase(id)
 			continue # Unknown tick IDs never invent entities/type metadata.
 		view.apply_status(status, seconds)
-		if id == player_id: _prediction = view.authoritative_position
+		if id == player_id: _reconcile_prediction(view.authoritative_position, explicit_goto_tick)
 	var explicit_goto := int(packet.get("tick_id", 0)) == -1 and float(packet.get("tick_time", 100)) <= 0.0
 	_snap_camera_on_discontinuity(_previous_tick_auth, explicit_goto)
 	_refresh_rail()
@@ -427,11 +519,13 @@ func predict_motion(input_vector: Vector2, delta: float) -> void:
 		var step := offset / float(steps)
 		for index in steps:
 			_prediction = _clip_movement(_prediction, _prediction + step)
-	# Visual smoothing of authoritative corrections. Player position remains server-owned.
-	player.predict_position(player.position.lerp(_prediction * TILE_PIXELS, minf(1.0, delta * 20.0)) / TILE_PIXELS)
+	# Render follows the lead. Node.position stays on the last echo so shots
+	# aimed at the server position still meet the contact box.
+	player.present_prediction(_prediction)
 	_move_clock += delta
 	if (moving or _last_move) and _move_clock >= 0.05:
 		_move_clock = 0.0
+		_record_sent_move(_prediction)
 		var pos: Dictionary = {"x": _prediction.x, "y": _prediction.y}
 		var timestamp: int = int(clock_ms.call()) if clock_ms.is_valid() else Time.get_ticks_msec()
 		move_requested.emit(pos, [{"time": timestamp, "position": pos.duplicate()}])

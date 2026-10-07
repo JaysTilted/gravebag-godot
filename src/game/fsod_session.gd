@@ -231,6 +231,9 @@ func receive_packet(packet_id: int, fields: Dictionary) -> void:
 			var record := {"Id": int(fields["ObjectId"]), "Position": fields["Position"], "Stats": []}
 			if int(fields["ObjectId"]) == player_id:
 				pending_position = _vector(fields["Position"])
+				# Only our own teleport invalidates the unsent local trail.
+				# A foreign GOTO must not drop samples the next MOVE still owes.
+				move_records.clear()
 			_observe_status(record)
 			view.call("apply_tick", Adapter.tick({"TickId": -1, "TickTime": 0, "UpdateStatuses": [record]}))
 		63: # DEATH: never fake a respawn or local fame award.
