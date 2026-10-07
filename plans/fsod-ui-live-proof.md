@@ -53,15 +53,31 @@ This seat never edits those.
   runtime hashes (DLL/MVID/GameXML), genuine frame-delta/time sampling
   (easing fills vs actual source values, never fixed `1/60` fake FPS),
   readable frames + diagnostics at 1280×720 and compact contract size.
-  One fresh round per runtime; collects same 4 combat/damage/loot/recovery
-  cases only if existing normal verifier requires fresh UI client hash.
+  One fresh round per runtime: stages the fresh UI client (`verify.py stage`),
+  runs the same 4 combat/damage/loot/recovery probes
+  (`--fsod-bot-realm/injury/loot/death-cycle`) via owned backend `exec` under
+  private `xvfb-run` (Mesa software GL, `nice -n 10`), then `verify.py`
+  `collect`+`verify` (PASS patterns + 1280x720 frames + runtime-hash equality).
+  Then two UI-probe rounds at 1280x720 and 640x360 asserting `FSOD UI LIVE PASS`,
+  readable PNG dimensions, genuine delta series, diagnostics schema and
+  bar-fill bounds (fill-vs-source series reported; change is informational).
+  Provenance recorded: source HEAD + file hashes, runtime DLL/MVID/GameXML
+  hashes, backend pin, exec IDs, GUI pid/uid/netns, Jay pid 629784
+  before/after (read-only), viewport+camera per size.
   Death→New-character and offline→Reconnect via actual production state wiring
   with real client proof for NEW QA account only. Backend TTL-bounded, cleanup
   owns ONLY own QA state after proof, no original IPC.
 - `src/game/fsod_ui_live_probe.gd`: QA SceneTree helper that instantiates
   production `fsod_entry` and inspects private fields readonly / drives real
-  `InputEvent` (`Input.parse_input_event`) while loading normal QA login file;
-  actual production normal handlers, never forced fake authoritative state.
+  `InputEvent` (`Input.parse_input_event`, key + mouse-button) while loading
+  normal QA login file; actual production normal handlers, never forced fake
+  authoritative state. W key alternates press/release; death→New-character
+  and offline→Reconnect click the production chrome regions from
+  `ui_diagnostics` with real mouse events (never signal emits). Persists
+  `frame-deltas.json` (genuine `Time.get_ticks_msec` series), `ui-diagnostics.jsonl`
+  snapshots, viewport-texture PNGs (up to 6), and `ui-live-meta.json`
+  (pid/mode/viewport+camera/click flags). PASS requires playing observed,
+  genuine deltas, exact `gravebag.ui_diagnostics.v1` schema, ≥1 PNG.
   Never copies entry into helper; requests parent if shared-file API change is
   needed (shared ownership).
 - `tests/fsod-ui-live-proof.test.mjs`: fail-closed contract. Fails if
