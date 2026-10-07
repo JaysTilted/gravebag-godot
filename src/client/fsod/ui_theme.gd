@@ -69,25 +69,23 @@ static func slot_style() -> StyleBoxFlat:
 	return style
 
 
-# Rail-local rect of the inventory host. Same numbers the live control uses.
-# At 256x720 this is the measured backpack block under a 2px inner margin,
-# with the potion strip kept outside the host. Proof reads the control rect.
+# Rail-local control geometry. Main 256x720: (8,221,240,467), potion
+# strip (8,692,240,20). Short views reserve readable bars/stat rows above the
+# core grid; slot sizes respond to this real host, never overlap those bars.
 static func inventory_host_rect(rail_size: Vector2) -> Rect2:
-	var inset := INNER_MARGIN
+	var inset := 8.0
 	var width := maxf(0.0, rail_size.x - inset * 2.0)
-	var strip := POTION_STRIP_HEIGHT
-	var gap := INNER_MARGIN
 	var host_h := INVENTORY_BACKPACK_MIN_SIZE.y
-	var y := rail_size.y - inset - strip - gap - host_h
-	if y < 96.0:
-		y = 72.0
-		host_h = maxf(64.0, rail_size.y - y - inset - strip - gap)
+	var y := rail_size.y - inset - POTION_STRIP_HEIGHT - 4.0 - host_h
+	if y < 180.0:
+		y = 180.0
+		host_h = maxf(64.0, rail_size.y - y - inset - POTION_STRIP_HEIGHT - 4.0)
 	return Rect2(inset, y, width, host_h)
 
 
 static func potion_strip_rect(rail_size: Vector2) -> Rect2:
 	var host := inventory_host_rect(rail_size)
-	return Rect2(host.position.x, host.position.y + host.size.y + INNER_MARGIN, host.size.x, POTION_STRIP_HEIGHT)
+	return Rect2(host.position.x, host.position.y + host.size.y + 4.0, host.size.x, POTION_STRIP_HEIGHT)
 
 
 static func pixel_font() -> Font:

@@ -19,6 +19,8 @@ const RAIL_WIDTH: float = 256.0 # Layout helper mirroring world_view.RAIL_WIDTH.
 const MAX_PORTAL_LABELS: int = 8
 const LABEL_TRUNC: int = 28
 const PANEL_POS := Vector2(16, 80) # Below entry status(16,16)/button(16,48).
+const THEME_SCRIPT := "res://src/client/fsod/ui_theme.gd"
+var _palette: Dictionary = {}
 
 var _panel: PanelContainer
 var _direction_label: Label
@@ -37,32 +39,37 @@ func _ensure_nodes() -> void:
 	if _ready_built:
 		return
 	_ready_built = true
+	if ResourceLoader.exists(THEME_SCRIPT):
+		var theme: Variant = load(THEME_SCRIPT)
+		if theme.has_method("tokens"):
+			_palette = theme.tokens()
 	_panel = PanelContainer.new()
 	_panel.name = "RealmGuidePanel"
 	_panel.position = PANEL_POS
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("111829")
-	style.set_content_margin_all(8.0)
+	style.bg_color = _color("charcoal", Color("333333"))
+	style.set_corner_radius_all(0)
+	style.set_content_margin_all(4.0)
 	_panel.add_theme_stylebox_override("panel", style)
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 4)
+	column.add_theme_constant_override("separation", 2)
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.add_child(column)
 	_direction_label = Label.new()
-	_direction_label.add_theme_color_override("font_color", Color("efcf7a"))
+	_direction_label.add_theme_color_override("font_color", _color("silver", Color("d4d4d4")))
 	_direction_label.add_theme_font_size_override("font_size", 14)
 	_direction_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_direction_label.focus_mode = Control.FOCUS_NONE
 	column.add_child(_direction_label)
 	_prompt_label = Label.new()
-	_prompt_label.add_theme_color_override("font_color", Color("64cbd3"))
+	_prompt_label.add_theme_color_override("font_color", _color("gold", Color("efcf7a")))
 	_prompt_label.add_theme_font_size_override("font_size", 16)
 	_prompt_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompt_label.focus_mode = Control.FOCUS_NONE
 	column.add_child(_prompt_label)
 	_hint_label = Label.new()
-	_hint_label.add_theme_color_override("font_color", Color("8996af"))
+	_hint_label.add_theme_color_override("font_color", _color("muted", Color("9a9a9a")))
 	_hint_label.add_theme_font_size_override("font_size", 12)
 	_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -70,6 +77,11 @@ func _ensure_nodes() -> void:
 	column.add_child(_hint_label)
 	add_child(_panel)
 	_panel.visible = false
+
+
+func _color(key: String, fallback: Color) -> Color:
+	var value: Variant = _palette.get(key, fallback)
+	return value if value is Color else (Color(value) if value is String else fallback)
 
 
 static func is_realm_type(object_type: int) -> bool:
@@ -401,6 +413,9 @@ func refresh(session: Node, frontend: Node) -> void:
 	_hint_label.visible = not hint_text.is_empty()
 	_panel.position = PANEL_POS
 	_panel.visible = true
+	# Container minimum sizes update after the visibility changes. Shrink stale
+	# empty rows instead of retaining the initial three-label card height.
+	_panel.call_deferred("reset_size")
 	# Floating SOURCE labels for on-screen portals only; off-screen portals keep
 	# direction-line guidance with no guessed coordinates.
 	var views_raw: Variant = frontend.get("entities")
@@ -426,7 +441,7 @@ func refresh(session: Node, frontend: Node) -> void:
 		if not is_instance_valid(node):
 			node = Label.new()
 			node.add_theme_color_override("font_color", Color("f9de86"))
-			node.add_theme_color_override("font_shadow_color", Color("111829"))
+			node.add_theme_color_override("font_shadow_color", _color("void", Color("1a1a1a")))
 			node.add_theme_constant_override("shadow_offset_x", 1)
 			node.add_theme_constant_override("shadow_offset_y", 1)
 			node.add_theme_font_size_override("font_size", 13)

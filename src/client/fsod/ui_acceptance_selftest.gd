@@ -9,6 +9,14 @@ const World = preload("res://src/client/fsod/world_view.gd")
 const Guide = preload("res://src/client/fsod/realm_guide.gd")
 const Inventory = preload("res://src/client/fsod/inventory_panel.gd")
 const UiTheme = preload("res://src/client/fsod/ui_theme.gd")
+# Production Entry/World composition. Only account startup and profile writes
+# are disabled in the fixture subclass; production refresh, handlers and signal
+# connections are exercised unchanged. No backend/account/profile is opened.
+class FixtureEntry extends "res://src/game/fsod_entry.gd":
+	func _ready() -> void:
+		set_process(false)
+	func _save_profile() -> void:
+		pass
 
 const OPTIONAL: Array[String] = [
 	"res://src/client/fsod/ui_theme.gd",
@@ -38,6 +46,16 @@ class FixtureSession extends Node:
 	var object_types: Dictionary = {}
 	var metadata: Dictionary = {}
 	var player_stats: Dictionary = {}
+	var class_type: int = 782
+	var character_id: int = -1
+	var retries: int = 0
+	var restarts: int = 0
+	func retry_connection() -> Error:
+		retries += 1
+		return OK
+	func restart_as_new_character() -> Error:
+		restarts += 1
+		return OK
 
 
 func _initialize() -> void:
@@ -76,7 +94,7 @@ func _run() -> void:
 	await _input_authority()
 	await _optional_modules()
 	_write_report(report_path)
-	print("FSOD UI ACCEPTANCE BASELINE: checks=%d failures=%d target_claimed=false" % [checks, failures])
+	print("FSOD UI ACCEPTANCE TARGET: checks=%d failures=%d target_claimed=false" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
 
@@ -86,7 +104,7 @@ func _scan_modules() -> void:
 		"inventory_panel": "present",
 		"realm_guide": "present",
 		"slice_hud": "excluded",
-		"entry": "not_instantiated",
+		"entry": "production_handlers_fixture_io_disabled",
 	}
 	for path in OPTIONAL:
 		var rel: String = path.trim_prefix("res://")
@@ -105,7 +123,6 @@ func _static_contracts() -> void:
 
 
 func _capture_states() -> void:
-	await _set_viewport(1280, 720)
 	await _state_nexus()
 	await _state_realm()
 	await _state_combat()
@@ -123,7 +140,7 @@ func _state_nexus() -> void:
 	await process_frame
 	_check(built.guide.is_guide_visible(), "Nexus playing shows the live guide")
 	_check(built.guide.guide_direction_text().contains("Explore"), "Nexus guide text comes from the live overlay")
-	_measure_rail(built.world, "nexus", true)
+	_measure_rail(built.world, "nexus" if _logical() == Vector2(1280, 720) else "%dx%d" % [_logical().x, _logical().y], true)
 	await _grab(built, "1280x720-nexus.png", "nexus", "apply_map Nexus + guide.refresh playing, no enemy")
 	_release(built, session)
 
@@ -180,7 +197,11 @@ func _state_tooltip() -> void:
 	var motion := InputEventMouseMotion.new()
 	motion.position = slot.get_global_rect().get_center()
 	root.push_input(motion)
+	if _logical() == Vector2(1280, 720):
+		for i in 3:
+			await _grab(built, "tooltip-fade-%d.png" % i, "tooltip-fade", "separate hover fade sample %d" % i)
 	await create_timer(0.7).timeout
+	_check(panel._tooltip.modulate.a >= 0.99, "tooltip legibility capture is fully settled")
 	var hovered := root.gui_get_hovered_control()
 	var tooltip_panel := false
 	var node: Node = root
@@ -214,7 +235,16 @@ func _state_session(mode: String) -> void:
 	var state := "death" if mode == "dead" else "offline"
 	if mode == "dead":
 		_check(hp_line == "0 / 100", "death shows authoritative HP 0, not a stand-in banner (%s)" % hp_line)
-	await _grab(built, file, state, "session.state=%s guide.refresh; entry not instantiated" % mode)
+	_present_fixture(built, session)
+	await process_frame
+	_check(_visible_button_text(built.chrome) == ("New character" if mode == "dead" else "Reconnect"), "composed %s chrome action" % mode)
+	var action := "new_character" if mode == "dead" else "reconnect"
+	_check(built.entry.ui_diagnostics().actions == [action], "production Entry advertises the actual %s action" % action)
+	_check(not built.entry._status.visible and not built.entry._action.visible and built.entry._action.disabled, "production Entry hides and disables legacy controls")
+	await _grab(built, file, state, "session.state=%s via production Entry state/READY/refresh handlers; profile IO disabled" % mode)
+	_press_visible_button(built.chrome)
+	_press_visible_button(built.chrome)
+	_check(session.restarts == (1 if mode == "dead" else 0) and session.retries == (1 if mode == "offline" else 0), "composed production signal routes one action to the fixture session")
 	_release(built, session)
 
 
@@ -222,15 +252,7 @@ func _viewport_sweep() -> void:
 	for size in [Vector2i(800, 600), Vector2i(640, 360), Vector2i(1920, 1080)]:
 		var measured := await _set_viewport(size.x, size.y)
 		_check(absf(measured.logical.w - float(size.x)) <= 1.0 and absf(measured.logical.h - float(size.y)) <= 1.0, "logical viewport is %d x %d" % [size.x, size.y])
-		var built := await _build("Nexus", true, false, false)
-		_measure_rail(built.world, "%dx%d" % [size.x, size.y], false)
-		var tag := "%dx%d-nexus.png" % [size.x, size.y]
-		await _grab(built, tag, "nexus", "logical viewport resize %d x %d" % [size.x, size.y])
-		_release(built, null)
-		var inventory := await _build("Nexus", true, false, false)
-		_measure_core(inventory.world, "%dx%d" % [size.x, size.y])
-		await _grab(inventory, "%dx%d-inventory.png" % [size.x, size.y], "inventory", "equipment clamp at logical %d x %d" % [size.x, size.y])
-		_release(inventory, null)
+		await _capture_states() # All eight states at every short/large logical size.
 
 
 func _letterbox() -> void:
@@ -250,19 +272,33 @@ func _temporal() -> void:
 	await _set_viewport(1280, 720)
 	var built := await _build("NexusPortal.Dragon", true, true, false)
 	var world = built.world
+	await create_timer(0.6).timeout # Settle chrome before measured, no-wait temporal steps.
 	world._camera_ready = true
 	world._camera_hold_auth = false
 	var player = world._player()
 	_check(player != null, "temporal sample has a player")
 	var target: Vector2 = world.desired_camera_position(player.position, _logical())
 	world._world.position = target + Vector2(140, 36)
+	world.apply_tick({"tick_time": 100, "tick_id": 2, "update_statuses": [{"id": 1, "stats": {1: 40, 4: 20, 6: 30}}]})
 	var deltas: Array = []
 	var positions: Array = []
 	var files: Array = []
+	var bar_samples: Array = []
+	var prior: Dictionary = world.ui_diagnostics().bars
 	for i in 4:
 		var delta := 1.0 / 60.0
 		var started := Time.get_ticks_usec()
 		world.advance_camera_display(delta)
+		world._hud.advance_display(delta)
+		var current: Dictionary = world.ui_diagnostics().bars
+		for kind in ["hp", "mp", "xp"]:
+			var fill_target := float(current[kind].value) / float(current[kind].max)
+			var previous := float(prior[kind].interpolated)
+			var shown := float(current[kind].interpolated)
+			_check(shown >= minf(previous, fill_target) - 0.0001 and shown <= maxf(previous, fill_target) + 0.0001 and absf(shown - previous) > 0.00001, "%s fill eases monotonically between source and prior frame" % kind)
+		_check(current.hp.displayed == "40 / 100" and current.mp.displayed == "20 / 100" and current.xp.displayed == "30 / 50", "stat captions jump to tick source")
+		bar_samples.append(current)
+		prior = current
 		if world.entities.has(2):
 			world.entities[2].advance_presentation(delta)
 		deltas.append(delta)
@@ -274,7 +310,7 @@ func _temporal() -> void:
 	var moved := absf(float(positions[3]) - float(positions[0])) > 1.0
 	_check(moved, "render-rate camera sample moved the display (%.2f -> %.2f)" % [positions[0], positions[3]])
 	var hz := 60.0
-	_gate("render_rate_samples", moved, {"deltas": deltas, "files": files, "sample_hz": hz, "positions": positions, "derived_from": "harness 1/60 steps, not a UI constant"})
+	_gate("render_rate_samples", moved, {"deltas": deltas, "files": files, "sample_hz": hz, "positions": positions, "bars": bar_samples, "derived_from": "harness 1/60 steps, not a UI constant"})
 	_release(built, null)
 
 
@@ -563,11 +599,35 @@ func _build(map_name: String, player: bool, combat: bool, loot: bool) -> Diction
 	world.apply_update({"tiles": cells, "new_objects": objects})
 	if combat:
 		world.apply_projectile({"owner_id": 2, "bullet_id": 3, "position": {"x": 20.0, "y": 11.0}, "angle": 3.1, "speed": 80, "lifetime_ms": 1200, "bullet_type": 0})
-	var guide = Guide.new()
-	_own(guide)
+	world._hud.set_process(false)
+	for _i in 20:
+		world._hud.advance_display(0.05)
+	var session := _session("playing", world)
+	var entry := FixtureEntry.new()
+	_own(entry)
+	entry.session = session
+	entry._frontend = world
+	entry._status = Label.new()
+	entry._action = Button.new()
+	entry.add_child(entry._status)
+	entry.add_child(entry._action)
+	entry._realm_guide = Guide.new()
+	entry.add_child(entry._realm_guide)
+	entry._attach_optional_hosts()
+	var built := {"world": world, "entry": entry, "guide": entry._realm_guide, "chrome": entry._account_chrome, "feedback": entry._combat_feedback, "session": session}
+	_check(built.chrome != null and built.feedback != null, "production Entry attaches delivered chrome and feedback")
+	_present_fixture(built, session)
 	await process_frame
 	await process_frame
-	return {"world": world, "guide": guide}
+	return built
+
+
+func _present_fixture(built: Dictionary, session: FixtureSession) -> void:
+	built.entry.session = session
+	built.entry._on_state(session.state)
+	if session.state == "playing":
+		built.entry._on_packet_readback(0, {}) # Existing READY predicate, not a fixture pass flag.
+	built.entry._process(1.0 / 60.0) # Real readonly snapshot and feedback refresh paths.
 
 
 func _session(mode: String, world) -> FixtureSession:
@@ -624,6 +684,7 @@ func _measure_rail(world, tag: String, require_flush: bool) -> void:
 	_gate("rail_%s" % tag, flush and width_ok and left_ok and center_ok, {"rect": _rect(rect), "viewport": {"w": vp.x, "h": vp.y}, "flush": flush, "width": rect.size.x, "center_x": center.x})
 	_push_region("dock", rail, false, "world_view")
 	var hud = world._hud
+	_gate("hud_host_no_overlap_%s" % tag, hud._stats_box.get_global_rect().end.y <= hud._host.get_global_rect().position.y, {"stats": _rect(hud._stats_box.get_global_rect()), "host": _rect(hud._host.get_global_rect())})
 	_push_region("identity", hud._identity, true, "hud_panel")
 	_push_region("minimap", hud._minimap_box, true, "hud_panel")
 	_push_region("potions", hud._potions, true, "hud_panel")
@@ -665,9 +726,16 @@ func _measure_core(world, tag: String) -> void:
 		var vp := _logical()
 		var past := rect.position.x < -1.0 or rect.position.y < -1.0 or rect.end.x > vp.x + 1.0 or rect.end.y > vp.y + 1.0
 		var scrolled := false
+		var ancestor := tile.get_parent()
+		while ancestor != null:
+			if ancestor is Control and ancestor.clip_contents and not ancestor.get_global_rect().grow(0.5).encloses(rect):
+				scrolled = true
+			ancestor = ancestor.get_parent()
+		if not tile.is_visible_in_tree():
+			scrolled = true
 		if scroll != null:
 			var visible := scroll.get_global_rect()
-			scrolled = rect.end.y > visible.end.y + 1.0 or rect.position.y < visible.position.y - 1.0
+			scrolled = scrolled or rect.end.y > visible.end.y + 1.0 or rect.position.y < visible.position.y - 1.0
 		if past or scrolled:
 			outside.append({"slot": slot, "rect": _rect(rect), "scrolled": scrolled})
 	var met := outside.is_empty() and scroll_y == 0
@@ -708,8 +776,25 @@ func _missing_stats() -> void:
 
 
 func _grab(built: Dictionary, file: String, state: String, source: String, allow_scale: bool = false) -> Dictionary:
+	if file.begins_with("1280x720-"):
+		file = "%dx%d-%s" % [_logical().x, _logical().y, file.trim_prefix("1280x720-")]
+	if state != "tooltip-fade" and not file.begins_with("temporal-"):
+		await create_timer(0.6).timeout # Fully settled chrome/tooltip legibility, separate from fade samples.
+		var surface: Control = built.chrome.get_node("AccountChromePanel" if built.entry.session.state in ["dead", "offline"] else "AccountReadyStatus")
+		_check(surface.modulate.a >= 0.99, "%s composed chrome fully settled" % file)
+	_measure_core(built.world, "%dx%d" % [_logical().x, _logical().y])
+	var header = built.world._hud
+	_gate("identity_fame_nonoverlap", not header._identity.get_global_rect().intersects(header._fame.get_global_rect()) and not UiTheme.text_overflows(header._identity) and not UiTheme.text_overflows(header._fame), {"name": {"rect": _rect(header._identity.get_global_rect()), "text": header._identity.text, "fit": UiTheme.text_fit(header._identity)}, "fame": {"rect": _rect(header._fame.get_global_rect()), "text": header._fame.text, "fit": UiTheme.text_fit(header._fame)}})
+	var current_diag: Dictionary = built.world.ui_diagnostics()
+	for region: Dictionary in current_diag.regions:
+		if bool(region.get("visible", false)):
+			_check(not bool(region.get("clipped", true)), "%s %s actual region %s is unclipped" % [file, state, region.id])
 	await process_frame
 	await RenderingServer.frame_post_draw
+	if state == "nexus":
+		var guide = built.guide
+		var style: StyleBoxFlat = guide._panel.get_theme_stylebox("panel")
+		_gate("guide_charcoal_compact", style.bg_color.is_equal_approx(UiTheme.CHARCOAL) and guide._panel.size.y <= guide._direction_label.size.y + 9.0, {"color": style.bg_color.to_html(false), "panel": _rect(guide._panel.get_global_rect()), "direction": _rect(guide._direction_label.get_global_rect()), "text": guide._direction_label.text})
 	var image := await _viewport_image()
 	var path := capture_dir.path_join(file)
 	_check(image != null and not image.is_empty(), "viewport texture for %s" % file)
@@ -732,6 +817,7 @@ func _grab(built: Dictionary, file: String, state: String, source: String, allow
 		"window_h": window.y,
 		"sample_colors": colors,
 		"transform": _transform(),
+		"diagnostics": {"entry": built.entry.ui_diagnostics(), "world": built.world.ui_diagnostics(), "chrome": built.chrome.ui_diagnostics(), "feedback": built.feedback.ui_diagnostics()},
 	}
 	if not allow_scale:
 		_check(absf(float(image.get_width()) - logical.x) <= 2.0 and absf(float(image.get_height()) - logical.y) <= 2.0, "%s png matches logical viewport" % file)
@@ -963,6 +1049,7 @@ func _rect(rect: Rect2) -> Dictionary:
 
 func _gate(id: String, met: bool, measured: Dictionary) -> void:
 	gates[id] = {"met": met, "measured": measured}
+	_check(met, "target gate %s: %s" % [id, JSON.stringify(measured)])
 
 
 func _own(node: Node) -> Node:
@@ -974,10 +1061,9 @@ func _own(node: Node) -> Node:
 func _release(built: Dictionary, session: Node) -> void:
 	if session != null and is_instance_valid(session):
 		session.free()
-	if built.has("guide") and is_instance_valid(built.guide):
-		built.guide.free()
-	if built.has("world") and is_instance_valid(built.world):
-		built.world.free()
+	for key in ["entry", "session", "world"]:
+		if built.has(key) and is_instance_valid(built[key]):
+			built[key].free()
 
 
 func _write_report(path: String) -> void:
@@ -987,7 +1073,7 @@ func _write_report(path: String) -> void:
 			unmet.append(id)
 	var report := {
 		"kind": "gravebag.ui_geometry.v1",
-		"acceptance": "baseline",
+		"acceptance": "target_geometry",
 		"target_quality_claimed": false,
 		"final_acceptance": false,
 		"reference_motion_matched": false,
@@ -996,7 +1082,7 @@ func _write_report(path: String) -> void:
 		"slice_hud_used_as_acceptance": false,
 		"live_subject": "world_view",
 		"backend_live": false,
-		"reason": "baseline fixture of current source; production diagnostics/theme/chrome/feedback absent or not a reference match; not final acceptance",
+		"reason": "binding source-derived geometry/input/stat/motion fixture gates; independent reference approval and original-backend live proof remain separate",
 		"modules": modules,
 		"diagnostics": diagnostics,
 		"regions": regions,

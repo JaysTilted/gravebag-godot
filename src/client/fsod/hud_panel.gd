@@ -119,6 +119,7 @@ func ui_diagnostics() -> Dictionary:
 	regions.append(_bar_region("mp", displayed_line(MP)))
 	regions.append(_bar_region("xp", displayed_line(XP)))
 	regions.append(_text_region("stats", _stats_box, _stats_text(), _stat_label_list()))
+	regions.append(UiTheme.region_from_control("fame", _fame, _fame.text))
 	var potion := _text_region("potions", _potions, "F %s\nV %s" % [displayed_line(POTION_HP), displayed_line(POTION_MP)], _potion_counts.values())
 	potion["icons"] = _potion_counts.size()
 	regions.append(potion)
@@ -138,6 +139,7 @@ func ui_diagnostics() -> Dictionary:
 		"focus": _focus_record(),
 		"state": "world",
 		"minimap_cache": {"rebuilds": tile_cache_rebuilds, "revision": _cache_revision},
+		"map_source": _map_name,
 	}
 
 
@@ -177,9 +179,9 @@ func _stat_label_list() -> Array:
 func _stats_text() -> String:
 	var lines: PackedStringArray = []
 	for row: Array in STAT_ROWS:
-		var bonus := _bonus_text(row[2])
-		lines.append("%s %s%s" % [row[0], _stat_text(row[1]), (" " + bonus) if not bonus.is_empty() else ""])
-	lines.append("Fame %s" % displayed_line(FAME))
+		var bonus: String = _stat_labels[row[0] + "_bonus"].text
+		lines.append("%s %s%s" % [_stat_labels[row[0] + "_name"].text, _stat_labels[row[0] + "_value"].text, (" " + bonus) if not bonus.is_empty() else ""])
+	lines.append(_fame.text)
 	return "\n".join(lines)
 
 
@@ -205,7 +207,7 @@ func _build() -> void:
 	_identity = Label.new()
 	_identity.name = "Identity"
 	_identity.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UiTheme.apply_label(_identity, 14, UiTheme.SILVER)
+	UiTheme.apply_label(_identity, 12, UiTheme.SILVER)
 	add_child(_identity)
 	for kind: String in ["hp", "mp", "xp"]:
 		var bar := Control.new()
@@ -270,16 +272,16 @@ func _layout() -> void:
 	var line_h := 15.0 # Font 12 line height fits; measured by text_fit in diagnostics.
 	var bar_h := 18.0 # Caption font 13 fits inside; readable, still compact.
 	var stats_h := line_h * 3.0
-	var below := 2.0 + (bar_h + 2.0) * 3.0 + stats_h + 2.0
+	var below := 1.0 + (bar_h + 1.0) * 3.0 + stats_h + 1.0
 	_identity.position = Vector2(inset + 2.0, inset)
-	_identity.size = Vector2(width - 4.0, 18.0)
-	_fame.position = _identity.position
-	_fame.size = _identity.size
+	_identity.size = Vector2(maxf(0.0, width - 78.0), 18.0)
+	_fame.position = Vector2(inset + width - 72.0, inset)
+	_fame.size = Vector2(70.0, 18.0)
 	var top := _identity.position.y + 19.0
 	var minimap_h := maxf(48.0, host.position.y - top - below)
 	_minimap_box.position = Vector2(inset, top)
 	_minimap_box.size = Vector2(width, minimap_h)
-	var y := top + minimap_h + 2.0
+	var y := top + minimap_h + 1.0
 	for kind: String in ["hp", "mp", "xp"]:
 		var bar: Control = _bars[kind]
 		bar.position = Vector2(inset, y)
@@ -287,7 +289,7 @@ func _layout() -> void:
 		var caption: Label = bar.get_node("Caption")
 		caption.position = Vector2(4, 0)
 		caption.size = Vector2(maxf(0.0, bar.size.x - 8.0), bar.size.y)
-		y += bar_h + 2.0
+		y += bar_h + 1.0
 	_stats_box.position = Vector2(inset + 2.0, y)
 	_stats_box.size = Vector2(width - 4.0, stats_h)
 	var col_w := (_stats_box.size.x) / 2.0
@@ -334,10 +336,9 @@ func _pair(kind: String, cur_id: int, max_id: int) -> void:
 	_source_value[cur_id] = cur
 	_source_max[max_id] = maximum
 	if cur == null or maximum == null:
-		_source_text[cur_id] = "—"
+		_source_text[cur_id] = "—" if cur == null and maximum == null else "%s / %s" % [str(cur) if cur != null else "—", str(maximum) if maximum != null else "—"]
 		_source_frac[kind] = 0.0
-		if not _display_frac.has(kind):
-			_display_frac[kind] = 0.0
+		_display_frac[kind] = 0.0 # Unknown maximum must never retain a stale filled meter.
 		return
 	_source_text[cur_id] = "%s / %s" % [cur, maximum]
 	var max_f := float(maximum)
@@ -350,7 +351,8 @@ func _sync_labels() -> void:
 	if not is_instance_valid(_identity):
 		return
 	var who := _name_text()
-	var world := _map_name if not _map_name.is_empty() else "—"
+	# Remove the wire map namespace, not the player name. Raw source remains in diagnostics.
+	var world := _map_name.trim_prefix("NexusPortal.") if not _map_name.is_empty() else "—"
 	_identity.text = "%s · %s" % [who, world]
 	_fame.text = "Fame %s" % displayed_line(FAME)
 	_bars["hp"].get_node("Caption").text = "HP  %s" % displayed_line(HP)
@@ -360,8 +362,8 @@ func _sync_labels() -> void:
 		_stat_labels[row[0] + "_name"].text = row[0]
 		_stat_labels[row[0] + "_value"].text = _stat_text(row[1])
 		_stat_labels[row[0] + "_bonus"].text = _bonus_text(row[2])
-	_potion_counts["hp"].text = displayed_line(POTION_HP)
-	_potion_counts["mp"].text = displayed_line(POTION_MP)
+	_potion_counts["hp"].text = "F %s" % displayed_line(POTION_HP)
+	_potion_counts["mp"].text = "V %s" % displayed_line(POTION_MP)
 	if is_instance_valid(_potions):
 		_potions.queue_redraw()
 

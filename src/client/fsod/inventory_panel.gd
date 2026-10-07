@@ -234,6 +234,17 @@ func _apply_metrics() -> void:
 	if width < 64.0:
 		width = 200.0
 	var side := clampi(int(floor((width - GAP * 3.0) / 4.0)), SLOT_MIN, SLOT_MAX)
+	var host := get_parent() as Control
+	# Only an explicitly bounded host supplies a height budget. Using this
+	# PanelContainer's content-derived minimum height creates a resize loop.
+	if host != null and host.size.y > 0.0 and host.size.y < 309.0:
+		# Short hosts keep bars and the entire core grid separate. Count actual
+		# visible rows, including nearby loot, rather than just width-sized tiles.
+		var rows := 3 + (2 if _backpack.visible else 0) + (2 if _loot.visible else 0)
+		var captions := (16 if _backpack.visible else 0) + (16 if _loot.visible else 0)
+		var overhead := PAD * 2 + 20 + captions + (rows + 3) * GAP
+		side = mini(side, maxi(16, int(floor((host.size.y - overhead) / rows))))
+		_hint.text = "Click or drag to swap"
 	for tile in _player_slots + _bag_slots:
 		if tile.custom_minimum_size.x != side:
 			tile.custom_minimum_size = Vector2(side, side)
@@ -241,7 +252,8 @@ func _apply_metrics() -> void:
 func _process(delta: float) -> void:
 	if _tooltip != null:
 		_tooltip.tick(delta)
-	set_process(false)
+	# Continue the fade until it settles, not just the first frame after hover.
+	set_process(_tooltip != null and not is_equal_approx(_tooltip.modulate.a, _tooltip.want))
 
 func _stat(stats: Dictionary, id: int) -> Variant:
 	return stats.get(id, stats.get(str(id)))
@@ -586,6 +598,9 @@ func _control_clipped(control: Control) -> bool:
 		return true
 	var node: Node = control.get_parent()
 	while node != null:
+		# Tooltip is drawn on its own canvas: it cannot inherit inventory clipping.
+		if node is CanvasLayer:
+			break
 		if node is Control and node.clip_contents and not node.get_global_rect().grow(0.5).encloses(rect):
 			return true
 		node = node.get_parent()

@@ -1,38 +1,48 @@
-# RotMG UI acceptance proof
+# RotMG UI target-geometry proof
 
-Status: baseline harness. Not final visual-parity acceptance.
-Owner files (this branch only):
-- NEW `src/client/fsod/ui_acceptance_selftest.gd` (+uid) — isolated fixture runner.
-- NEW `scripts/fsod_ui_proof/contract.json` — frozen diagnostics schema the runner consumes.
-- NEW `tests/layout.test.mjs` — xvfb render, geometry, motion, input gate.
-- THIS PLAN `plans/rotmg-ui-proof.md`.
+Status: binding integrated fixture gate, not final reference/live approval.
+The original proof lane's baseline-only ownership restrictions are historical;
+the sole integration coordinator owns the merged UI and proof repairs.
 
-Forbidden: `world_view.gd`, `entity_view.gd`, `fsod_session.gd`, `inventory_panel.gd`,
-`fsod_entry.gd`, `project.godot`, `src/ui/hud.gd`, theme, and every other
-production UI file. Those writers own the modules. This lane does not invent a
-stand-in HUD or a `ui_diagnostics()` implementation on their files.
+## Production composition, isolated IO
+`tests/layout.test.mjs` stages the actual source dependencies into a temporary
+Godot project with isolated HOME and Xvfb. `ui_acceptance_selftest.gd` subclasses
+production `fsod_entry.gd`, disabling only startup/account/profile IO. Production
+Entry state/READY/refresh handlers attach the actual World, account chrome,
+feedback and guide, and connect the actual recovery signals. Session commands
+are local counters: this does not prove original-backend packets or saves.
+No current player profile, backend STATE, display or window is used.
 
-## What this proves
-A real GL frame of the live `world_view` rail at logical 1280×720, 800×600,
-640×360 and 1920×1080, plus a 1920×1080 window whose logical viewport stays
-1280×720 (letterbox). States are Nexus, realm, combat (enemy + projectile, not
-map name alone), inventory, loot, tooltip text, offline and death. Review
-manifests carry runtime, frame and source hashes. `target_quality_claimed` stays
-false until production modules, reference comparison and the binding gates are
-all actually met.
+## Binding checks
+Every target gate asserts immediately; later states cannot overwrite an earlier
+failure. Core 4 equipment + 8 inventory slots must be visible and unclipped by
+any ancestor. Real HP/MP/XP/stat region rectangles and measured caption font,
+line height and width must fit, including at 640x360. The compact layout reserves
+header/bars/stats above a height-budgeted grid; there is no core scrolling.
+Main host and potion strip match the primary v2 contract via real controls.
+Identity/Fame rectangles and rendered text must not overlap. The existing guide
+uses shared charcoal tokens and shrinks unused label rows. Potions show authored
+icons plus known wire 69/70 counts and existing F/V actions. Unknown maxima have
+empty fills, not a level-20 full Fame bar; known values remain readable.
 
-## What this does not prove
-RotMG parity, watched-video motion, original-backend live play, or a pass of
-unchanged source. Slice `src/ui/hud.gd` is not the live client and is not
-instantiated. Account chrome and combat feedback are exercised only when their
-scripts exist in the tree.
+All eight states (Nexus, realm, combat, inventory, loot, tooltip, offline, death)
+are captured at 1280x720, 640x360, 800x600 and 1920x1080, plus letterbox, tile-change
+and temporal samples. Offline/death captures use actual production Entry action
+handlers and prove a latched press routes once to the fixture session. Chrome
+and legibility tooltip frames settle fully; separate tooltip fade frames remain
+transitional evidence. Temporal HP/MP/XP values jump to source, fills ease between
+source and previous samples, and Space passes focused inventory slots unchanged.
+The 1/60 algorithm samples are harness steps, not a measured production FPS claim.
 
-## Verification
-`node --test tests/layout.test.mjs` with isolated HOME and xvfb. No `verify.sh`,
-no live window, no profile, no network. `tests/run_all.sh` launches this script
-headless with no capture args; that path prints SKIP and is not render proof.
+## Provenance and limits
+The manifest hashes every staged source dependency (including Entry/theme/guide)
+and every PNG. The gate compares each rendered source hash with the declared
+commit before capture, then checks sources remain unchanged. Dirty source cannot
+produce an accepted exact-HEAD manifest. The inspected RotMG references are real
+classic/Exalt stills; full video/motion remains unwatched. The terrain fixture is
+12x8 known cells, not live Nexus's initial terrain population. No quests, chat,
+party, gameplay rules or original Flash artwork are invented to fill gaps.
 
-## Limits
-Parent owns integration and CI. Geometry targets are measured from production
-controls and `Theme.inventory_host_rect` when that method exists. Positions are
-not hardcoded pass flags.
+Run `node --test tests/layout.test.mjs` from a fresh clone with isolated HOME.
+The headless run_all path deliberately skips render proof. Independent frame
+review and separately authorized fresh-account live QA remain acceptance gates.
