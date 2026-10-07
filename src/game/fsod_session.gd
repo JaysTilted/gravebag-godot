@@ -79,6 +79,59 @@ func start(host: String, port: int, login_fields: Dictionary, load_character_id:
 	return transport.call("connect_to_server", host, port)
 
 
+## Playable-entry recovery. Original server creates/saves/authorizes; no delays.
+## retry_connection() re-enters the stored Nexus with the saved character_id
+## (MAPINFO then sends LOAD, or CREATE when no character is saved).
+## restart_as_new_character() re-enters the stored Nexus as a fresh character
+## (MAPINFO then sends CREATE, never LOADs the dead id).
+## Both restore the original Nexus HELLO (GameId -2, KeyTime 0, empty Key),
+## reuse the stored encrypted GUID/Password, and connect once to the stored
+## Nexus host/port. View/map clearing happens only on real MAPINFO. Never
+## resurrects a dead character or mutates HP/XP/inventory locally.
+## Duplicate clicks while connecting/authenticating/loading/reconnecting/playing
+## return ERR_BUSY without a second transport connect.
+func retry_connection() -> Error:
+	if state in ["connecting", "authenticating", "loading_character", "reconnecting", "playing"]:
+		return ERR_BUSY
+	if state not in ["offline", "failed"]:
+		return ERR_INVALID_PARAMETER
+	if not is_instance_valid(transport) or login.is_empty():
+		return ERR_UNCONFIGURED
+	_reset_to_nexus_hello()
+	_set_state("connecting")
+	transport.call("configure_login", login)
+	var result: Error = transport.call("connect_to_server", _host, _port)
+	if result != OK:
+		_set_state("failed")
+	return result
+
+
+func restart_as_new_character() -> Error:
+	if state in ["connecting", "authenticating", "loading_character", "reconnecting", "playing"]:
+		return ERR_BUSY
+	if state != "dead":
+		return ERR_INVALID_PARAMETER
+	if not is_instance_valid(transport) or login.is_empty():
+		return ERR_UNCONFIGURED
+	# Fresh Nexus character only; the dead id is never reloaded.
+	character_id = -1
+	player_id = -1
+	_reset_to_nexus_hello()
+	_set_state("connecting")
+	transport.call("configure_login", login)
+	var result: Error = transport.call("connect_to_server", _host, _port)
+	if result != OK:
+		_set_state("failed")
+	return result
+
+
+func _reset_to_nexus_hello() -> void:
+	# Nexus entry only: clear portal reconnect tokens, keep encrypted credentials.
+	login["GameId"] = -2
+	login["KeyTime"] = 0
+	login["Key"] = PackedByteArray()
+
+
 static func normalize_login(fields: Dictionary) -> Dictionary:
 	var normalized := fields.duplicate(true)
 	# JSON numbers arrive as floats; the binary codec rightly requires typed integers.
