@@ -62,7 +62,7 @@ test('compiled original C# lifecycle forces save/dispose/logout/reconnect/packet
     run('mcs', ['-r:System.Drawing', '-out:' + exe, join(temp, changed[0]), join(temp, changed[2]),
       join(temp, changed[4]), join(temp, 'ManagerLifecycle.cs'), join(overlay, 'tests/LifecycleRegression.cs')]);
     const result = run('mono', [exe], { timeout: 30000 });
-    assert.match(result, /compiled-original-lifecycle: PASS \(11 forced interleavings\)/);
+    assert.match(result, /compiled-original-lifecycle: PASS \(15 forced interleavings\)/);
     console.log(result.trim());
     // Negative controls prove that these compiled probes detect the original
     // classes of defect rather than merely compiling the happy path.
@@ -70,6 +70,19 @@ test('compiled original C# lifecycle forces save/dispose/logout/reconnect/packet
     const managerBaseline = readFileSync(managerFile, 'utf8');
     const pairRemove = 'return ((ICollection<KeyValuePair<string, Client>>)Clients).Remove(\n                new KeyValuePair<string, Client>(accountId, client));';
     assert.ok(managerBaseline.includes(pairRemove));
+    // Death-recovery barrier: HELLO must join SAME-ACCOUNT departing save+unlock+removal
+    // before CheckAccountInUse/registration; alive still rejects; no kick/unlock-before-save.
+    assert.ok(managerBaseline.includes('DepartureTaskFor'), 'RealmManager.DepartureTaskFor joins departing save+unlock+removal');
+    assert.ok(managerBaseline.includes('IsDeparting'), 'RealmManager peeks departing vs alive without kicking');
+    assert.ok(readFileSync(join(temp, changed[0]), 'utf8').includes('IsDeparting'), 'Client.IsDeparting distinguishes departing vs alive');
+    assert.ok(readFileSync(join(temp, changed[0]), 'utf8').includes('MarkDeathDeparting'), 'Client marks exact DEATH moment, never infers HP0, never kicks living');
+    const helloPatched = readFileSync(join(temp, changed[5]), 'utf8');
+    assert.ok(helloPatched.includes('DepartureTaskFor'), 'Hello joins departure before CheckAccountInUse');
+    assert.ok(helloPatched.includes('CheckAccountInUse'), 'Hello still gates on CheckAccountInUse after departure');
+    assert.ok(helloPatched.includes('Task.WhenAny') && helloPatched.includes('Task.Delay'), 'Hello departure wait bounded, never hangs logic/DB queues');
+    assert.ok(helloPatched.includes('RunSessionAction'), 'Hello phases stay behind teardown barrier');
+    const regressionText = readFileSync(join(overlay, 'tests/LifecycleRegression.cs'), 'utf8');
+    assert.ok(regressionText.includes('DeathHelloBarrier') && regressionText.includes('HelloLiveReject') && regressionText.includes('HelloSaveFailLocked') && regressionText.includes('EarlyDeathHelloBeforeDisconnect'), 'death-HELLO while Save pending, live reject, save-fail locked, early DeathRow covered');
     writeFileSync(managerFile, managerBaseline.replace(pairRemove, 'Client removed; return Clients.TryRemove(accountId, out removed);'));
     const compile = () => run('mcs', ['-r:System.Drawing', '-out:' + exe, join(temp, changed[0]), join(temp, changed[2]),
       join(temp, changed[4]), managerFile, join(overlay, 'tests/LifecycleRegression.cs')]);
@@ -91,13 +104,28 @@ test('compiled original C# lifecycle forces save/dispose/logout/reconnect/packet
     assert.notEqual(earlyDispose.status, 0);
     assert.match(earlyDispose.stderr, /public Dispose defers field release/);
     writeFileSync(clientFile, clientBaseline);
-    console.log('compiled negative controls: PASS; key-only removal and early field disposal both rejected');
-    // Player patch is limited to transferring two teardown unlocks to the
-    // lifecycle owner; no Tick gameplay, SaveToCharacter, AI or fields change.
-    const playerOriginal = original(changed[3]).toString();
-    const expectedPlayer = playerOriginal.replaceAll(
-      'Manager.Database.DoActionAsync(db => db.UnlockAccount(Client.Account));', 'Client.Disconnect();');
-    assert.equal(readFileSync(join(temp, changed[3]), 'utf8'), expectedPlayer);
+    // Death-HELLO negative control: without the departure join (always null, never wait),
+    // immediate DEATH new HELLO must fail its barrier instead of registering early.
+    writeFileSync(managerFile, managerBaseline.replace('if (!previous.IsDeparting) return null;', 'return null;'));
+    compile();
+    const noJoin = spawnSync('mono', [exe], { encoding: 'utf8', timeout: 30000 });
+    assert.equal(noJoin.error, undefined);
+    assert.notEqual(noJoin.status, 0);
+    assert.match(noJoin.stderr, /HELLO must join departing save/);
+    writeFileSync(managerFile, managerBaseline);
+    compile();
+    console.log('compiled negative controls: PASS; key-only removal, early disposal, and missing departure join all rejected');
+    // Player patch is lifecycle-only: two Tick teardown unlocks become Disconnect,
+    // Death marks exact DEATH moment and tracks DeathRow via RunSessionAction so the
+    // departing terminal Save joins after it. No Tick/Death gameplay, timer, LeaveWorld,
+    // SaveToCharacter, AI or fields change; no death-row wipe.
+    const playerPatched = readFileSync(join(temp, changed[3]), 'utf8');
+    assert.ok(!playerPatched.includes('UnlockAccount'), 'no unlock-before-save, no kick');
+    assert.ok(playerPatched.includes('Client.Disconnect();'), 'Tick teardowns transfer to lifecycle owner');
+    assert.ok(playerPatched.includes('MarkDeathDeparting'), 'exact DEATH moment flagged, never HP0-inferred');
+    assert.ok(playerPatched.includes('RunSessionAction'), 'DeathRow tracked behind teardown barrier');
+    assert.ok(playerPatched.includes('db.Death(') && playerPatched.includes('SaveToCharacter()'), 'Death Save/Death mapping preserved');
+    assert.ok(playerPatched.includes('DeathPacket') && playerPatched.includes('WorldTimer(1000') && playerPatched.includes('LeaveWorld'), 'original 1s timer/DeathPacket/LeaveWorld unchanged');
   } finally { rmSync(temp, { recursive: true, force: true }); }
 });
 
