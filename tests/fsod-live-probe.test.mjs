@@ -14,3 +14,11 @@ test('live probe compiles and refuses missing private profile without fake succe
   assert.match(output, /FSOD LIVE FAIL: profile missing/);
   assert.doesNotMatch(output, /FSOD LIVE PASS/);
 });
+test('real Godot bot input thresholds cannot idle before waypoint arrival', () => {
+  const result = spawnSync(godot, ['--headless', '--path', root, '-s', 'res://src/game/fsod_probe_navigation_selftest.gd'], { encoding: 'utf8', timeout: 30000 });
+  assert.ifError(result.error);
+  const output = `${result.stdout}\n${result.stderr}`;
+  assert.equal(result.status, 0, output);
+  assert.doesNotMatch(output, /Parse Error|SCRIPT ERROR|Assertion failed/i);
+  assert.match(output, /FSOD PROBE NAVIGATION PASS: 1802 checks/);
+});

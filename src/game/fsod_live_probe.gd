@@ -341,11 +341,7 @@ func _navigate(target: Vector2, explore: bool = false) -> void:
 
 func _move_toward(target: Vector2) -> void:
 	var offset: Vector2 = target - session.pending_position
-	var desired: Array = []
-	if absf(offset.x) > 0.2:
-		desired.append(KEY_D if offset.x > 0 else KEY_A)
-	if absf(offset.y) > 0.2:
-		desired.append(KEY_S if offset.y > 0 else KEY_W)
+	var desired := navigation_keys(offset)
 	for key in _held_keys:
 		if key not in desired:
 			_key(key, false)
@@ -353,6 +349,15 @@ func _move_toward(target: Vector2) -> void:
 		if key not in _held_keys:
 			_key(key, true)
 	_held_keys = desired
+
+static func navigation_keys(offset: Vector2) -> Array:
+	# Smaller than the waypoint arrival radius (0.18), so a 0.19-tile
+	# remainder can never leave the bot idle forever between thresholds.
+	var desired: Array = []
+	if absf(offset.x) > 0.1: desired.append(KEY_D if offset.x > 0 else KEY_A)
+	if absf(offset.y) > 0.1: desired.append(KEY_S if offset.y > 0 else KEY_W)
+	return desired
+
 
 func _key(code: int, pressed: bool) -> void:
 	var event := InputEventKey.new()
