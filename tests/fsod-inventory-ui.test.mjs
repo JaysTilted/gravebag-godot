@@ -18,17 +18,19 @@ test('FSoD inventory: real SceneTree authority, callbacks, complete layout and r
   const env = { ...process.env, HOME: home, XDG_CONFIG_HOME: join(home, '.config'), XDG_CACHE_HOME: join(home, '.cache'), XDG_DATA_HOME: join(home, '.local/share') };
   try {
     mkdirSync(home);
-    for (const path of ['src/client/fsod/inventory_panel.gd', 'src/client/fsod/inventory_ui_selftest.gd', 'src/data/fsod/items.json', 'src/data/fsod/objects.json']) {
+    for (const path of ['src/client/fsod/inventory_panel.gd', 'src/client/fsod/item_icon.gd', 'src/client/fsod/item_tooltip.gd', 'src/client/fsod/inventory_ui_selftest.gd', 'src/data/fsod/items.json', 'src/data/fsod/objects.json']) {
       const destination = join(project, path);
       mkdirSync(resolve(destination, '..'), { recursive: true });
       copyFileSync(join(root, path), destination);
     }
+    // v1 rollback fixture. The panel must ignore it and keep the frozen v2 sample.
+    writeFileSync(join(project, 'src/client/fsod/ui_theme.gd'), "extends RefCounted\nstatic func tokens():\n\treturn {\"ink\": \"#171717\", \"slate\": \"#343434\"}\n");
     writeFileSync(join(project, 'project.godot'), `config_version=5
 [application]
 config/name="Inventory isolated acceptance"
 [display]
-window/size/viewport_width=960
-window/size/viewport_height=760
+window/size/viewport_width=1280
+window/size/viewport_height=720
 [rendering]
 renderer/rendering_method="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
@@ -48,8 +50,8 @@ textures/canvas_textures/default_texture_filter=0
     run(['xvfb-run', '-a', godot, ...args, '--', `--capture=${frame}`], /FSOD INVENTORY RENDER PASS/);
     const png = readFileSync(frame);
     assert.equal(png.subarray(1, 4).toString(), 'PNG');
-    assert.equal(png.readUInt32BE(16), 960);
-    assert.equal(png.readUInt32BE(20), 760);
+    assert.equal(png.readUInt32BE(16), 1280);
+    assert.equal(png.readUInt32BE(20), 720);
     assert.ok(png.length > 10000, 'real frame must contain rendered inventory, not a marker');
     if (process.env.FSOD_INVENTORY_PROOF_DIR) {
       copyFileSync(frame, join(resolve(process.env.FSOD_INVENTORY_PROOF_DIR), 'inventory-frame.png'));
