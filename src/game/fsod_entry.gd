@@ -2,6 +2,7 @@ extends Node
 ## Opt-in server frontend entry during cutover. Original slice remains default.
 const Session := preload("res://src/game/fsod_session.gd")
 const Adapter := preload("res://src/game/fsod_view_adapter.gd")
+const RealmGuide := preload("res://src/client/fsod/realm_guide.gd")
 const NETWORK := "res://src/net/fsod/client.gd"
 const FRONTEND := "res://src/client/fsod/frontend.tscn"
 const DATA := "res://src/data/fsod/"
@@ -12,6 +13,7 @@ var _profile_path := ""
 var _profile: Dictionary = {}
 var _frontend: Node
 var _ready_reported := false
+var _realm_guide: CanvasLayer
 
 
 func _ready() -> void:
@@ -58,6 +60,11 @@ func _ready() -> void:
 	var metadata := Adapter.descriptors(_read_json(DATA + "objects.json"), _read_json(DATA + "object_descriptors.json"), _read_json(DATA + "projectiles.json"), _read_json(DATA + "grounds.json"))
 	session.bind(network, frontend, metadata, _read_json(DATA + "items.json"))
 	_frontend = frontend
+	# Realm entry overlay: display-only labels, no gameplay writes. Created only
+	# on the live entry path; early-_fail selftest fixtures leave it null and
+	# _process no-ops so existing entry checks are unaffected.
+	_realm_guide = RealmGuide.new()
+	add_child(_realm_guide)
 	# Observe after the session consumes packets. CREATE_SUCCESS alone is not
 	# a spawned player: the original constructor can fail after that packet.
 	network.connect("packet_received", _on_packet_readback)
@@ -68,6 +75,17 @@ func _ready() -> void:
 	var result: Error = session.start(String(_profile.get("host", "127.0.0.1")), int(_profile.get("port", 2050)), _profile.hello, int(_profile.get("character_id", -1)))
 	if result != OK:
 		_fail("Could not start local backend connection (code %d)" % result)
+
+
+## Realm guide poll: readonly display refresh once per frame. Lightweight
+## single pass inside the guide; never sends gameplay/transport requests,
+## never touches focus/input. Null-safe for early-_fail fixtures.
+func _process(_delta: float) -> void:
+	if not is_instance_valid(session) or not is_instance_valid(_frontend):
+		return
+	if not is_instance_valid(_realm_guide):
+		return
+	_realm_guide.refresh(session, _frontend)
 
 
 func _read_json(path: String) -> Dictionary:
