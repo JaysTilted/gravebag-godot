@@ -180,7 +180,12 @@ func _draw() -> void:
 		for y: int in rows.size():
 			for x: int in rows[y].length():
 				var key: String = rows[y][x]
-				if key != ".": draw_rect(Rect2(Vector2(x - 4, y - 6) * PIXEL, Vector2.ONE * PIXEL), colors[key])
+				if key != ".":
+					var origin := Vector2(x - 4, y - 6) * PIXEL
+					draw_rect(Rect2(origin, Vector2.ONE * PIXEL), colors[key])
+					# Only the outer silhouette gets subpixel coverage. Internal pixel
+					# boundaries/palette stay crisp; no unsupported GLES3 2D MSAA.
+					_draw_texel_edge(rows, x, y, origin, colors[key])
 	elif kind == "portal":
 		draw_circle(Vector2(0, -7), 13.0, Color("182f43"), true, -1.0, true)
 		draw_arc(Vector2(0, -7), 12.0, 0.0, TAU, 48, Color("64cbd3"), 2.0, true)
@@ -211,6 +216,17 @@ func _draw() -> void:
 		var dir: Vector2 = Vector2.from_angle(aim_angle)
 		draw_line(dir * 8.0, dir * 22.0, Color("efcf7a"), 3.0, true)
 		draw_circle(dir * 23.0, 2.0, Color("fff1bd"), true, -1.0, true)
+
+
+func _draw_texel_edge(rows: PackedStringArray, x: int, y: int, origin: Vector2, color: Color) -> void:
+	if y == 0 or rows[y - 1][x] == ".":
+		draw_line(origin, origin + Vector2(PIXEL, 0), color, 0.7, true)
+	if y == rows.size() - 1 or rows[y + 1][x] == ".":
+		draw_line(origin + Vector2(0, PIXEL), origin + Vector2(PIXEL, PIXEL), color, 0.7, true)
+	if x == 0 or rows[y][x - 1] == ".":
+		draw_line(origin, origin + Vector2(0, PIXEL), color, 0.7, true)
+	if x == rows[y].length() - 1 or rows[y][x + 1] == ".":
+		draw_line(origin + Vector2(PIXEL, 0), origin + Vector2(PIXEL, PIXEL), color, 0.7, true)
 
 
 func draw_ellipse_shadow() -> void:

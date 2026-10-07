@@ -219,7 +219,8 @@ func apply_tick(packet: Dictionary) -> void:
 			continue # Unknown tick IDs never invent entities/type metadata.
 		view.apply_status(status, seconds)
 		if id == player_id: _prediction = view.authoritative_position
-	_snap_camera_on_discontinuity(_previous_tick_auth)
+	var explicit_goto := int(packet.get("tick_id", 0)) == -1 and float(packet.get("tick_time", 100)) <= 0.0
+	_snap_camera_on_discontinuity(_previous_tick_auth, explicit_goto)
 	_refresh_rail()
 	_redraw()
 
@@ -396,7 +397,7 @@ func _player_auth_snapshot() -> Variant:
 	return player.authoritative_position if player != null else null
 
 
-func _snap_camera_on_discontinuity(previous: Variant) -> void:
+func _snap_camera_on_discontinuity(previous: Variant, force_snap: bool = false) -> void:
 	if not (previous is Vector2):
 		return
 	var player: Variant = _player()
@@ -404,7 +405,7 @@ func _snap_camera_on_discontinuity(previous: Variant) -> void:
 		return
 	if not previous.is_finite() or not player.authoritative_position.is_finite():
 		return
-	if previous.distance_to(player.authoritative_position) <= CAMERA_TELEPORT_TILES:
+	if not force_snap and previous.distance_to(player.authoritative_position) <= CAMERA_TELEPORT_TILES:
 		return
 	# Map/GOTO/teleport discontinuity: hard-snap so smoothing never slews across
 	# the jump. Packet trajectory origins stay _prediction (untouched).

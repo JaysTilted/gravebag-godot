@@ -91,7 +91,7 @@ func _run() -> void:
 	# while the render pose catches up, so the camera never slews across the jump.
 	world.apply_tick({"tick_time": 100, "update_statuses": [{"id": 10, "position": {"x": 20.0, "y": 15.0}, "stats": {}}]})
 	var landing_target: Vector2 = world.desired_camera_position(Vector2(20, 15) * 32.0, viewport_size)
-	_check(world._camera_hold_auth, "teleport engages authoritative hold")
+	_check(world._camera_hold_auth or player.display_position().is_equal_approx(Vector2(20, 15) * 32.0), "teleport holds until display pose lands, or releases after entity instant snap")
 	_check(world._world.position.is_equal_approx(landing_target), "teleport snaps display to landing")
 	for i: int in 4:
 		world.advance_camera_display(1.0 / 60.0)
@@ -99,6 +99,8 @@ func _run() -> void:
 	world.predict_motion(Vector2.ZERO, 0.5) # Physics-cadence prediction lands the local pose on _prediction.
 	world.advance_camera_display(1.0 / 60.0)
 	_check(not world._camera_hold_auth, "hold releases once the render pose lands")
+	world.apply_tick({"tick_id": -1, "tick_time": 0, "update_statuses": [{"id": 10, "position": {"x": 20.1, "y": 15.0}, "stats": {}}]})
+	_check(world._world.position.is_equal_approx(world.desired_camera_position(Vector2(20.1, 15) * 32.0, viewport_size)), "even sub-tile explicit GOTO snaps camera immediately")
 	# 9. Map reset invalidates the camera; the next presentation snaps, not slews.
 	world.apply_map({"width": 40, "height": 30, "name": "Camera fixture re-map"})
 	_check(not world._camera_ready, "map reset invalidates camera readiness")

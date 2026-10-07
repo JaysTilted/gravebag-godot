@@ -20,6 +20,9 @@ var _frame_dir := "/state/live-frames"
 var _bot_realm := false
 var _bot_injury := false
 var _bot_loot := false
+var _bot_death_cycle := false
+var _dead_character_id := -1
+var _recovering := false
 var _deadline_ms := 90000
 var _loot_request := {}
 var _injury_observed := false
@@ -55,6 +58,10 @@ func _start() -> void:
 		elif argument == "--fsod-bot-injury":
 			_bot_realm = true
 			_bot_injury = true
+		elif argument == "--fsod-bot-death-cycle":
+			_bot_realm = true
+			_bot_injury = true
+			_bot_death_cycle = true
 		elif argument.begins_with("--fsod-deadline-ms="):
 			_deadline_ms = clampi(int(argument.trim_prefix("--fsod-deadline-ms=")), 1000, 300000)
 		elif argument == "--fsod-bot-loot":
@@ -89,7 +96,14 @@ func _start() -> void:
 
 func _on_state(state: String) -> void:
 	print("FSOD LIVE STATE ", state)
+	if state == "dead":
+		profile["character_id"] = -1
+		var saved := FileAccess.open(profile_path, FileAccess.WRITE)
+		if saved != null:
+			saved.store_string(JSON.stringify(profile) + "\n")
+			saved.close()
 	if state == "playing":
+		if _dead_character_id < 0: _dead_character_id = session.character_id
 		playing_at = Time.get_ticks_msec()
 		profile["character_id"] = session.character_id
 		# Existing private file retains its mode; credentials are never logged.
@@ -114,14 +128,28 @@ func _process(_delta: float) -> bool:
 	if Time.get_ticks_msec() - started > (_deadline_ms if _bot_realm else 20000):
 		_fail("real-client bounded deadline")
 		return false
+	if _recovering and session.state == "playing" and not session.player_stats.is_empty():
+		if session.character_id == _dead_character_id or session.character_id < 0:
+			_fail("server recovery returned dead character")
+			return false
+		_capture("07-original-recovery")
+		_done = true
+		print("FSOD LIVE RECOVERY PASS dead_character_id=%d new_character_id=%d original_server=true" % [_dead_character_id, session.character_id])
+		quit(0)
+		return false
 	if _bot_realm and session.state == "playing" and not session.player_stats.is_empty():
 		_drive_bot()
 		return false
 	if _bot_realm and session.state == "dead":
 		_release_keys()
-		_done = true
 		print("FSOD LIVE DEATH original_server=true visited_realm=%s xp=%d" % [_visited_realm, _source_xp])
-		quit(0 if _visited_realm else 1)
+		if _bot_death_cycle and _visited_realm:
+			_recovering = true
+			var result: int = session.restart_as_new_character()
+			if result != OK: _fail("new character request refused code%d" % result)
+		else:
+			_done = true
+			quit(0 if _visited_realm else 1)
 		return false
 	if playing_at >= 0 and ticks >= 3 and updates >= 1 and not session.player_stats.is_empty():
 		var elapsed := Time.get_ticks_msec() - playing_at
@@ -139,8 +167,12 @@ func _drive_bot() -> void:
 	var now := Time.get_ticks_msec()
 	var pos: Vector2 = session.pending_position
 	_source_xp = int(session.player_stats.get(6, 0))
+	# Wire XP6 resets at level-up; original GetLevelExp(level)=50*(level-1)^2.
+	# Inspect total source XP so genuine level-up never looks like lost progress.
+	var source_level := maxi(1, int(session.player_stats.get(7, 1)))
+	var source_lifetime_xp := _source_xp + 50 * (source_level - 1) * (source_level - 1)
 	if _starting_xp < 0:
-		_starting_xp = _source_xp
+		_starting_xp = source_lifetime_xp
 	_source_hp = int(session.player_stats.get(1, -1))
 	if now - _last_log > 5000:
 		_last_log = now
@@ -193,14 +225,14 @@ func _drive_bot() -> void:
 		_navigate(Vector2.ZERO, true)
 	if _realm_since >= 0 and now - _realm_since > 6000 and capture_attempts < 3:
 		_capture("03-original-realm-%02d" % capture_attempts)
-	if _bot_injury and _source_hp < int(session.player_stats.get(0, _source_hp)):
+	if _bot_injury and not _bot_death_cycle and _source_hp < int(session.player_stats.get(0, _source_hp)):
 		_injury_observed = true
 		_release_keys()
 		_capture("05-original-damage")
 		_done = true
 		print("FSOD LIVE DAMAGE PASS original_server_hp=%d maximum=%d realm=true" % [_source_hp, session.player_stats.get(0, -1)])
 		quit(0)
-	if not _bot_injury and not _bot_loot and _source_xp > _starting_xp and _realm_since >= 0 and now - _realm_since > 10000:
+	if not _bot_injury and not _bot_loot and source_lifetime_xp > _starting_xp and _realm_since >= 0 and now - _realm_since > 10000:
 		_release_keys()
 		_capture("04-original-combat")
 		_done = true

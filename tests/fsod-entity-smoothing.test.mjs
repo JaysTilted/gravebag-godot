@@ -46,5 +46,9 @@ test('FSoD entity smoothing keeps scope and aesthetic', () => {
   const project = readFileSync(join(root, 'project.godot'), 'utf8');
   assert.match(project, /default_texture_filter=0/, 'Nearest crisp pixel filter preserved');
   const world = readFileSync(join(root, 'src/client/fsod/world_view.gd'), 'utf8');
-  assert.doesNotMatch(world, /advance_presentation/, 'world camera cadence untouched by this change');
+  const physics = world.split('func _physics_process(')[1].split('\nfunc _process(')[0];
+  const render = world.split('func _process(')[1].split('\nfunc desired_camera_position(')[0];
+  assert.match(physics, /advance_visuals\(delta\)/, 'semantic contact positions still advance only in physics');
+  assert.match(render, /advance_presentation/, 'parallel camera integration uses cosmetic render pass');
+  assert.doesNotMatch(render, /advance_visuals\(|predict_motion\(|_projectile_hits\(|_check_ground_contact\(/, 'render cadence cannot advance contact, prediction or damage requests');
 });
