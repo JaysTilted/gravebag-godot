@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Real Godot UI baseline: live world_view frames, geometry, motion and input.
-// Baseline evidence is not RotMG target-quality acceptance.
+// Binding Godot UI target geometry, motion and input gates on the integrated source.
+// Fixtures are not original-backend live proof or independent visual approval.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
@@ -64,7 +64,7 @@ function stage(project) {
   return [...copied];
 }
 
-test('live UI baseline renders frames and does not claim target quality', { timeout: 240000 }, () => {
+test('integrated UI meets target geometry and input gates without claiming live parity', { timeout: 240000 }, () => {
   assert.equal(existsSync(godot), true, `godot binary missing: ${godot}`);
   const contract = JSON.parse(readFileSync(join(root, 'scripts/fsod_ui_proof/contract.json'), 'utf8'));
   assert.equal(contract.schema, 'gravebag.ui_diagnostics.v1');
@@ -88,10 +88,14 @@ test('live UI baseline renders frames and does not claim target quality', { time
     assert.equal(copied.includes('src/client/fsod/world_view.gd'), true);
     const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
     assert.match(head, /^[0-9a-f]{40}$/);
+    for (const [rel, hash] of Object.entries(sourceBefore)) {
+      const committed = execFileSync('git', ['show', `${head}:${rel}`], { cwd: root, timeout: 30000, maxBuffer: 8 * 1024 * 1024 });
+      assert.equal(sha(committed), hash, `rendered source differs from declared HEAD: ${rel}`);
+    }
     const version = spawnSync(godot, ['--version'], { encoding: 'utf8', timeout: 30000 });
     assert.equal(version.status, 0, version.stderr || version.stdout);
     const runtimeVersion = String(version.stdout).trim();
-    const sourceBefore = Object.fromEntries(LIVE.filter((rel) => existsSync(join(root, rel))).map((rel) => [rel, sha256(readFileSync(join(root, rel)))]));
+    const sourceBefore = Object.fromEntries([...copied, 'src/game/fsod_entry.gd'].filter((rel) => existsSync(join(root, rel))).map((rel) => [rel, sha256(readFileSync(join(root, rel)))]));
     const reportPath = join(capture, 'geometry.json');
     const run = spawnSync('xvfb-run', ['-a', godot, '--path', project, '-s', 'res://src/client/fsod/ui_acceptance_selftest.gd', '--', `--capture-dir=${capture}`, `--report=${reportPath}`], {
       cwd: project,
@@ -105,13 +109,13 @@ test('live UI baseline renders frames and does not claim target quality', { time
       writeFileSync(join(capture, 'godot.log'), log);
       assert.fail(`godot baseline failed status=${run.status} signal=${run.signal}\n${log.slice(-4000)}`);
     }
-    assert.match(log, /FSOD UI ACCEPTANCE BASELINE: checks=\d+ failures=0 target_claimed=false/);
+    assert.match(log, /FSOD UI ACCEPTANCE TARGET: checks=\d+ failures=0 target_claimed=false/);
     assert.doesNotMatch(log, /SCRIPT ERROR|Parse Error|FSOD UI ACCEPTANCE FAIL/);
     for (const [rel, hash] of Object.entries(sourceBefore)) {
       assert.equal(sha256(readFileSync(join(root, rel))), hash, `${rel} was rewritten by the fixture`);
     }
     const geometry = JSON.parse(readFileSync(reportPath, 'utf8'));
-    assert.equal(geometry.acceptance, 'baseline');
+    assert.equal(geometry.acceptance, 'target_geometry');
     assert.equal(geometry.target_quality_claimed, false);
     assert.equal(geometry.final_acceptance, false);
     assert.equal(geometry.reference_motion_matched, false);
@@ -130,7 +134,7 @@ test('live UI baseline renders frames and does not claim target quality', { time
     for (const id of ['rail_nexus', 'core_4_plus_8_nexus', 'core_4_plus_8_640x360', 'core_4_plus_8_800x600', 'core_4_plus_8_1920x1080',
       'essential_inner_2px_1280', 'potions_69_70_displayed', 'bars_readable_unclipped', 'six_stats_rows', 'minimap_readable',
       'space_passthrough_while_slot_focused', 'minimap_cache_skips_unchanged_physics', 'inventory_host_rect', 'theme_tokens',
-      'chrome_ready_hides', 'chrome_actions_once', 'feedback_no_false_first_damage', 'feedback_map_reset_clean']) {
+      'chrome_ready_hides', 'chrome_actions_once', 'feedback_no_false_first_damage', 'feedback_map_reset_clean', 'identity_fame_nonoverlap', 'guide_charcoal_compact']) {
       assert.equal(geometry.gates[id]?.met, true, `target gate ${id}`);
     }
     assert.ok(geometry.gates.rail_nexus.measured.rect.x + geometry.gates.rail_nexus.measured.rect.w <= 1280.5, 'rail ends inside 1280');
@@ -189,12 +193,23 @@ test('live UI baseline renders frames and does not claim target quality', { time
     assert.equal(letterbox.logical_h, 720);
     assert.ok(letterbox.transform);
     for (const size of ['800x600', '640x360', '1920x1080']) {
-      assert.equal(byFile.has(`${size}-nexus.png`), true, size);
-      assert.equal(byFile.has(`${size}-inventory.png`), true, size);
+      for (const state of STATES) {
+        const name = `${size}-${state}.png`;
+        assert.equal(byFile.has(name), true, name);
+        const frame = byFile.get(name);
+        assert.ok(frame.diagnostics?.world?.bars?.hp, `${name} source diagnostics`);
+        for (const region of frame.diagnostics.world.regions.filter(r => r.visible)) assert.equal(region.clipped, false, `${name} ${region.id}`);
+        if (state === 'death' || state === 'offline') {
+          assert.equal(frame.diagnostics.chrome.state, state === 'death' ? 'dead' : 'offline', `${name} real composed chrome state`);
+          assert.deepEqual(frame.diagnostics.entry.actions, [state === 'death' ? 'new_character' : 'reconnect'], `${name} production Entry action`);
+          assert.ok(frame.diagnostics.chrome.regions.some(r => r.visible && !r.clipped && r.focusable), `${name} actual recovery control`);
+        }
+      }
     }
     const manifest = {
       kind: 'gravebag.ui_review_manifest.v1',
-      acceptance: 'baseline',
+      acceptance: 'target_geometry',
+      fixture_composition: 'production Entry handlers; only startup/profile IO disabled',
       target_quality_claimed: false,
       final_acceptance: false,
       reference_motion_matched: false,

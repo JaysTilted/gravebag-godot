@@ -39,7 +39,7 @@ func _ready() -> void:
 	canvas.add_child(_action)
 	add_child(canvas)
 	_action.pressed.connect(_on_action)
-	_status.text = "GRAVEBAG — connecting to original backend"
+	_status.text = "Connecting"
 	for required in [NETWORK, FRONTEND, DATA + "objects.json", DATA + "object_descriptors.json", DATA + "projectiles.json", DATA + "grounds.json", DATA + "items.json"]:
 		if not ResourceLoader.exists(required) and not FileAccess.file_exists(required):
 			_fail("Backend cutover dependency not yet installed: " + required)
@@ -107,7 +107,7 @@ func _read_json(path: String) -> Dictionary:
 
 func _on_state(state: String) -> void:
 	print("FSOD CLIENT STATE " + state)
-	_status.text = "GRAVEBAG — " + state.replace("_", " ")
+	_status.text = state.replace("_", " ").capitalize()
 	if state != "playing": _ready_reported = false
 	if state == "playing":
 		_profile["character_id"] = session.character_id
@@ -127,7 +127,7 @@ func _on_packet_readback(_id: int, _fields: Dictionary) -> void:
 	if session.player_id < 0 or int(session.player_stats.get(1, 0)) <= 0: return
 	if not is_instance_valid(_frontend) or not _frontend.entities.has(session.player_id) or _frontend.tiles.is_empty(): return
 	_ready_reported = true
-	_status.text = "GRAVEBAG · original backend"
+	_status.text = "Ready"
 	print("FSOD CLIENT READY player_id=%d character_id=%d hp=%d entities=%d tiles=%d" % [session.player_id, session.character_id, session.player_stats.get(1, 0), _frontend.entities.size(), _frontend.tiles.size()])
 
 
@@ -202,12 +202,7 @@ func _attach_optional_hosts() -> void:
 	if is_instance_valid(_combat_feedback):
 		if "layer" in _combat_feedback:
 			_combat_feedback.layer = 80
-		if _combat_feedback.has_method("initialize"):
-			var argc := Callable(_combat_feedback, "initialize").get_argument_count()
-			if argc >= 2:
-				_combat_feedback.call("initialize", session, _frontend)
-			else:
-				_combat_feedback.call("initialize")
+		# add_child already ran the overlay's _ready/initialize exactly once.
 		_force_mouse_ignore(_combat_feedback)
 	_account_chrome = _spawn_optional(CHROME_PATH)
 	if is_instance_valid(_account_chrome):

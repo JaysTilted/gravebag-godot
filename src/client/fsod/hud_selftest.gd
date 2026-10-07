@@ -99,6 +99,19 @@ func _check_panel() -> void:
 			inventory = region
 	_check(inventory.visible and inventory.rect.w == host.get_global_rect().size.x, "diagnostics use the real inventory rect")
 	_check(diag.focus.traps_gameplay == false, "unfocused HUD does not trap gameplay")
+	_check(expected.is_equal_approx(Rect2(8, 221, 240, 467)), "canonical v2 main host geometry")
+	_check(UiTheme.potion_strip_rect(hud.size).is_equal_approx(Rect2(8, 692, 240, 20)), "canonical potion strip geometry")
+	hud.set_snapshot({7: 20, 6: 123, 57: 3, 20: 25, 48: 5, 69: 2, 70: 1}, "NexusPortal.Dragon", {})
+	for _i in 40:
+		hud.advance_display(0.05)
+	var capped: Dictionary = hud.ui_diagnostics()
+	_check(capped.bars.xp.max == null and capped.bars.xp.interpolated == 0.0, "level 20 with unknown XP maximum has no invented full fame bar")
+	_check(hud._fame.text == "Fame 3" and hud._bars.xp.get_node("Caption").text == "Lv 20  XP 123 / —", "real Fame is text, XP stays source meter")
+	_check(hud._stat_labels.ATT_value.text == "25" and hud._stat_labels.ATT_bonus.text == "(+5)", "included bonus is shown without adding it twice")
+	_check(hud._stat_labels.DEF_value.text == "—" and hud._stat_labels.DEF_bonus.text == "", "unknown totals stay dash and unknown bonuses stay absent")
+	_check(hud._potion_counts.hp.text == "F 2" and hud._potion_counts.mp.text == "V 1", "icon counts show actual F/V actions")
+	_check(not hud._identity.get_global_rect().intersects(hud._fame.get_global_rect()), "identity and Fame controls do not overlap")
+	_check(not UiTheme.text_overflows(hud._identity) and not UiTheme.text_overflows(hud._fame), "cleaned source realm title and Fame text fit their own rects")
 	hud.free()
 
 
