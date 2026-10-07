@@ -6,6 +6,8 @@ extends Node2D
 
 const EntityView = preload("res://src/client/fsod/entity_view.gd")
 const InventoryPanel = preload("res://src/client/fsod/inventory_panel.gd")
+const HudPanel = preload("res://src/client/fsod/hud_panel.gd")
+const UiTheme = preload("res://src/client/fsod/ui_theme.gd")
 const TILE_PIXELS: float = 32.0
 const RAIL_WIDTH: float = 256.0
 signal move_requested(pos: Dictionary, records: Array)
@@ -37,7 +39,9 @@ var map_name: String = "Awaiting server"
 var _world: Node2D
 var _ground: Node2D
 var _rail: PanelContainer
-var _minimap: Control
+var _hud: Control
+var _tile_revision: int = 0
+var _hud_cells_revision: int = -1
 var _summary: Label
 var _inventory: Label # Hidden debug projection retained for fixture/diagnostic readback.
 var _inventory_panel: PanelContainer
@@ -87,51 +91,39 @@ func _ensure_nodes() -> void:
 	_world.add_child(_ground)
 	_ground.draw.connect(_draw_ground)
 	var overlay := CanvasLayer.new()
+	overlay.name = "HudOverlay"
 	add_child(overlay)
 	_rail = PanelContainer.new()
 	_rail.name = "AuthoritativeRail"
+	_rail.mouse_filter = Control.MOUSE_FILTER_STOP
+	_rail.focus_mode = Control.FOCUS_NONE
+	_rail.add_theme_stylebox_override("panel", UiTheme.panel_style())
 	overlay.add_child(_rail)
 	_rail.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
-	_rail.offset_left = -RAIL_WIDTH
-	var margin := MarginContainer.new()
-	for side: String in ["left", "top", "right", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 16)
-	_rail.add_child(margin)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 16)
-	margin.add_child(column)
-	var title := Label.new()
-	title.text = "GRAVEBAG"
-	title.add_theme_color_override("font_color", Color("efcf7a"))
-	column.add_child(title)
-	_minimap = Control.new()
-	_minimap.custom_minimum_size = Vector2(224, 136)
-	_minimap.draw.connect(_draw_minimap)
-	column.add_child(_minimap)
+	_hud = HudPanel.new()
+	_hud.name = "HudPanel"
+	_hud.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hud.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_rail.add_child(_hud)
 	_summary = Label.new()
-	_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_summary.add_theme_font_size_override("font_size", 14)
-	column.add_child(_summary)
+	_summary.name = "SummaryDebug"
+	_summary.visible = false
+	_summary.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(_summary)
 	_inventory = Label.new()
-	_inventory.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_inventory.add_theme_font_size_override("font_size", 12)
-	column.add_child(_inventory)
-	_inventory.hide()
-	var inventory_scroll := ScrollContainer.new()
-	inventory_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	inventory_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	column.add_child(inventory_scroll)
+	_inventory.name = "InventoryDebug"
+	_inventory.visible = false
+	_inventory.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(_inventory)
 	_inventory_panel = InventoryPanel.new()
-	_inventory_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	inventory_scroll.add_child(_inventory_panel)
+	_inventory_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hud.inventory_host().add_child(_inventory_panel)
 	_inventory_panel.swap_requested.connect(func(source_id: int, source_slot: int, destination_id: int, destination_slot: int): inventory_swap_requested.emit(source_id, source_slot, destination_id, destination_slot))
 	_inventory_panel.use_requested.connect(func(slot: int): item_use_requested.emit(slot))
 	_inventory_panel.selection_changed.connect(func(slot: int): inventory_slot = maxi(slot, 0))
-	var keys := Label.new()
-	keys.text = "WASD / Mouse  move / aim / shoot\nSpace / F / V  ability / potions\nR / E  escape / interact"
-	keys.add_theme_color_override("font_color", Color("8996af"))
-	keys.add_theme_font_size_override("font_size", 12)
-	column.add_child(keys)
+	_layout_rail()
+	if is_inside_tree() and not get_viewport().size_changed.is_connected(_layout_rail):
+		get_viewport().size_changed.connect(_layout_rail)
 
 
 func predicted_position() -> Vector2:
@@ -234,6 +226,7 @@ func apply_map(packet: Dictionary) -> void:
 	map_width = clampi(_integer(packet.get("width", 0)), 0, 65535)
 	map_height = clampi(_integer(packet.get("height", 0)), 0, 65535)
 	map_name = str(packet.get("name", "Unnamed server map"))
+	_tile_revision += 1
 	_prediction = Vector2.ZERO
 	_prediction_ready = false
 	_sent_moves.clear()
@@ -260,6 +253,7 @@ func apply_update(packet: Dictionary) -> void:
 			var y: int = _integer(tile.get("y", -1), -1)
 			if x < 0 or y < 0 or x >= map_width or y >= map_height: continue
 			tiles[Vector2i(x, y)] = _integer(tile.get("tile", 0))
+			_tile_revision += 1
 	var objects: Variant = packet.get("new_objects", [])
 	if objects is Array:
 		for object: Variant in objects:
@@ -721,23 +715,47 @@ func _draw_ground() -> void:
 		_ground.draw_rect(Rect2(point - Vector2(2, 1), Vector2(4, 2)), Color("fff9df"))
 
 
-func _draw_minimap() -> void:
-	_minimap.draw_rect(Rect2(Vector2.ZERO, _minimap.size), Color("111829"))
-	if map_width <= 0 or map_height <= 0: return
-	var scale: float = minf(_minimap.size.x / map_width, _minimap.size.y / map_height)
-	for cell: Variant in tiles:
-		_minimap.draw_rect(Rect2(Vector2(cell) * scale, Vector2.ONE * maxf(1.0, scale)), _tile_color(tiles[cell]))
+func _layout_rail() -> void:
+	if not is_instance_valid(_rail):
+		return
+	var viewport := get_viewport_rect().size
+	var width := minf(RAIL_WIDTH, maxf(0.0, viewport.x))
+	_rail.offset_left = -width
+	_rail.offset_right = 0.0
+	_rail.offset_top = 0.0
+	_rail.offset_bottom = 0.0
+
+
+func _minimap_payload(player: Variant) -> Dictionary:
+	var payload := {"width": map_width, "height": map_height, "revision": _tile_revision, "player": Vector2.ZERO, "aim": -PI / 2.0, "markers": [], "player_name": ""}
+	if player != null:
+		payload.player = player.authoritative_position
+		payload.aim = float(player.aim_angle) if "aim_angle" in player else -PI / 2.0
+		var named: Variant = player.stats.get(31, "") if player.stats is Dictionary else ""
+		if named is String:
+			payload.player_name = named
+		if payload.player_name.is_empty():
+			payload.player_name = str(_object_descriptor(player.object_type).get("name", ""))
 	for id: Variant in entities:
 		var view: Variant = entities[id]
-		if _live(view):
-			var marker := Color("8993a2")
-			if int(id) == player_id:
-				marker = Color("f9de86")
-			elif view.kind == "enemy":
-				marker = Color("d36573")
-			elif view.kind == "portal":
-				marker = Color("64cbd3")
-			_minimap.draw_rect(Rect2(view.authoritative_position * scale - Vector2.ONE * 2, Vector2.ONE * 4), marker)
+		if not _live(view):
+			continue
+		var kind := "enemy"
+		if int(id) == player_id:
+			kind = "player"
+		elif view.kind == "portal":
+			kind = "portal"
+		elif view.kind == "container":
+			kind = "container"
+		payload.markers.append({"pos": view.authoritative_position, "kind": kind})
+	if _tile_revision != _hud_cells_revision:
+		_hud_cells_revision = _tile_revision
+		var cells := {}
+		for cell: Variant in tiles:
+			if cell is Vector2i:
+				cells[cell] = _tile_color(int(tiles[cell]))
+		payload.cells = cells
+	return payload
 
 
 func _refresh_rail() -> void:
@@ -756,7 +774,8 @@ func _refresh_rail() -> void:
 		lines.append("%02d  %s" % [slot, text.left(28)])
 	_inventory.text = "\n".join(lines)
 	_refresh_inventory_panel(stats)
-	_minimap.queue_redraw()
+	if is_instance_valid(_hud) and _hud.has_method("set_snapshot"):
+		_hud.set_snapshot(stats, map_name, _minimap_payload(player))
 
 
 func _object_descriptor(type: int) -> Dictionary:
@@ -793,7 +812,35 @@ func _player() -> Variant:
 func _redraw() -> void:
 	if not _ready_built: return
 	_ground.queue_redraw()
-	_minimap.queue_redraw()
+
+
+func ui_diagnostics() -> Dictionary:
+	var base: Dictionary = _hud.ui_diagnostics() if is_instance_valid(_hud) and _hud.has_method("ui_diagnostics") else {
+		"schema": "gravebag.ui_diagnostics.v1", "viewport": {"w": 0.0, "h": 0.0}, "regions": [],
+		"bars": {}, "actions": [], "focus": {"owner": "", "traps_gameplay": false}, "state": "world",
+	}
+	var regions: Array = base.get("regions", [])
+	if is_instance_valid(_inventory_panel) and _inventory_panel.has_method("ui_diagnostics"):
+		var child: Variant = _inventory_panel.call("ui_diagnostics")
+		if child is Dictionary:
+			for item: Variant in child.get("regions", []):
+				if not item is Dictionary or not item.has("id"):
+					continue
+				var replaced := false
+				for i in regions.size():
+					if str(regions[i].get("id", "")) == str(item["id"]):
+						regions[i] = item
+						replaced = true
+						break
+				if not replaced:
+					regions.append(item)
+	base.regions = regions
+	base.state = "world"
+	if is_inside_tree():
+		var viewport := get_viewport_rect().size
+		base.viewport = {"w": viewport.x, "h": viewport.y}
+		base.logical_viewport = {"w": viewport.x, "h": viewport.y}
+	return base
 
 
 func _refresh_inventory_panel(stats: Dictionary) -> void:
