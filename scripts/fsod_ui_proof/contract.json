@@ -1,0 +1,38 @@
+{
+  "schema": "gravebag.ui_diagnostics.v1",
+  "coordinate_space": "viewport",
+  "status": "frozen",
+  "source": "plans/goal-rotmg-ui.md pinned UI integration contract",
+  "notes": [
+    "Proof consumes ui_diagnostics() when a production module implements it.",
+    "Proof does not add that method and does not synthesize a stand-in HUD.",
+    "Viewport and region rects are logical UI viewport units from get_viewport_rect / get_global_rect.",
+    "PNG and window pixels are recorded separately with the measured canvas/window transform.",
+    "Inner essential controls use a 2px margin. The root dock may sit flush.",
+    "Hidden regions (visible false) do not fail READY bounds.",
+    "sample_hz is the harness sample interval, not a guessed UI rate.",
+    "target quality is not claimed from this baseline."
+  ],
+  "optional_modules": [
+    "res://src/client/fsod/ui_theme.gd",
+    "res://src/client/fsod/account_chrome.gd",
+    "res://src/client/fsod/combat_feedback.gd",
+    "res://src/client/fsod/item_tooltip.gd"
+  ],
+  "tokens_v2": {
+    "charcoal": "#333333",
+    "slot": "#515151",
+    "slot_edge": "#2a2a2a",
+    "silver": "#d4d4d4",
+    "muted": "#9a9a9a",
+    "gold": "#efcf7a",
+    "hp": "#fc3436",
+    "mp": "#648dff",
+    "xp": "#5b832b",
+    "fame": "#ff8a1a",
+    "player": "#ffe500",
+    "enemy": "#ff3b4a",
+    "portal": "#3d8bff",
+    "void": "#1a1a1a"
+  }
+}
