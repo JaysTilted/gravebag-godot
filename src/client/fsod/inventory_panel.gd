@@ -433,9 +433,26 @@ func _tooltip_body(bag: bool, slot: int) -> String:
 	return TooltipScript.body(_descriptor(bag, slot), {
 		"name": _item_name(bag, slot),
 		"role": _role(bag, slot),
-		"eligibility": "Double-click to use" if _can_use(bag, slot) else "Cannot use here",
-		"hint": "Shift-click to take; click or drag to swap" if bag else "Click or drag to swap; server validates equipment",
+		"eligibility": _action_text(bag, slot),
+		"hint": _control_hint(bag),
 	})
+
+# Plain player instructions from source descriptor flags; no wire codes or backend prose.
+func _action_text(bag: bool, slot: int) -> String:
+	if _item(bag, slot) < 0:
+		return ""
+	if _can_use(bag, slot):
+		return "Double-click to use"
+	if bag:
+		return "Shift-click to take"
+	if slot < 4:
+		return "Equipped"
+	if _descriptor(bag, slot).has("SlotType"):
+		return "Drag onto its equipment slot to equip"
+	return ""
+
+func _control_hint(_bag: bool) -> String:
+	return "Click or drag to swap"
 
 func _tint(descriptor: Dictionary) -> Color:
 	var heal := false
@@ -625,11 +642,11 @@ class ItemSlot extends Control:
 		var item: int = rail._item(bag, slot)
 		var descriptor: Dictionary = rail._descriptor(bag, slot)
 		var role: String = rail._role(bag, slot)
-		var eligibility: String = "Double-click to use" if rail._can_use(bag, slot) else "Cannot use here"
+		var eligibility: String = rail._action_text(bag, slot)
 		var slot_types: Variant = rail._descriptors.get("SlotTypes", [])
 		if not bag and slot < 4 and slot_types is Array and slot_types.size() > slot:
-			role += " (source equipment slot)"
-		var next_tip := "%s\n%s · position %d\n%s\n%s" % [rail._item_name(bag, slot), role, slot + 1, eligibility, "Shift-click to take; click or drag to swap" if bag else "Click or drag to swap; server validates equipment"]
+			role += " slot"
+		var next_tip := "%s\n%s\n%s\n%s" % [rail._item_name(bag, slot), role, eligibility, rail._control_hint(bag)]
 		if item < 0:
 			next_tip = "Unavailable" if item == -2 else ""
 		if tooltip_text != next_tip:

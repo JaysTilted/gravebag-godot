@@ -64,16 +64,13 @@ static func body(descriptor: Dictionary, context: Dictionary) -> String:
 	lines.append(item_name if not item_name.is_empty() else MISSING)
 	lines.append(_tier_line(descriptor))
 	var role := str(context.get("role", MISSING))
-	var type_line := role if not role.is_empty() else MISSING
-	var slot_type: Variant = _whole(descriptor.get("SlotType"))
-	if slot_type != null:
-		type_line += " · slot type %d" % int(slot_type)
-	elif not descriptor.is_empty():
-		type_line += " · slot type " + MISSING
-	lines.append(type_line)
+	# Player-readable role only; raw wire SlotType codes never reach the panel.
+	lines.append(role if not role.is_empty() else MISSING)
 	for stat_line in _stat_lines(descriptor):
 		lines.append(stat_line)
-	lines.append(instruction_text(descriptor.get("Description", "")))
+	var description := instruction_text(descriptor.get("Description", ""))
+	if description != MISSING:
+		lines.append(description) # No source description: omit, never a bare dash row.
 	var eligibility := str(context.get("eligibility", ""))
 	if not eligibility.is_empty():
 		lines.append(eligibility)

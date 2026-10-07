@@ -130,6 +130,8 @@ static func region_from_control(id: String, control: Control, text: String = "")
 		var parent := control.get_parent()
 		if parent is Control and parent.clip_contents and not parent.get_global_rect().encloses(rect):
 			clipped = true
+		if control is Label and text_overflows(control as Label):
+			clipped = true
 	return {
 		"id": id,
 		"rect": {"x": rect.position.x, "y": rect.position.y, "w": rect.size.x, "h": rect.size.y},
@@ -143,3 +145,32 @@ static func region_from_control(id: String, control: Control, text: String = "")
 
 static func bar_record(value: Variant, maximum: Variant, displayed: String, interpolated: float) -> Dictionary:
 	return {"value": value, "max": maximum, "displayed": displayed, "interpolated": interpolated}
+
+
+# Measured text fit: true when any rendered line is wider than the label or the
+# lines are taller than it. Viewport bbox containment alone misses clip_text.
+static func text_overflows(label: Label) -> bool:
+	if not is_instance_valid(label) or label.text.is_empty():
+		return false
+	var font: Font = label.get_theme_font("font")
+	var font_size: int = label.get_theme_font_size("font_size")
+	if font == null:
+		return false
+	var lines := label.text.split("\n")
+	var widest := 0.0
+	for line in lines:
+		widest = maxf(widest, font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+	var tall := font.get_height(font_size) * lines.size() + label.get_theme_constant("line_spacing") * maxi(0, lines.size() - 1)
+	return widest > label.size.x + 0.5 or tall > label.size.y + 0.5
+
+
+static func text_fit(label: Label) -> Dictionary:
+	if not is_instance_valid(label):
+		return {}
+	var font: Font = label.get_theme_font("font")
+	var font_size: int = label.get_theme_font_size("font_size")
+	var lines := label.text.split("\n")
+	var widest := 0.0
+	for line in lines:
+		widest = maxf(widest, font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+	return {"font_size": font_size, "line_height": font.get_height(font_size), "lines": lines.size(), "text_w": widest, "label_w": label.size.x, "label_h": label.size.y, "overflows": text_overflows(label)}

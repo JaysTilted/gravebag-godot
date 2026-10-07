@@ -125,6 +125,18 @@ test('live UI baseline renders frames and does not claim target quality', { time
     assert.equal(geometry.modules.slice_hud, 'excluded');
     assert.ok(Array.isArray(geometry.unmet));
     for (const id of geometry.unmet) assert.equal(geometry.gates[id].met, false, id);
+    // Target acceptance, not observed baseline: every measured gate must be met.
+    assert.deepEqual(geometry.unmet, [], `unmet target gates: ${geometry.unmet.join(', ')}`);
+    for (const id of ['rail_nexus', 'core_4_plus_8_nexus', 'core_4_plus_8_640x360', 'core_4_plus_8_800x600', 'core_4_plus_8_1920x1080',
+      'essential_inner_2px_1280', 'potions_69_70_displayed', 'bars_readable_unclipped', 'six_stats_rows', 'minimap_readable',
+      'space_passthrough_while_slot_focused', 'minimap_cache_skips_unchanged_physics', 'inventory_host_rect', 'theme_tokens',
+      'chrome_ready_hides', 'chrome_actions_once', 'feedback_no_false_first_damage', 'feedback_map_reset_clean']) {
+      assert.equal(geometry.gates[id]?.met, true, `target gate ${id}`);
+    }
+    assert.ok(geometry.gates.rail_nexus.measured.rect.x + geometry.gates.rail_nexus.measured.rect.w <= 1280.5, 'rail ends inside 1280');
+    for (const fit of Object.values(geometry.gates.bars_readable_unclipped.measured.fits)) {
+      assert.ok(fit.font_size >= 12 && fit.text_w <= fit.label_w && fit.line_height <= fit.label_h, `bar caption fits ${JSON.stringify(fit)}`);
+    }
     assert.equal(typeof geometry.gates.rail_nexus.measured.rect.w, 'number');
     assert.equal(geometry.gates.rail_nexus.measured.width, geometry.gates.rail_nexus.measured.rect.w);
     assert.equal(geometry.gates.rail_offset_256.met, true);

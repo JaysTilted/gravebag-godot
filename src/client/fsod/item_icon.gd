@@ -52,11 +52,16 @@ func _draw() -> void:
 	var rows: Array = GLYPHS[glyph]
 	var scale := maxi(1, int(floorf(minf(size.x, size.y) / 8.0)))
 	var origin := ((size - Vector2(8, 8) * scale) * 0.5).floor()
-	for y in 8:
-		for x in 8:
-			var pixel: String = rows[y][x]
-			if pixel == ".":
-				continue
-			var cell := Rect2(origin + Vector2(x, y) * scale, Vector2(scale, scale))
-			draw_rect(cell.grow(1.0), ink)
-			draw_rect(cell, paper if pixel == "X" else tint)
+	# Two passes: one silhouette outline, then solid fills, so the shape reads as a
+	# solid sprite instead of a per-pixel outlined checkerboard.
+	for pass_index in 2:
+		for y in 8:
+			for x in 8:
+				var pixel: String = rows[y][x]
+				if pixel == ".":
+					continue
+				var cell := Rect2(origin + Vector2(x, y) * scale, Vector2(scale, scale))
+				if pass_index == 0:
+					draw_rect(cell.grow(1.0), ink)
+				else:
+					draw_rect(cell, paper if pixel == "X" else tint)

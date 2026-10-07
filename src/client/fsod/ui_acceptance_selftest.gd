@@ -8,6 +8,7 @@ extends SceneTree
 const World = preload("res://src/client/fsod/world_view.gd")
 const Guide = preload("res://src/client/fsod/realm_guide.gd")
 const Inventory = preload("res://src/client/fsod/inventory_panel.gd")
+const UiTheme = preload("res://src/client/fsod/ui_theme.gd")
 
 const OPTIONAL: Array[String] = [
 	"res://src/client/fsod/ui_theme.gd",
@@ -206,12 +207,13 @@ func _state_session(mode: String) -> void:
 	var session := _session(mode, built.world)
 	built.guide.refresh(session, built.world)
 	_check(not built.guide.is_guide_visible(), "%s hides the guide" % mode)
-	var summary: String = built.world._summary.text
-	_check(summary.contains("HP"), "%s still shows the live rail summary" % mode)
+	var diag: Dictionary = built.world.ui_diagnostics()
+	var hp_line: String = str(diag.bars.hp.displayed)
+	_check(_region(diag, "hp").get("visible", false), "%s still shows the live HP bar" % mode)
 	var file := "1280x720-death.png" if mode == "dead" else "1280x720-offline.png"
 	var state := "death" if mode == "dead" else "offline"
 	if mode == "dead":
-		_check(summary.contains("HP  0 / 100"), "death shows authoritative HP 0, not a stand-in banner")
+		_check(hp_line == "0 / 100", "death shows authoritative HP 0, not a stand-in banner (%s)" % hp_line)
 	await _grab(built, file, state, "session.state=%s guide.refresh; entry not instantiated" % mode)
 	_release(built, session)
 
@@ -281,18 +283,19 @@ func _minimap_invalidation() -> void:
 	var built := await _build("Nexus", true, false, false)
 	var world = built.world
 	var draws := {"n": 0}
-	world._minimap.draw.connect(func() -> void: draws.n += 1)
+	world._hud._minimap_box.draw.connect(func() -> void: draws.n += 1)
 	world._redraw()
 	await process_frame
 	await RenderingServer.frame_post_draw
 	var before := await _crop_minimap(world, "minimap-before.png")
 	var draws_before: int = draws.n
-	world.tiles[Vector2i(4, 4)] = 2
+	# Real tile path: apply_update bumps the revision the HUD cache keys on.
+	world.apply_update({"tiles": [{"x": 14, "y": 9, "tile": 3}, {"x": 15, "y": 9, "tile": 3}, {"x": 14, "y": 10, "tile": 3}]})
 	world._redraw()
 	await process_frame
 	await RenderingServer.frame_post_draw
 	var after := await _crop_minimap(world, "minimap-after.png")
-	var changed: bool = before.checksum != after.checksum and before.checksum >= 0 and after.checksum >= 0
+	var changed: bool = before.checksum != after.checksum and not str(before.checksum).is_empty() and not str(after.checksum).is_empty()
 	_check(changed, "minimap pixels change after a tile write and redraw")
 	_gate("minimap_invalidates_on_tile_change", changed, {"before": before, "after": after, "draws_after_tile": draws.n - draws_before})
 	var physics_draws := 0
@@ -581,7 +584,7 @@ func _session(mode: String, world) -> FixtureSession:
 
 
 func _player_stats() -> Dictionary:
-	var stats := {0: 100, 1: 80, 3: 100, 4: 40, 5: 50, 6: 12, 7: 4, 57: 3, 69: 2, 70: 1}
+	var stats := {0: 100, 1: 80, 3: 100, 4: 40, 5: 50, 6: 12, 7: 4, 20: 25, 21: 5, 22: 30, 26: 20, 27: 30, 28: 32, 48: 5, 53: 2, 57: 3, 69: 2, 70: 1}
 	for slot in range(12):
 		stats[8 + slot] = -1
 	stats[8] = 2711
@@ -620,11 +623,29 @@ func _measure_rail(world, tag: String, require_flush: bool) -> void:
 	var center_ok := is_equal_approx(center.x, maxf(0.0, vp.x - RAIL) / 2.0)
 	_gate("rail_%s" % tag, flush and width_ok and left_ok and center_ok, {"rect": _rect(rect), "viewport": {"w": vp.x, "h": vp.y}, "flush": flush, "width": rect.size.x, "center_x": center.x})
 	_push_region("dock", rail, false, "world_view")
-	_push_region("summary", world._summary, true, "world_view")
-	_push_region("minimap", world._minimap, true, "world_view")
-	var potions: bool = world._summary.text.contains("69") or world._summary.text.to_lower().contains("potion")
+	var hud = world._hud
+	_push_region("identity", hud._identity, true, "hud_panel")
+	_push_region("minimap", hud._minimap_box, true, "hud_panel")
+	_push_region("potions", hud._potions, true, "hud_panel")
+	var diag: Dictionary = world.ui_diagnostics()
+	var potion_region := _region(diag, "potions")
+	# Fixture wire stats 69=2, 70=1: both counts must render in a visible, unclipped potion strip.
+	var potions: bool = bool(potion_region.get("visible", false)) and not bool(potion_region.get("clipped", true)) and str(potion_region.get("text", "")).contains("2") and str(potion_region.get("text", "")).contains("1") and int(potion_region.get("icons", 0)) == 2
 	if tag == "nexus" or tag == "1280x720":
-		_gate("potions_69_70_displayed", potions, {"summary": world._summary.text})
+		_gate("potions_69_70_displayed", potions, {"region": potion_region})
+		var bars_ok := true
+		var fits: Dictionary = {}
+		for id in ["hp", "mp", "xp"]:
+			var r := _region(diag, id)
+			fits[id] = r.get("text_fit", {})
+			var fit: Dictionary = r.get("text_fit", {})
+			if not bool(r.get("visible", false)) or bool(r.get("clipped", true)) or float(fit.get("font_size", 0)) < 12.0 or float(r.rect.h) < float(fit.get("line_height", 999.0)):
+				bars_ok = false
+		_gate("bars_readable_unclipped", bars_ok, {"fits": fits})
+		var stats_region := _region(diag, "stats")
+		_gate("six_stats_rows", bool(stats_region.get("visible", false)) and not bool(stats_region.get("clipped", true)) and str(stats_region.get("text", "")).split("\n").size() >= 6, {"region": stats_region})
+		var mm := _region(diag, "minimap")
+		_gate("minimap_readable", bool(mm.get("visible", false)) and float(mm.rect.w) >= 200.0 and float(mm.rect.h) >= 96.0, {"region": mm})
 	_measure_core(world, tag)
 	var essential := _essential_violations(world)
 	if tag == "nexus":
@@ -656,7 +677,9 @@ func _measure_core(world, tag: String) -> void:
 func _essential_violations(world) -> Array:
 	var vp := _logical()
 	var bad: Array = []
-	var controls: Array = [world._summary, world._minimap]
+	var controls: Array = [world._hud._identity, world._hud._minimap_box, world._hud._potions]
+	for kind in ["hp", "mp", "xp"]:
+		controls.append(world._hud._bars[kind])
 	for slot in range(4):
 		controls.append(world._inventory_panel._player_slots[slot])
 	for control in controls:
@@ -669,16 +692,18 @@ func _essential_violations(world) -> Array:
 		var inside := rect.position.x >= MARGIN - 0.5 and rect.position.y >= MARGIN - 0.5 and rect.end.x <= vp.x - MARGIN + 0.5 and rect.end.y <= vp.y - MARGIN + 0.5
 		if not inside:
 			bad.append({"name": String(control.name), "rect": _rect(rect)})
+		elif control is Label and UiTheme.text_overflows(control):
+			bad.append({"name": String(control.name), "reason": "text overflows", "fit": UiTheme.text_fit(control)})
 	return bad
 
 
 func _missing_stats() -> void:
 	await _set_viewport(1280, 720)
 	var built := await _build("Awaiting server", false, false, false)
-	var summary: String = built.world._summary.text
-	var shown: bool = summary.contains("—")
+	var diag: Dictionary = built.world.ui_diagnostics()
+	var shown: bool = str(diag.bars.hp.displayed) == "—" and str(diag.bars.mp.displayed) == "—" and str(diag.bars.xp.displayed) == "—" and float(diag.bars.xp.interpolated) == 0.0
 	_check(shown, "absent stats render an em dash, not a guessed number")
-	_gate("missing_stat_emdash", shown, {"summary": summary})
+	_gate("missing_stat_emdash", shown, {"bars": diag.bars})
 	_release(built, null)
 
 
@@ -719,8 +744,8 @@ func _crop_minimap(world, file: String) -> Dictionary:
 	await RenderingServer.frame_post_draw
 	var image := await _viewport_image()
 	if image == null or image.is_empty():
-		return {"checksum": -1, "file": file}
-	var rect: Rect2 = world._minimap.get_global_rect()
+		return {"checksum": "", "file": file}
+	var rect: Rect2 = world._hud._minimap_box.get_global_rect()
 	var scale := _pixel_scale(image)
 	var origin := _pixel_origin()
 	var pixel := Rect2i(Vector2i(origin + rect.position * scale), Vector2i(rect.size * scale))
@@ -804,15 +829,11 @@ func _sample_colors(image: Image) -> int:
 	return seen.size()
 
 
-func _checksum(image: Image) -> int:
+func _checksum(image: Image) -> String:
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_SHA256)
 	ctx.update(image.get_data())
-	var digest := ctx.finish()
-	var n := 0
-	for i in range(mini(8, digest.size())):
-		n = (n << 8) | int(digest[i])
-	return n
+	return ctx.finish().hex_encode()
 
 
 func _consume_diagnostics(node: Node, module: String) -> void:
@@ -867,6 +888,8 @@ func _feedback_count(node: Node) -> int:
 	if node.has_method("ui_diagnostics"):
 		var raw: Variant = node.call("ui_diagnostics")
 		if raw is Dictionary:
+			if raw.get("state") is Dictionary and raw.state.has("floater_count"):
+				return int(raw.state.floater_count)
 			for key in ["floater_count", "damage_events", "floaters"]:
 				if raw.has(key) and (raw[key] is int or raw[key] is float):
 					return int(raw[key])
@@ -925,6 +948,13 @@ func _find_scroll(node: Node) -> ScrollContainer:
 		if found != null:
 			return found
 	return null
+
+
+func _region(diag: Dictionary, id: String) -> Dictionary:
+	for item in diag.get("regions", []):
+		if item is Dictionary and str(item.get("id", "")) == id:
+			return item
+	return {}
 
 
 func _rect(rect: Rect2) -> Dictionary:

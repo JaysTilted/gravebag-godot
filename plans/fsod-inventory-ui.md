@@ -1,5 +1,9 @@
 # FSoD inventory rail
 
+Status: superseded by `plans/rotmg-ui-inventory.md` and the charcoal v2 theme in
+`src/client/fsod/ui_theme.gd` (RotMG UI goal). The navy palette, captioned
+tiles and section titles below are historical; do not implement them.
+
 ## Direction
 A quiet field-kit rail, not a numeric debug ledger. Ink `#101a2b`, slate
 `#26354b`, muted steel `#8996af`, parchment `#dce3ef`, game gold `#efcf7a`,
