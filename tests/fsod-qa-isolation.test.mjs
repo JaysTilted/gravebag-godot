@@ -14,7 +14,8 @@ test('QA orchestrator refuses Jay state and stays in this worktree', () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true);
   assert.equal(payload.jay_refused, true);
-  assert.match(payload.state, /fsod-walking-realm-live\/scripts\/fsod_backend\/\.state$/);
+  assert.equal(payload.state, join(root, 'scripts/fsod_backend/.state'));
+  assert.doesNotMatch(payload.state, /\/gravebag-godot\/scripts\/fsod_backend\/\.state$/);
   const driver = readFileSync(join(root, 'scripts/fsod_qa/live_driver.gd'), 'utf8');
   assert.doesNotMatch(driver, /interact_requested\.emit|send_fields\(|predict_motion\(/);
   assert.match(driver, /Input\.parse_input_event/);
