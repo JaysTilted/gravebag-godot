@@ -61,9 +61,10 @@ Pure display read, zero gameplay writes:
     direction exists (none pinned, so the generic explore line is used).
 - Stand-closer hint, no auto `UsePortal`, no fabricated portals, no local
   teleport. Emits NO signals, touches NO transport.
-- Visible only when `session.state == "playing"` AND `map_name` contains
-  `nexus` (case-insensitive) AND `player_id >= 0`. Hidden offline/failed/
-  connecting/reconnecting/loading/dead and after leaving Nexus (e.g. `Realm`).
+- Visible only when `session.state == "playing"` AND `map_name` is exactly
+  `Nexus` (case-insensitive, surrounding space ignored) AND `player_id >= 0`.
+  `NexusPortal.Sprite` / `NexusPortal.Dragon` are realms, not the hub. Hidden
+  offline/failed/connecting/reconnecting/loading/dead and after leaving Nexus.
   No coupling to learning/original-position state.
 - Dark readable pixel HUD in current palette only:
   bg `111829`, direction `efcf7a`, prompt `64cbd3`, hint `8996af`,

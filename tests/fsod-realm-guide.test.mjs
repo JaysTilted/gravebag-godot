@@ -40,9 +40,18 @@ test('realm guide overlay: fixtures, render, and entry/frontend collision check'
     assert.equal(png.readUInt32BE(16), 1280, 'rendered frame width is the real 1280 viewport');
     assert.equal(png.readUInt32BE(20), 720, 'rendered frame height is the real 720 viewport');
     assert.ok(png.length > 10000, 'real rendered frame must not be a blank marker');
+    assert.match(rendering, /FSOD REALM GUIDE REALM FRAME: 1280x720 map=NexusPortal\.Sprite explore_absent=true/);
+    const realmFrame = join(frames, 'realm-guide-realm-frame-0.png');
+    assert.ok(existsSync(realmFrame), 'rendered original-realm frame must exist');
+    const realmPng = readFileSync(realmFrame);
+    assert.equal(realmPng.subarray(1, 4).toString(), 'PNG');
+    assert.equal(realmPng.readUInt32BE(16), 1280, 'original-realm frame width is the real 1280 viewport');
+    assert.equal(realmPng.readUInt32BE(20), 720, 'original-realm frame height is the real 720 viewport');
+    assert.ok(realmPng.length > 10000, 'original-realm frame must not be a blank marker');
     if (process.env.FSOD_PROOF_DIR) {
       const proof = resolve(process.env.FSOD_PROOF_DIR);
       copyFileSync(frame, join(proof, 'realm-guide-frame-0.png'));
+      copyFileSync(realmFrame, join(proof, 'realm-guide-realm-frame-0.png'));
     }
     console.log(rendering.trim().split('\n').slice(-3).join('\n'));
     // Walkingwriter collision: existing entry + frontend fixtures still pass untouched.

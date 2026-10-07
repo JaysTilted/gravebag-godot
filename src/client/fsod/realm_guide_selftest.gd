@@ -2,9 +2,10 @@
 # Realm guide overlay checks: real world_view display reads only, mock session
 # snapshots. No live server, no transport writes, no focus/input theft.
 # Covers Nexus far/near/unknown/bag-closer/non-realm-nearer/realm/removed/
-# busy, viewport small/large clamps, localization cleanup, zero requests, and
-# (under xvfb --capture-dir) a real 1280x720 rendered frame with source name
-# and E prompt. Must not edit world_view/entity_view/session/entry.
+# busy, viewport small/large clamps, localization cleanup, zero requests,
+# exact hub name versus original realm names, and (under xvfb --capture-dir)
+# a real 1280x720 rendered frame with source name and E prompt plus a realm
+# frame whose explore prompt is absent. Must not edit world_view/entity_view/session/entry.
 extends SceneTree
 
 const World = preload("res://src/client/fsod/world_view.gd")
@@ -82,6 +83,7 @@ func _run() -> void:
 	await _far_near_unknown()
 	await _bag_closer_nonrealm()
 	await _realm_removed_busy()
+	await _exact_nexus_versus_realm_names()
 	await _smoothed_camera_labels()
 	_viewport_clamps()
 	await _zero_requests()
@@ -91,6 +93,7 @@ func _run() -> void:
 			capture_dir = arg.trim_prefix("--capture-dir=")
 	if capture_dir != "":
 		await _render_capture(capture_dir)
+		await _render_original_realm(capture_dir)
 	_cleanup()
 	await process_frame
 	print("FSOD REALM GUIDE PASS: %d checks, %d failures" % [checks, failures])
@@ -123,6 +126,15 @@ func _static_checks() -> void:
 	_check(Guide.compass(Vector2(5, -5)) == "north-east", "compass diagonal")
 	_check(Guide.format_distance(10.4) == "10 tiles", "distance rounds to tiles")
 	_check(Guide.format_distance(0.2) == "1 tile", "sub-tile distance floors to 1 tile")
+	_check(Guide.is_nexus_map("Nexus"), "exact hub name Nexus is the guide map")
+	_check(Guide.is_nexus_map(" nexus "), "exact hub match ignores only surrounding space")
+	_check(not Guide.is_nexus_map("NexusPortal.Sprite"), "NexusPortal.Sprite is a realm, not the hub")
+	_check(not Guide.is_nexus_map("NexusPortal.Dragon"), "NexusPortal.Dragon is a realm, not the hub")
+	_check(not Guide.is_nexus_map("NexusPortal.Cube"), "NexusPortal.Cube is a realm, not the hub")
+	_check(not Guide.is_nexus_map("Portal to Nexus"), "a name that merely contains nexus is not the hub")
+	_check(not Guide.is_nexus_map("Realm"), "Realm is not the hub")
+	_check(not Guide.is_nexus_map(""), "empty map name is not the hub")
+	_check(not Guide.is_nexus_map(1810), "non-string map name is not the hub")
 
 
 func _far_near_unknown() -> void:
@@ -344,6 +356,67 @@ func _zero_requests() -> void:
 	for i: int in 5:
 		guide.refresh(session, world)
 	_check(moves.is_empty() and shots.is_empty() and interacts.is_empty() and abilities.is_empty() and potions.is_empty(), "overlay refresh emits no gameplay requests")
+	session.free()
+	guide.free()
+	world.free()
+	await process_frame
+
+
+func _exact_nexus_versus_realm_names() -> void:
+	var world := _make_world()
+	var guide = Guide.new()
+	root.add_child(guide)
+	var session := _make_session(Vector2(10, 10))
+	world.interaction_target_id = -1
+	guide.refresh(session, world)
+	_check(guide.is_guide_visible(), "true Nexus with no portal shows the guide")
+	_check(guide.guide_direction_text() == "Explore Nexus to find a realm portal", "true Nexus shows the explore line")
+	_check(guide.guide_prompt_text() == "", "true Nexus explore line is not an E prompt")
+	for realm_name: String in ["NexusPortal.Sprite", "NexusPortal.Dragon", "NexusPortal.Cube"]:
+		world.apply_map({"width": 60, "height": 40, "name": realm_name})
+		guide.refresh(session, world)
+		_check(not guide.is_guide_visible(), "%s hides the Nexus guide" % realm_name)
+		_check(guide.guide_direction_text() == "", "%s clears the explore line" % realm_name)
+		_check(not guide.guide_direction_text().contains("Explore"), "%s explore prompt absent" % realm_name)
+		_check(guide.guide_prompt_text() == "" and guide.guide_hint_text() == "", "%s carries no E or stand-closer prompt" % realm_name)
+	world.apply_map({"width": 60, "height": 40, "name": "Nexus"})
+	guide.refresh(session, world)
+	_check(guide.is_guide_visible(), "returning to exact Nexus shows the guide again")
+	_check(guide.guide_direction_text() == "Explore Nexus to find a realm portal", "returning to exact Nexus restores the explore line")
+	session.free()
+	guide.free()
+	world.free()
+	await process_frame
+
+
+func _render_original_realm(capture_dir: String) -> void:
+	# Original bound-realm world name, as the server sends it after E. The
+	# explore line must not be drawn.
+	var world := _make_world()
+	var guide = Guide.new()
+	root.add_child(guide)
+	var session := _make_session(Vector2(10, 10))
+	world.apply_map({"width": 60, "height": 40, "name": "NexusPortal.Sprite"})
+	_add_portal(session, world, 50, 1810, Vector2(12, 10), {31: "NexusPortal.Dragon"})
+	world.interaction_target_id = -1
+	guide.refresh(session, world)
+	_check(not guide.is_guide_visible(), "rendered original realm name hides the guide")
+	_check(guide.guide_direction_text() == "", "rendered original realm name has explore prompt absent")
+	_check(not guide.guide_direction_text().contains("Explore"), "rendered realm frame does not carry Explore")
+	_check(guide.guide_prompt_text() == "" and guide.guide_hint_text() == "", "rendered realm frame has no E prompt")
+	for i: int in 2:
+		await process_frame
+	await RenderingServer.frame_post_draw
+	var image: Image = root.get_texture().get_image()
+	if image.is_empty() or image.get_width() < 1000:
+		_check(false, "realm renderer did not return real viewport pixels")
+		return
+	_check(image.get_width() == 1280 and image.get_height() == 720, "realm frame is the real 1280x720 viewport")
+	var path: String = capture_dir.path_join("realm-guide-realm-frame-0.png")
+	if image.save_png(path) != OK:
+		_check(false, "cannot save rendered original-realm guide frame")
+		return
+	print("FSOD REALM GUIDE REALM FRAME: %dx%d map=NexusPortal.Sprite explore_absent=true %s" % [image.get_width(), image.get_height(), path])
 	session.free()
 	guide.free()
 	world.free()

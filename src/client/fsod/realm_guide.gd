@@ -202,10 +202,24 @@ func portal_label_position(entity_id: int) -> Vector2:
 	return Vector2(INF, INF)
 
 
+static func is_nexus_map(map_value: Variant) -> bool:
+	# The original hub world is named exactly Nexus. A substring match treats
+	# NexusPortal.Sprite / NexusPortal.Dragon as the hub and leaves the explore
+	# line up after a real realm entry.
+	if not map_value is String:
+		return false
+	return (map_value as String).strip_edges().to_lower() == "nexus"
+
+
 func _set_visible(value: bool) -> void:
 	_ensure_nodes()
 	_panel.visible = value
 	if not value:
+		_direction_label.text = ""
+		_prompt_label.text = ""
+		_hint_label.text = ""
+		_prompt_label.visible = false
+		_hint_label.visible = false
 		for id in _portal_labels:
 			var label: Variant = _portal_labels[id]
 			if label is Label and is_instance_valid(label):
@@ -279,7 +293,8 @@ func refresh(session: Node, frontend: Node) -> void:
 		_set_visible(false)
 		return
 	var map_value: Variant = frontend.get("map_name")
-	if not map_value is String or not (map_value as String).to_lower().contains("nexus"):
+	# Hub only. Bound realms are named NexusPortal.Sprite / Dragon / etc.
+	if not is_nexus_map(map_value):
 		_set_visible(false)
 		return
 	var player_raw: Variant = session.get("player_id")
