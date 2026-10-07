@@ -18,7 +18,7 @@
  
          private static readonly ILog log = LogManager.GetLogger(typeof (Client));
  
-@@ -92,90 +103,266 @@
+@@ -92,90 +103,278 @@
  
          internal void ProcessPacket(Packet pkt)
          {
@@ -192,7 +192,13 @@
 +        private async Task RunSessionActionCore(Task previous, RealmManager manager, Action<db.Database> callback)
 +        {
 +            await previous.ConfigureAwait(false);
-+            await manager.Database.DoActionAsync(callback).ConfigureAwait(false);
++            Exception failure = null;
++            await manager.Database.DoActionAsync(db =>
++            {
++                try { callback(db); }
++                catch (Exception ex) { failure = ex; }
++            }).ConfigureAwait(false);
++            if (failure != null) throw new InvalidOperationException("Session persistence failed", failure);
 +        }
 +
 +        internal bool RegisterAccount(RealmManager manager)
@@ -217,10 +223,16 @@
 +            }
 +        }
 +
-+        internal void MarkDeathDeparting()
++        internal Task MarkDeathDeparting(Action<db.Database> callback)
 +        {
 +            lock (lifecycleLock)
++            {
++                if (disposed || persistenceSealed || disconnectQueued) return saveTask;
++                // Publish the departure marker and its DeathRow barrier as one
++                // atomic operation: HELLO cannot seal persistence between them.
 +                deathDeparting = true;
++                return saveTask = RunSessionActionCore(saveTask, Manager, callback);
++            }
 +        }
 +
 +        internal bool IsDeparting
@@ -334,7 +346,7 @@
          }
  
          public void GiftCodeReceived(string type)
-@@ -212,20 +399,35 @@
+@@ -212,20 +411,35 @@
  
          public void Dispose()
          {
@@ -558,43 +570,27 @@
                              try
 --- a/wServer/realm/entities/player/Player.cs
 +++ b/wServer/realm/entities/player/Player.cs
-@@ -495,13 +495,29 @@
+@@ -495,13 +495,13 @@
  
              try
              {
 -                Manager.Database.DoActionAsync(db =>
-+                try { Client.MarkDeathDeparting(); }
-+                catch (Exception markEx) { log.Error("Death departure mark failed", markEx); }
-+                try
++                Client.MarkDeathDeparting(db =>
                  {
 -                    Client.Character.Dead = true;
 -                    SaveToCharacter();
 -                    db.SaveCharacter(Client.Account, Client.Character);
 -                    db.Death(Manager.GameData, Client.Account, Client.Character, killer);
 -                });
-+                    Client.RunSessionAction(db =>
-+                    {
-+                        Client.Character.Dead = true;
-+                        SaveToCharacter();
-+                        db.SaveCharacter(Client.Account, Client.Character);
-+                        db.Death(Manager.GameData, Client.Account, Client.Character, killer);
-+                    });
-+                }
-+                catch (Exception schedEx)
-+                {
-+                    log.Error("Death persistence scheduling failed", schedEx);
-+                    Manager.Database.DoActionAsync(db =>
-+                    {
-+                        Client.Character.Dead = true;
-+                        SaveToCharacter();
-+                        db.SaveCharacter(Client.Account, Client.Character);
-+                        db.Death(Manager.GameData, Client.Account, Client.Character, killer);
-+                    });
-+                }
++                    Client.Character.Dead = true;
++                    SaveToCharacter();
++                    db.SaveCharacter(Client.Account, Client.Character);
++                    db.Death(Manager.GameData, Client.Account, Client.Character, killer);
++                });
                  if (Owner.Id != -6)
                  {
                      Client.SendPacket(new DeathPacket
-@@ -753,7 +769,7 @@
+@@ -753,7 +753,7 @@
                          Owner.LeaveWorld(this);
                      else
                          WorldInstance.LeaveWorld(this);
@@ -603,7 +599,7 @@
                      return;
                  }
                  if (Client.Stage == ProtocalStage.Disconnected || (!Client.Account.VerifiedEmail && Program.Verify))
-@@ -762,7 +778,7 @@
+@@ -762,7 +762,7 @@
                          Owner.LeaveWorld(this);
                      else
                          WorldInstance.LeaveWorld(this);

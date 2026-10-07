@@ -474,13 +474,12 @@ class LifecycleRegression
     {
         var m = new RealmManager(); var old = New(m);
         m.Database.Store.LockAccount(old.Account);
-        old.MarkDeathDeparting();
-        Check(old.IsDeparting, "exact DEATH moment marks departing before read-loop EOF/Disconnect");
-        Task deathRow = old.RunSessionAction(db =>
+        Task deathRow = old.MarkDeathDeparting(db =>
         {
             db.SaveCharacter(old.Account, old.Character);
             db.Events.Add("death:42");
         });
+        Check(old.IsDeparting, "exact DEATH moment atomically publishes its persistence barrier before EOF/Disconnect");
         Check(m.Logic.Count == 0 && m.Database.Count == 1, "pending DeathRow tracked, no Disconnect yet");
         var newer = New(m, registered: false);
         Task departure = m.DepartureTaskFor(newer.Account.AccountId, newer);

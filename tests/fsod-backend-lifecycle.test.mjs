@@ -123,7 +123,9 @@ test('compiled original C# lifecycle forces save/dispose/logout/reconnect/packet
     assert.ok(!playerPatched.includes('UnlockAccount'), 'no unlock-before-save, no kick');
     assert.ok(playerPatched.includes('Client.Disconnect();'), 'Tick teardowns transfer to lifecycle owner');
     assert.ok(playerPatched.includes('MarkDeathDeparting'), 'exact DEATH moment flagged, never HP0-inferred');
-    assert.ok(playerPatched.includes('RunSessionAction'), 'DeathRow tracked behind teardown barrier');
+    assert.ok(playerPatched.includes('Client.MarkDeathDeparting(db =>'), 'DeathRow and exact departure marker publish atomically behind teardown barrier');
+    const deathSection = playerPatched.slice(playerPatched.indexOf('Client.MarkDeathDeparting(db =>'), playerPatched.indexOf('Client.MarkDeathDeparting(db =>') + 1100);
+    assert.ok(!deathSection.includes('Manager.Database.DoActionAsync'), 'DeathRow has no untracked fallback racing disposal');
     assert.ok(playerPatched.includes('db.Death(') && playerPatched.includes('SaveToCharacter()'), 'Death Save/Death mapping preserved');
     assert.ok(playerPatched.includes('DeathPacket') && playerPatched.includes('WorldTimer(1000') && playerPatched.includes('LeaveWorld'), 'original 1s timer/DeathPacket/LeaveWorld unchanged');
   } finally { rmSync(temp, { recursive: true, force: true }); }
