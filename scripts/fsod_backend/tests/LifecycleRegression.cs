@@ -53,6 +53,7 @@ namespace db
         public int Saves, Unlocks, LastSeen;
         public bool FailSave;
         public readonly List<string> Events = new List<string>();
+        public readonly HashSet<string> Locks = new HashSet<string>();
         public db.JsonObjects.Char Saved;
         public void SaveCharacter(db.JsonObjects.Account a, db.JsonObjects.Char c)
         {
@@ -66,7 +67,21 @@ namespace db
         public void UnlockAccount(db.JsonObjects.Account a)
         {
             if (a == null) throw new Exception("null source unlock identity");
+            Locks.Remove(a.AccountId);
             Unlocks++; Events.Add("unlock:" + a.AccountId);
+        }
+        public void LockAccount(db.JsonObjects.Account a)
+        {
+            if (a == null) return;
+            Locks.Add(a.AccountId);
+            Events.Add("lock:" + a.AccountId);
+        }
+        public bool CheckAccountInUse(db.JsonObjects.Account a, ref int? timeout)
+        {
+            if (a == null) return false;
+            if (Locks.Contains(a.AccountId)) { timeout = 600; return true; }
+            UnlockAccount(a);
+            return false;
         }
         public string GenerateGiftcode(string c, string a) { return "fixture"; }
     }
@@ -381,6 +396,114 @@ class LifecycleRegression
         }
         finally { Check(thread.Join(20000), "owned shutdown thread stopped"); }
     }
+    static void DeathHelloBarrier()
+    {
+        var m = new RealmManager(); var old = New(m);
+        m.Database.Store.LockAccount(old.Account);
+        old.Disconnect();
+        Check(m.Logic.Count == 1 && m.Database.Count == 0, "death departure queues logic before persistence");
+        var newer = New(m, registered: false);
+        Task departure = m.DepartureTaskFor(newer.Account.AccountId, newer);
+        Check(departure != null && !departure.IsCompleted, "HELLO must join departing save+unlock+identity cleanup");
+        Check(!m.TryConnect(newer), "immediate DEATH new HELLO cannot register while Save pending");
+        Check(m.Database.Store.Unlocks == 0, "no premature unlock before departure save");
+        Check(Object.ReferenceEquals(m.Clients["42"], old), "old still registered before departure");
+        int? timeout = null;
+        Check(m.Database.Store.CheckAccountInUse(newer.Account, ref timeout), "Check sees locked before departure");
+        Check(m.Database.Store.Unlocks == 0, "locked Check does not unlock");
+        m.Logic.DrainOne();
+        Check(m.Database.Count == 1, "departure persistence queued");
+        m.Database.RunOne();
+        Check(m.Database.Store.Saves == 1 && m.Database.Store.Unlocks == 1, "departure save precedes unlock");
+        Check(!m.Database.Store.Locks.Contains("42"), "unlock clears lock");
+        Check(!m.TryConnect(newer), "cannot register before identity cleanup even after unlock");
+        Check(Object.ReferenceEquals(m.Clients["42"], old), "old still present until removal");
+        m.Logic.DrainOne();
+        Check(departure.Wait(5000), "bounded departure completion with identity cleanup");
+        Check(m.Clients.Count == 0, "departure removes old identity");
+        Check(m.TryConnect(newer), "same-account HELLO registers after save+unlock+removal");
+        Check(Object.ReferenceEquals(m.Clients["42"], newer), "new owns registration after barrier");
+        var again = m.Disconnect(old);
+        Check(again.Wait(5000) && Object.ReferenceEquals(m.Clients["42"], newer), "old completion cannot remove new");
+        Persisted(m);
+        Cleanup(m, newer); cases++;
+    }
+    static void HelloLiveReject()
+    {
+        var m = new RealmManager(); var old = New(m);
+        m.Database.Store.LockAccount(old.Account);
+        var newer = New(m, registered: false);
+        Check(m.DepartureTaskFor(newer.Account.AccountId, newer) == null, "alive non-departing account must not wait");
+        Check(!m.TryConnect(newer), "ordinary live account still rejects");
+        int? timeout = null;
+        Check(m.Database.Store.CheckAccountInUse(newer.Account, ref timeout), "live account still locked");
+        Check(m.Database.Store.Unlocks == 0 && m.Database.Store.Saves == 0, "live reject performs no save/unlock");
+        Check(Object.ReferenceEquals(m.Clients["42"], old), "live owner retained");
+        Cleanup(m, old);
+        newer.Disconnect(); m.Logic.DrainOne(); var done = m.Disconnect(newer); Finish(m, done);
+        Check(m.Database.Store.Saves == 1 && m.Database.Store.Unlocks == 1, "rejected newcomer adds no save/unlock");
+        cases++;
+    }
+    static void HelloSaveFailLocked()
+    {
+        var m = new RealmManager(); var old = New(m);
+        m.Database.Store.LockAccount(old.Account);
+        m.Database.Store.FailSave = true;
+        old.Disconnect();
+        var newer = New(m, registered: false);
+        Task departure = m.DepartureTaskFor(newer.Account.AccountId, newer);
+        Check(departure != null && !departure.IsCompleted, "failed-save departure still joined");
+        Check(!m.TryConnect(newer), "cannot register while failed save pending");
+        m.Logic.DrainOne();
+        m.Database.RunOne();
+        Check(m.Database.Store.Saves == 0 && m.Database.Store.Unlocks == 0, "failed save performs no unlock");
+        Check(m.Database.Store.Locks.Contains("42"), "failed save remains locked");
+        m.Logic.DrainOne();
+        Check(departure.Wait(5000), "bounded failed departure completion");
+        Check(m.Clients.Count == 0, "failed departure still removes identity");
+        int? timeout = null;
+        Check(m.Database.Store.CheckAccountInUse(newer.Account, ref timeout), "save-fail remains locked for next HELLO");
+        Check(m.Database.Store.Unlocks == 0, "locked Check does not unlock");
+        var doneOld = m.Disconnect(old);
+        Check(doneOld.Wait(5000), "old failed departure idempotent");
+        newer.Disconnect(); m.Logic.DrainOne(); var doneNew = m.Disconnect(newer); Finish(m, doneNew);
+        Check(m.Database.Store.Unlocks == 0 && m.Database.Store.Saves == 0, "failed paths never unlock");
+        cases++;
+    }
+    static void EarlyDeathHelloBeforeDisconnect()
+    {
+        var m = new RealmManager(); var old = New(m);
+        m.Database.Store.LockAccount(old.Account);
+        old.MarkDeathDeparting();
+        Check(old.IsDeparting, "exact DEATH moment marks departing before read-loop EOF/Disconnect");
+        Task deathRow = old.RunSessionAction(db =>
+        {
+            db.SaveCharacter(old.Account, old.Character);
+            db.Events.Add("death:42");
+        });
+        Check(m.Logic.Count == 0 && m.Database.Count == 1, "pending DeathRow tracked, no Disconnect yet");
+        var newer = New(m, registered: false);
+        Task departure = m.DepartureTaskFor(newer.Account.AccountId, newer);
+        Check(departure != null && !departure.IsCompleted && !deathRow.IsCompleted,
+            "EARLY new HELLO joins DeathRow+departing save without Verify-latency guess");
+        Check(!m.TryConnect(newer), "early HELLO cannot register before DeathRow+save");
+        Check(m.Database.Store.Unlocks == 0, "no premature unlock before DeathRow");
+        Check(m.Database.Count == 1, "Hello join chains terminal behind DeathRow, no timer wait");
+        old.Disconnect();
+        Check(m.Logic.Count == 0 && m.Database.Count == 1, "1s-timer Disconnect idempotent after Hello join");
+        m.Database.RunOne();
+        Check(m.Database.Store.Saves == 1 && m.Database.Store.Unlocks == 0, "DeathRow first, still locked");
+        Check(m.Database.Store.Events.Contains("death:42"), "pending DeathRow transaction preserved");
+        Check(m.Database.Count == 1, "terminal queued only after DeathRow, no race");
+        Check(!m.TryConnect(newer), "still cannot register before terminal save");
+        m.Database.RunOne();
+        Check(m.Database.Store.Saves == 2 && m.Database.Store.Unlocks == 1, "terminal save+unlock after DeathRow");
+        m.Logic.DrainOne();
+        Check(departure.Wait(5000) && deathRow.Wait(5000), "bounded DeathRow+departure completion, no hang");
+        Check(m.Clients.Count == 0, "departure removes old identity after DeathRow");
+        Check(m.TryConnect(newer), "HELLO registers after DeathRow+save+unlock+removal");
+        Cleanup(m, newer); cases++;
+    }
     static void Cleanup(RealmManager m, Client c)
     {
         var done = m.Disconnect(c);
@@ -392,6 +515,7 @@ class LifecycleRegression
         LogoutRace(); ReconnectBarrier(); SerializedSaves(); DisconnectedPacket();
         SaveFailure(false, false); SaveFailure(true, false); SaveFailure(false, true);
         ArenaAndUnauthenticated(); RejectedSessionCannotUnlock(); AuthenticationDisposeRace(); ShutdownDrain();
+        DeathHelloBarrier(); HelloLiveReject(); HelloSaveFailLocked(); EarlyDeathHelloBeforeDisconnect();
         Console.WriteLine("compiled-original-lifecycle: PASS (" + cases + " forced interleavings)");
     }
 }

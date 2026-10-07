@@ -1,6 +1,6 @@
 --- a/wServer/networking/Client.cs
 +++ b/wServer/networking/Client.cs
-@@ -29,6 +29,16 @@
+@@ -29,6 +29,17 @@
      {
          public const string SERVER_VERSION = "27.3.2";
          private bool disposed;
@@ -13,16 +13,31 @@
 +        private bool persistenceSealed;
 +        private bool reconnecting;
 +        private bool ownsAccount;
++        private bool deathDeparting;
 +        private Account savedAccount;
  
          private static readonly ILog log = LogManager.GetLogger(typeof (Client));
  
-@@ -92,90 +102,236 @@
+@@ -92,90 +103,266 @@
  
          internal void ProcessPacket(Packet pkt)
          {
+-            try
+-            {
+-                log.Logger.Log(typeof (Client), Level.Verbose,
+-                   $"Handling packet '{pkt}'...", null);
+-                if (pkt.ID == (PacketID) 255) return;
+-                IPacketHandler handler;
+-                if (!PacketHandlers.Handlers.TryGetValue(pkt.ID, out handler))
+-                    log.Warn($"Unhandled packet '{pkt.ID}'.");
+-                else
+-                    handler.Handle(this, (ClientPacket) pkt);
+-            }
+-            catch (Exception e)
 +            lock (lifecycleLock)
-+            {
+             {
+-                log.Error($"Error when handling packet '{pkt}'...", e);
+-                Disconnect();
 +                if (disconnectQueued || reconnecting || disposed) return;
 +                try
 +                {
@@ -40,13 +55,18 @@
 +                    log.Error($"Error when handling packet '{pkt}'...", e);
 +                    Disconnect();
 +                }
-+            }
-+        }
-+
-+        public void Disconnect()
-+        {
+             }
+         }
+ 
+         public void Disconnect()
+         {
+-            try
 +            lock (lifecycleLock)
-+            {
+             {
+-                if (Stage == ProtocalStage.Disconnected) return;
+-                Stage = ProtocalStage.Disconnected;
+-                if (Account != null)
+-                    DisconnectFromRealm();
 +                if (disposed || disconnectQueued) return;
 +                disconnectQueued = true;
 +                CloseTransport();
@@ -54,7 +74,8 @@
 +                manager.Logic.AddPendingAction(t => manager.Disconnect(this), PendingPriority.Destruction);
 +            }
 +        }
-+
+ 
+-                Socket.Close();
 +        private void CloseTransport()
 +        {
 +            Stage = ProtocalStage.Disconnected;
@@ -68,7 +89,8 @@
 +            {
 +                if (disposed || persistenceSealed) return saveTask;
 +                return QueueSave(false);
-+            }
+             }
+-            catch (Exception e)
 +        }
 +
 +        // Snapshot original Player -> Char fields on the requesting tick
@@ -81,55 +103,48 @@
 +            string world = null;
 +            bool arena = false;
 +            if (Player != null)
-+            {
+             {
+-                log.Error(e);
 +                Player.SaveToCharacter();
 +                if (Player.Owner != null)
 +                {
 +                    arena = Player.Owner.Id == -6;
 +                    world = Player.Owner.Name;
 +                }
-+            }
+             }
 +            return saveTask = Persist(saveTask, manager, account, character, world, arena, unlock);
-+        }
-+
+         }
+ 
+-        public Task Save()
 +        private async Task Persist(Task previous, RealmManager manager, Account account,
 +            Char character, string world, bool arena, bool unlock)
-+        {
-             try
+         {
+-            return Manager.Database.DoActionAsync(db =>
++            try
              {
--                log.Logger.Log(typeof (Client), Level.Verbose,
--                   $"Handling packet '{pkt}'...", null);
--                if (pkt.ID == (PacketID) 255) return;
--                IPacketHandler handler;
--                if (!PacketHandlers.Handlers.TryGetValue(pkt.ID, out handler))
--                    log.Warn($"Unhandled packet '{pkt.ID}'.");
--                else
--                    handler.Handle(this, (ClientPacket) pkt);
--            }
--            catch (Exception e)
--            {
--                log.Error($"Error when handling packet '{pkt}'...", e);
--                Disconnect();
--            }
--        }
--
--        public void Disconnect()
+-                try
 +                await previous.ConfigureAwait(false);
 +                if (account == null) return; // unauthenticated transport
 +                Exception failure = null;
 +                await manager.Database.DoActionAsync(db =>
-+                {
+                 {
+-                    string w = null;
+-                    if (Player != null)
 +                    // DatabaseTicker logs/swallow callbacks; convey failure to
 +                    // the lifecycle barrier instead of unlocking a failed save.
 +                    try
-+                    {
+                     {
+-                        Player.SaveToCharacter();
+-                        if (Player.Owner != null)
 +                        if (!arena && character != null)
-+                        {
+                         {
+-                            if (Player.Owner.Id == -6) return;
+-                            w = Player.Owner.Name;
 +                            if (world != null) db.UpdateLastSeen(account.AccountId, character.CharacterId, world);
 +                            db.SaveCharacter(account, character);
-+                        }
+                         }
 +                        if (unlock) db.UnlockAccount(account);
-+                    }
+                     }
 +                    catch (Exception ex) { failure = ex; }
 +                }).ConfigureAwait(false);
 +                if (failure != null) throw new InvalidOperationException("Persistence barrier failed", failure);
@@ -140,7 +155,14 @@
 +                throw;
 +            }
 +        }
-+
+ 
+-                    if (Character != null)
+-                    {
+-                        if (w != null) db.UpdateLastSeen(Account.AccountId, Character.CharacterId, w);
+-                        db.SaveCharacter(Account, Character);
+-                    }
+-
+-                    db.UnlockAccount(Account);
 +        private Task SaveForDeparture()
 +        {
 +            if (!persistenceSealed)
@@ -153,7 +175,7 @@
 +                    var failed = new TaskCompletionSource<int>();
 +                    failed.SetException(ex);
 +                    saveTask = failed.Task;
-+                }
+                 }
 +            }
 +            return saveTask;
 +        }
@@ -195,6 +217,36 @@
 +            }
 +        }
 +
++        internal void MarkDeathDeparting()
++        {
++            lock (lifecycleLock)
++                deathDeparting = true;
++        }
++
++        internal bool IsDeparting
++        {
++            get
++            {
++                lock (lifecycleLock)
++                    return disposed || disconnectQueued || reconnecting || persistenceSealed ||
++                        deathDeparting || Stage == ProtocalStage.Disconnected;
++            }
++        }
++
++        internal bool IsPortalReconnectOnly
++        {
++            get
++            {
++                lock (lifecycleLock)
++                    return reconnecting && !disconnectQueued && !disposed;
++            }
++        }
++
++        internal Task PersistenceBarrier
++        {
++            get { lock (lifecycleLock) return saveTask; }
++        }
++
 +        internal Task CompleteDisconnect(RealmManager manager)
 +        {
 +            lock (lifecycleLock)
@@ -206,24 +258,31 @@
 +                var accountId = ownsAccount ? savedAccount?.AccountId : null;
 +                Task persistence;
 +                try { persistence = SaveForDeparture(); }
-+                catch (Exception ex)
-+                {
+                 catch (Exception ex)
+                 {
+-                    log.Fatal("SaveException", ex);
 +                    log.Fatal("Save snapshot failed", ex);
 +                    var failed = new TaskCompletionSource<int>();
 +                    failed.SetException(ex);
 +                    persistence = failed.Task;
-+                }
+                 }
+-            });
 +                return disconnectTask = FinishDisconnect(manager, accountId, persistence);
 +            }
-+        }
-+
+         }
+ 
+-        //Following must execute, network loop will discard disconnected client, so logic loop
+-        private void DisconnectFromRealm()
 +        private async Task FinishDisconnect(RealmManager manager, string accountId, Task persistence)
-+        {
+         {
+-            Manager.Logic.AddPendingAction(t =>
 +            try { await persistence.ConfigureAwait(false); }
 +            catch (Exception ex) { log.Error("Disconnect persistence failed; account remains locked", ex); }
 +            var completion = new TaskCompletionSource<int>();
 +            manager.Logic.AddPendingAction(t =>
-+            {
+             {
+-                Save();
+-                Manager.Disconnect(this);
 +                try
 +                {
 +                    manager.RemoveClient(accountId, this);
@@ -231,14 +290,18 @@
 +                }
 +                catch (Exception ex) { log.Error("Disconnect cleanup failed", ex); }
 +                finally { completion.SetResult(0); }
-+            }, PendingPriority.Destruction);
+             }, PendingPriority.Destruction);
 +            await completion.Task.ConfigureAwait(false);
-+        }
-+
-+        public void Reconnect(ReconnectPacket pkt)
-+        {
+         }
+ 
+         public void Reconnect(ReconnectPacket pkt)
+         {
+-            Manager.Logic.AddPendingAction(t =>
 +            lock (lifecycleLock)
-+            {
+             {
+-                Save();
+-                SendPacket(pkt);
+-            }, PendingPriority.Destruction);
 +                if (disposed || disconnectQueued || reconnecting) return;
 +                reconnecting = true;
 +                var manager = Manager;
@@ -257,71 +320,9 @@
 +        }
 +
 +        private async Task FinishReconnect(RealmManager manager, ReconnectPacket pkt, Task persistence)
-         {
-             try
-             {
--                if (Stage == ProtocalStage.Disconnected) return;
--                Stage = ProtocalStage.Disconnected;
--                if (Account != null)
--                    DisconnectFromRealm();
--
--                Socket.Close();
--            }
--            catch (Exception e)
--            {
--                log.Error(e);
--            }
--        }
--
--        public Task Save()
--        {
--            return Manager.Database.DoActionAsync(db =>
--            {
--                try
--                {
--                    string w = null;
--                    if (Player != null)
--                    {
--                        Player.SaveToCharacter();
--                        if (Player.Owner != null)
--                        {
--                            if (Player.Owner.Id == -6) return;
--                            w = Player.Owner.Name;
--                        }
--                    }
--
--                    if (Character != null)
--                    {
--                        if (w != null) db.UpdateLastSeen(Account.AccountId, Character.CharacterId, w);
--                        db.SaveCharacter(Account, Character);
--                    }
--
--                    db.UnlockAccount(Account);
--                }
--                catch (Exception ex)
--                {
--                    log.Fatal("SaveException", ex);
--                }
--            });
--        }
--
--        //Following must execute, network loop will discard disconnected client, so logic loop
--        private void DisconnectFromRealm()
--        {
--            Manager.Logic.AddPendingAction(t =>
--            {
--                Save();
--                Manager.Disconnect(this);
--            }, PendingPriority.Destruction);
--        }
--
--        public void Reconnect(ReconnectPacket pkt)
--        {
--            Manager.Logic.AddPendingAction(t =>
--            {
--                Save();
--                SendPacket(pkt);
--            }, PendingPriority.Destruction);
++        {
++            try
++            {
 +                await persistence.ConfigureAwait(false);
 +                manager.Logic.AddPendingAction(t =>
 +                {
@@ -333,7 +334,7 @@
          }
  
          public void GiftCodeReceived(string type)
-@@ -212,20 +368,35 @@
+@@ -212,20 +399,35 @@
  
          public void Dispose()
          {
@@ -382,7 +383,9 @@
 +            }
          }
      }
- }--- a/wServer/realm/RealmManager.cs
+ }
+\ No newline at end of file
+--- a/wServer/realm/RealmManager.cs
 +++ b/wServer/realm/RealmManager.cs
 @@ -142,6 +142,7 @@
          public DatabaseTicker Database { get; private set; }
@@ -397,15 +400,14 @@
          }
  
 -        public async void Disconnect(Client client)
--        {
++        public Task Disconnect(Client client)
+         {
 -            if (client == null) return;
 -            Client dummy;
 -            client.Disconnect();
 -            await client.Save();
 -            while (!Clients.TryRemove(client.Account.AccountId, out dummy) && Clients.ContainsKey(client.Account.AccountId));
 -            client.Dispose();
-+        public Task Disconnect(Client client)
-+        {
 +            return client == null ? Task.FromResult(0) : client.CompleteDisconnect(this);
 +        }
 +
@@ -419,14 +421,19 @@
          }
  
          public Player FindPlayer(string name)
-@@ -305,21 +310,37 @@
+@@ -305,38 +310,80 @@
          {
              log.Info("Stopping Realm Manager...");
  
+-            Terminating = true;
+-            List<Client> saveAccountUnlock = new List<Client>();
+-            foreach (Client c in Clients.Values)
 +            if (stopping) return;
 +            stopping = true;
 +            var departures = Clients.Values.ToArray().Select(client =>
-+            {
+             {
+-                saveAccountUnlock.Add(c);
+-                c.Disconnect();
 +                var completion = new TaskCompletionSource<int>();
 +                Logic.AddPendingAction(t =>
 +                {
@@ -448,28 +455,41 @@
 +            {
 +                if (!Task.WaitAll(departures, TimeSpan.FromSeconds(15)))
 +                    log.Error("Shutdown persistence deadline reached; incomplete accounts remain locked");
-+            }
-+            catch (AggregateException ex) { log.Error("Shutdown persistence failed", ex); }
-             Terminating = true;
--            List<Client> saveAccountUnlock = new List<Client>();
--            foreach (Client c in Clients.Values)
--            {
--                saveAccountUnlock.Add(c);
--                c.Disconnect();
--            }
+             }
 -            //To prevent a buggy Account in use.
 -            using(var db = new Database())
 -                foreach (Client c in saveAccountUnlock)
 -                    db.UnlockAccount(c.Account);
 -
 -            GameData.Dispose();
++            catch (AggregateException ex) { log.Error("Shutdown persistence failed", ex); }
++            Terminating = true;
              logic.Join();
              network.Join();
 +            GameData.Dispose();
  
              log.Info("Realm Manager stopped.");
          }
-@@ -327,16 +348,23 @@
+ 
++        internal Task DepartureTaskFor(string accountId, Client newcomer)
++        {
++            if (accountId == null || newcomer == null) return null;
++            Client previous;
++            if (!Clients.TryGetValue(accountId, out previous)) return null;
++            if (Object.ReferenceEquals(previous, newcomer)) return null;
++            // Alive (non-departing) logins must still reject immediately.
++            // Never wait for, kick, or unlock-before-save an alive account.
++            if (!previous.IsDeparting) return null;
++            // Portal-only transfer keeps its owner; await its persistence barrier
++            // so the completed-reconnect handoff in TryConnect may replace it.
++            // Never dispose the portal owner here (would suppress its packet).
++            if (previous.IsPortalReconnectOnly) return previous.PersistenceBarrier;
++            // Normal DEATH/Disconnect departure: join save+unlock+identity cleanup.
++            // Idempotent; safe because IsDeparting was true (not an alive kick).
++            try { return previous.CompleteDisconnect(this); }
++            catch (Exception ex) { log.Error("Departure join failed", ex); return previous.PersistenceBarrier; }
++        }
++
          public bool TryConnect(Client psr)
          {
              Account acc = psr.Account;
@@ -519,7 +539,9 @@
 -            Socket.Close();
          }
      }
- }--- a/wServer/realm/NetworkTicker.cs
+ }
+\ No newline at end of file
+--- a/wServer/realm/NetworkTicker.cs
 +++ b/wServer/realm/NetworkTicker.cs
 @@ -52,10 +52,8 @@
                              if (Manager.Terminating) return;
@@ -536,7 +558,43 @@
                              try
 --- a/wServer/realm/entities/player/Player.cs
 +++ b/wServer/realm/entities/player/Player.cs
-@@ -753,7 +753,7 @@
+@@ -495,13 +495,29 @@
+ 
+             try
+             {
+-                Manager.Database.DoActionAsync(db =>
++                try { Client.MarkDeathDeparting(); }
++                catch (Exception markEx) { log.Error("Death departure mark failed", markEx); }
++                try
+                 {
+-                    Client.Character.Dead = true;
+-                    SaveToCharacter();
+-                    db.SaveCharacter(Client.Account, Client.Character);
+-                    db.Death(Manager.GameData, Client.Account, Client.Character, killer);
+-                });
++                    Client.RunSessionAction(db =>
++                    {
++                        Client.Character.Dead = true;
++                        SaveToCharacter();
++                        db.SaveCharacter(Client.Account, Client.Character);
++                        db.Death(Manager.GameData, Client.Account, Client.Character, killer);
++                    });
++                }
++                catch (Exception schedEx)
++                {
++                    log.Error("Death persistence scheduling failed", schedEx);
++                    Manager.Database.DoActionAsync(db =>
++                    {
++                        Client.Character.Dead = true;
++                        SaveToCharacter();
++                        db.SaveCharacter(Client.Account, Client.Character);
++                        db.Death(Manager.GameData, Client.Account, Client.Character, killer);
++                    });
++                }
+                 if (Owner.Id != -6)
+                 {
+                     Client.SendPacket(new DeathPacket
+@@ -753,7 +769,7 @@
                          Owner.LeaveWorld(this);
                      else
                          WorldInstance.LeaveWorld(this);
@@ -545,7 +603,7 @@
                      return;
                  }
                  if (Client.Stage == ProtocalStage.Disconnected || (!Client.Account.VerifiedEmail && Program.Verify))
-@@ -762,7 +762,7 @@
+@@ -762,7 +778,7 @@
                          Owner.LeaveWorld(this);
                      else
                          WorldInstance.LeaveWorld(this);
@@ -556,27 +614,327 @@
              }
 --- a/wServer/networking/handlers/HelloHandler.cs
 +++ b/wServer/networking/handlers/HelloHandler.cs
-@@ -38,9 +38,12 @@
+@@ -3,6 +3,7 @@
+ using System;
+ using System.Linq;
+ using System.Text;
++using System.Threading.Tasks;
+ using db;
+ using wServer.networking.cliPackets;
+ using wServer.networking.svrPackets;
+@@ -38,139 +39,203 @@
                  client.Disconnect();
                  return;
              }
 -            client.Manager.Database.DoActionAsync(db =>
 +            // Capture the actual packet's manager, not PacketHandlerBase's
 +            // mutable singleton client context. Keep teardown behind this task.
++            // Capture packet fields before any async hop; the packet object is
++            // per-connection but must not be held across the departure await.
 +            var manager = client.Manager;
-+            client.RunSessionAction(db =>
++            string guid = packet.GUID;
++            string password = packet.Password;
++            string buildVersion = packet.BuildVersion;
++            int gameId = packet.GameId;
++            byte[] portalKey = packet.Key;
++            byte[] mapInfo = packet.MapInfo;
++            Task verifyTask;
++            try
              {
 -                if ((client.Account = db.Verify(packet.GUID, packet.Password, Manager.GameData)) == null)
-+                if ((client.Account = db.Verify(packet.GUID, packet.Password, manager.GameData)) == null)
++                verifyTask = client.RunSessionAction(db =>
                  {
-                     log.Info(@"Account not verified.");
-                     client.Account = Database.CreateGuestAccount(packet.GUID);
-@@ -166,7 +169,7 @@
-                         AllowTeleport = world.AllowTeleport,
-                         ShowDisplays = world.ShowDisplays,
-                         ClientXML = world.ClientXml,
+-                    log.Info(@"Account not verified.");
+-                    client.Account = Database.CreateGuestAccount(packet.GUID);
+-
+-                    if (client.Account == null)
++                    if ((client.Account = db.Verify(guid, password, manager.GameData)) == null)
+                     {
+-                        log.Info(@"Account is null!");
+-                        client.SendPacket(new FailurePacket
+-                        {
+-                            ErrorDescription = "Invalid account."
+-                        });
+-                        client.Disconnect();
+-                        return;
+-                    }
+-                }
+-                if (!client.Account.IsGuestAccount)
+-                {
+-                    int? timeout = null;
++                        log.Info(@"Account not verified.");
++                        client.Account = Database.CreateGuestAccount(guid);
+ 
+-                    if (DateTime.Now <= Program.WhiteListTurnOff)
+-                    {
+-                        if (!IsWhiteListed(client.Account.Rank))
++                        if (client.Account == null)
+                         {
++                            log.Info(@"Account is null!");
+                             client.SendPacket(new FailurePacket
+                             {
+-                                ErrorId = 0,
+-                                ErrorDescription = "You are not whitelisted!"
++                                ErrorDescription = "Invalid account."
+                             });
+                             client.Disconnect();
+                             return;
+                         }
+                     }
+-                    if (db.CheckAccountInUse(client.Account, ref timeout))
+-                    {
+-                        if (timeout == null)
+-                        {
+-                            client.SendPacket(new FailurePacket
+-                            {
+-                                ErrorId = 0,
+-                                ErrorDescription = "Account in use."
+-                            });
+-                        }
+-                        else
+-                        {
+-                            client.SendPacket(new FailurePacket
+-                            {
+-                                ErrorId = 0,
+-                                ErrorDescription = "Account in use. (" + timeout + " seconds until timeout.)"
+-                            });
+-                        }
+-                        client.Disconnect();
+-                        return;
+-                    }
+-                }
+-                log.Info(@"Client trying to connect!");
+-                client.ConnectedBuild = packet.BuildVersion;
+-                if (!client.Manager.TryConnect(client))
+-                {
+-                    client.Account = null;
+-                    client.SendPacket(new FailurePacket
+-                    {
+-                        ErrorDescription = "Failed to connect."
+-                    });
+-                    client.Disconnect();
+-                    log.Warn(@"Failed to connect.");
+-                }
+-                else
++                });
++            }
++            catch (Exception ex) { log.Error("Hello verify scheduling failed", ex); client.Disconnect(); return; }
++            verifyTask.ContinueWith(vt =>
++            {
++                try
+                 {
+-                    log.Info(@"Client loading world");
+-                    if (packet.GameId == World.NEXUS_LIMBO) packet.GameId = World.NEXUS_ID;
+-                    World world = client.Manager.GetWorld(packet.GameId);
+-                    if (world == null && packet.GameId == World.TUT_ID) world = client.Manager.AddWorld(new Tutorial(false));
+-                    if (world == null)
++                    if (vt.IsFaulted) { log.Error("Hello verify failed", vt.Exception); client.Disconnect(); return; }
++                    string accId = null;
++                    try { var acc = client.Account; if (acc != null) accId = acc.AccountId; }
++                    catch { }
++                    if (accId == null) return;
++                    Task departure = null;
++                    try { departure = manager.DepartureTaskFor(accId, client); }
++                    catch (Exception ex) { log.Error("Hello departure peek failed", ex); }
++                    Action registerPhase = () =>
+                     {
+-                        client.SendPacket(new FailurePacket
++                        try
+                         {
+-                            ErrorId = 1,
+-                            ErrorDescription = "Invalid world."
+-                        });
+-                        client.Disconnect();
+-                        return;
+-                    }
+-                    if (world.NeedsPortalKey)
+-                    {
+-                        if (!world.PortalKey.SequenceEqual(packet.Key))
+-                        {
+-                            client.SendPacket(new FailurePacket
++                            client.RunSessionAction(db =>
+                             {
+-                                ErrorId = 1,
+-                                ErrorDescription = "Invalid Portal Key"
++                                if (client.Account == null) return;
++                                if (!client.Account.IsGuestAccount)
++                                {
++                                    int? timeout = null;
++
++                                    if (DateTime.Now <= Program.WhiteListTurnOff)
++                                    {
++                                        if (!IsWhiteListed(client.Account.Rank))
++                                        {
++                                            client.SendPacket(new FailurePacket
++                                            {
++                                                ErrorId = 0,
++                                                ErrorDescription = "You are not whitelisted!"
++                                            });
++                                            client.Disconnect();
++                                            return;
++                                        }
++                                    }
++                                    // Same-account departing save+unlock+identity cleanup
++                                    // has completed here (or there was no departing
++                                    // client). Alive accounts still report in use and
++                                    // reject without any kick or early unlock.
++                                    if (db.CheckAccountInUse(client.Account, ref timeout))
++                                    {
++                                        if (timeout == null)
++                                        {
++                                            client.SendPacket(new FailurePacket
++                                            {
++                                                ErrorId = 0,
++                                                ErrorDescription = "Account in use."
++                                            });
++                                        }
++                                        else
++                                        {
++                                            client.SendPacket(new FailurePacket
++                                            {
++                                                ErrorId = 0,
++                                                ErrorDescription = "Account in use. (" + timeout + " seconds until timeout.)"
++                                            });
++                                        }
++                                        client.Disconnect();
++                                        return;
++                                    }
++                                }
++                                log.Info(@"Client trying to connect!");
++                                client.ConnectedBuild = buildVersion;
++                                if (!manager.TryConnect(client))
++                                {
++                                    client.Account = null;
++                                    client.SendPacket(new FailurePacket
++                                    {
++                                        ErrorDescription = "Failed to connect."
++                                    });
++                                    client.Disconnect();
++                                    log.Warn(@"Failed to connect.");
++                                }
++                                else
++                                {
++                                    log.Info(@"Client loading world");
++                                    if (gameId == World.NEXUS_LIMBO) gameId = World.NEXUS_ID;
++                                    World world = manager.GetWorld(gameId);
++                                    if (world == null && gameId == World.TUT_ID) world = manager.AddWorld(new Tutorial(false));
++                                    if (world == null)
++                                    {
++                                        client.SendPacket(new FailurePacket
++                                        {
++                                            ErrorId = 1,
++                                            ErrorDescription = "Invalid world."
++                                        });
++                                        client.Disconnect();
++                                        return;
++                                    }
++                                    if (world.NeedsPortalKey)
++                                    {
++                                        if (!world.PortalKey.SequenceEqual(portalKey))
++                                        {
++                                            client.SendPacket(new FailurePacket
++                                            {
++                                                ErrorId = 1,
++                                                ErrorDescription = "Invalid Portal Key"
++                                            });
++                                            client.Disconnect();
++                                            return;
++                                        }
++                                        if (world.PortalKeyExpired)
++                                        {
++                                            client.SendPacket(new FailurePacket
++                                            {
++                                                ErrorId = 1,
++                                                ErrorDescription = "Portal key expired."
++                                            });
++                                            client.Disconnect();
++                                            return;
++                                        }
++                                    }
++                                    log.Info(@"Client joined world " + world.Id);
++                                    if (mapInfo.Length > 0) //Test World
++                                        (world as Test).LoadJson(Encoding.Default.GetString(mapInfo));
++
++                                    if (world.IsLimbo)
++                                        world = world.GetInstance(client);
++                                    client.Random = new wRandom(world.Seed);
++                                    client.TargetWorld = world.Id;
++                                    client.SendPacket(new MapInfoPacket
++                                    {
++                                        Width = world.Map.Width,
++                                        Height = world.Map.Height,
++                                        Name = world.Name,
++                                        Seed = world.Seed,
++                                        ClientWorldName = world.ClientWorldName,
++                                        Difficulty = world.Difficulty,
++                                        Background = world.Background,
++                                        AllowTeleport = world.AllowTeleport,
++                                        ShowDisplays = world.ShowDisplays,
++                                        ClientXML = world.ClientXml,
++                                        ExtraXML = manager.GameData.AdditionXml
++                                    });
++                                    client.Stage = ProtocalStage.Handshaked;
++                                }
+                             });
+-                            client.Disconnect();
+-                            return;
+                         }
+-                        if (world.PortalKeyExpired)
++                        catch (Exception ex) { log.Error("Hello registration scheduling failed", ex); client.Disconnect(); }
++                    };
++                    if (departure == null) { registerPhase(); return; }
++                    // Await SAME-ACCOUNT departing save+unlock+identity cleanup
++                    // before CheckAccountInUse/registration. No DB connection is
++                    // held across this await, and the logic ticker is never
++                    // blocked: continuations run on the pool. Bounded: a hung
++                    // departure still rejects via Check/TryConnect instead of
++                    // hanging Hello, and a failed save remains locked.
++                    Task departureDeadline = Task.Delay(TimeSpan.FromSeconds(15));
++                    Task.WhenAny(departure, departureDeadline).ContinueWith(wt =>
++                    {
++                        try
+                         {
+-                            client.SendPacket(new FailurePacket
+-                            {
+-                                ErrorId = 1,
+-                                ErrorDescription = "Portal key expired."
+-                            });
+-                            client.Disconnect();
+-                            return;
++                            if (wt.Result != departure) log.Error("Hello departure deadline reached; account remains locked");
++                            else if (departure.IsFaulted) log.Error("Hello departure persistence failed; account remains locked", departure.Exception);
+                         }
+-                    }
+-                    log.Info(@"Client joined world " + world.Id);
+-                    if (packet.MapInfo.Length > 0) //Test World
+-                        (world as Test).LoadJson(Encoding.Default.GetString(packet.MapInfo));
+-
+-                    if (world.IsLimbo)
+-                        world = world.GetInstance(client);
+-                    client.Random = new wRandom(world.Seed);
+-                    client.TargetWorld = world.Id;
+-                    client.SendPacket(new MapInfoPacket
+-                    {
+-                        Width = world.Map.Width,
+-                        Height = world.Map.Height,
+-                        Name = world.Name,
+-                        Seed = world.Seed,
+-                        ClientWorldName = world.ClientWorldName,
+-                        Difficulty = world.Difficulty,
+-                        Background = world.Background,
+-                        AllowTeleport = world.AllowTeleport,
+-                        ShowDisplays = world.ShowDisplays,
+-                        ClientXML = world.ClientXml,
 -                        ExtraXML = Manager.GameData.AdditionXml
-+                        ExtraXML = manager.GameData.AdditionXml
-                     });
-                     client.Stage = ProtocalStage.Handshaked;
+-                    });
+-                    client.Stage = ProtocalStage.Handshaked;
++                        catch (Exception ex) { log.Error("Hello departure wait failed", ex); }
++                        registerPhase();
++                    }, TaskScheduler.Default);
                  }
+-            });
++                catch (Exception ex) { log.Error("Hello departure join failed", ex); client.Disconnect(); }
++            }, TaskScheduler.Default);
+         }
+ 
+         private bool IsWhiteListed(int rank)
