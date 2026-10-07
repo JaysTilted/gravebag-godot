@@ -52,7 +52,6 @@ var _prediction_ready: bool = false
 const SENT_MOVE_MAX: int = 64
 const SENT_ECHO_EPSILON_TILES: float = 0.02
 const POSE_DEADZONE_TILES: float = 0.20
-const OFFPATH_SNAP_TILES: float = 0.50
 var _sent_moves: Array = []
 var _move_clock: float = 0.0
 var _shoot_clock: float = 0.0
@@ -194,19 +193,10 @@ func _reconcile_prediction(auth: Variant, hard_snap: bool = false) -> bool:
 		return false
 	if _prediction.distance_to(auth) <= POSE_DEADZONE_TILES:
 		return false
-	if _off_sent_trail(auth):
-		_prediction_snap(auth)
-		return true
+	# Not an echo and outside the 0.20 pose dead zone. Snap. There is no
+	# second off-trail threshold: 0.30 and 0.50 both correct.
 	_prediction_snap(auth)
 	return true
-
-
-func _off_sent_trail(auth: Vector2) -> bool:
-	var closest := INF
-	for point: Variant in _sent_moves:
-		if point is Vector2 and point.is_finite():
-			closest = minf(closest, auth.distance_to(point))
-	return closest >= OFFPATH_SNAP_TILES
 
 
 func set_descriptors(metadata: Dictionary) -> void:

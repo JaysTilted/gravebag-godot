@@ -194,12 +194,23 @@ func _turns_and_thresholds(world, player, dt: float) -> void:
 	var expected: float = 4.0 * 0.5
 	_check(absf(world._prediction.x - origin.x - expected) < 0.05, "perpendicular x covers speed*time")
 	_check(absf(world._prediction.y - origin.y - expected) < 0.05, "perpendicular y covers speed*time")
-	# Off-path threshold. 0.20 off the current pose is noise. 0.50 off the trail snaps.
+	# Off-path. 0.20 off the current pose is noise. Anything outside that dead
+	# zone that is not a sent echo snaps, including 0.30. 0.50 is the same rule,
+	# not a separate threshold.
 	_reset(world, player, Vector2(6, 6))
 	world.predict_motion(Vector2.RIGHT, dt)
 	var pose: Vector2 = world._prediction
 	_echo_sent(world, pose.x + 0.20, pose.y, 600)
 	_check(world._prediction.is_equal_approx(pose), "0.20 off the current pose does not snap")
+	_reset(world, player, Vector2(6, 6))
+	world.predict_motion(Vector2.RIGHT, dt)
+	var pose30: Vector2 = world._prediction
+	_echo_sent(world, pose30.x, pose30.y + 0.30, 603)
+	_check(world._prediction.is_equal_approx(Vector2(pose30.x, pose30.y + 0.30)), "0.30 off-trail non-echo snaps")
+	_check(world._sent_moves.size() == 1, "0.30 off-trail snap clears sent history")
+	_reset(world, player, Vector2(6, 6))
+	world.predict_motion(Vector2.RIGHT, dt)
+	pose = world._prediction
 	_echo_sent(world, pose.x, pose.y + 0.50, 601)
 	_check(world._prediction.is_equal_approx(Vector2(pose.x, pose.y + 0.50)), "0.50 off the trail snaps")
 	_check(world._sent_moves.size() == 1, "off-path snap clears sent history")

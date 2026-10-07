@@ -44,6 +44,7 @@ test('FSoD walking fix keeps scope: prediction/display only', () => {
   assert.match(world, /player\.present_prediction\(_prediction\)/, 'render pose follows prediction without moving the contact box');
   assert.doesNotMatch(world, /player\.position\.lerp\(_prediction/, 'delta*20 semantic follower removed');
   assert.doesNotMatch(world, /if not _can_walk\(_prediction\)/, 'occupied cell alone must not rewind prediction');
+  assert.doesNotMatch(world, /OFFPATH_SNAP_TILES|_off_sent_trail/, 'unused off-trail threshold must not return');
   const entity = readFileSync(join(root, 'src/client/fsod/entity_view.gd'), 'utf8');
   assert.match(entity, /Contact stays on the server echo/, 'projectile contact is not the unacked lead');
   const session = readFileSync(join(root, 'src/game/fsod_session.gd'), 'utf8');

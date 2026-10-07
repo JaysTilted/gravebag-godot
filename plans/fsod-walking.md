@@ -61,7 +61,7 @@ display/rebase path.
 
 ## Checked
 
-- `walking_selftest.gd` real Godot: reverse, perpendicular, 0.20/0.50
+- `walking_selftest.gd` real Godot: reverse, perpendicular, 0.20 dead zone, 0.30 off-trail non-echo snap, 0.50 same rule
   threshold, paralysis 0.2 and 0.6, OccupySquare echo, aged 144Hz ring,
   echo-vs-prediction PLAYERHIT. Contact stays on the echo.
 - `tests/fsod-walking.test.mjs` (isolated HOME): 2/2 pass.
