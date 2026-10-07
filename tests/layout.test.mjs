@@ -88,14 +88,14 @@ test('integrated UI meets target geometry and input gates without claiming live 
     assert.equal(copied.includes('src/client/fsod/world_view.gd'), true);
     const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
     assert.match(head, /^[0-9a-f]{40}$/);
-    for (const [rel, hash] of Object.entries(sourceBefore)) {
-      const committed = execFileSync('git', ['show', `${head}:${rel}`], { cwd: root, timeout: 30000, maxBuffer: 8 * 1024 * 1024 });
-      assert.equal(sha(committed), hash, `rendered source differs from declared HEAD: ${rel}`);
-    }
     const version = spawnSync(godot, ['--version'], { encoding: 'utf8', timeout: 30000 });
     assert.equal(version.status, 0, version.stderr || version.stdout);
     const runtimeVersion = String(version.stdout).trim();
-    const sourceBefore = Object.fromEntries([...copied, 'src/game/fsod_entry.gd'].filter((rel) => existsSync(join(root, rel))).map((rel) => [rel, sha256(readFileSync(join(root, rel)))]));
+    const sourceBefore = Object.fromEntries([...copied, 'src/game/fsod_entry.gd', 'tests/layout.test.mjs'].filter((rel) => existsSync(join(root, rel))).map((rel) => [rel, sha256(readFileSync(join(root, rel)))]));
+    for (const [rel, hash] of Object.entries(sourceBefore)) {
+      const committed = execFileSync('git', ['show', `${head}:${rel}`], { cwd: root, timeout: 30000, maxBuffer: 8 * 1024 * 1024 });
+      assert.equal(sha256(committed), hash, `rendered source differs from declared HEAD: ${rel}`);
+    }
     const reportPath = join(capture, 'geometry.json');
     const run = spawnSync('xvfb-run', ['-a', godot, '--path', project, '-s', 'res://src/client/fsod/ui_acceptance_selftest.gd', '--', `--capture-dir=${capture}`, `--report=${reportPath}`], {
       cwd: project,

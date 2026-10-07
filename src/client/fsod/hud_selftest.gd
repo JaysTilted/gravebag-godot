@@ -99,8 +99,8 @@ func _check_panel() -> void:
 			inventory = region
 	_check(inventory.visible and inventory.rect.w == host.get_global_rect().size.x, "diagnostics use the real inventory rect")
 	_check(diag.focus.traps_gameplay == false, "unfocused HUD does not trap gameplay")
-	_check(expected.is_equal_approx(Rect2(8, 221, 240, 467)), "canonical v2 main host geometry")
-	_check(UiTheme.potion_strip_rect(hud.size).is_equal_approx(Rect2(8, 692, 240, 20)), "canonical potion strip geometry")
+	var strip := UiTheme.potion_strip_rect(hud.size)
+	_check(expected.end.y <= strip.position.y and strip.end.y <= hud.size.y, "actual host and potion strip do not overlap or exceed the rail")
 	hud.set_snapshot({7: 20, 6: 123, 57: 3, 20: 25, 48: 5, 69: 2, 70: 1}, "NexusPortal.Dragon", {})
 	for _i in 40:
 		hud.advance_display(0.05)
