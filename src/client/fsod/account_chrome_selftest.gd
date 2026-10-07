@@ -144,7 +144,9 @@ func _states_and_latch() -> void:
 		ink = box.bg_color.to_html(false)
 	print("FSOD ACCOUNT CHROME THEME: %s" % ink)
 	if ResourceLoader.exists(THEME_SCRIPT):
-		_check(box.bg_color.is_equal_approx(Color("#112233")), "theme file void token retints ink")
+		# Compare with whatever theme file is installed (real v2 or the test's stub), not a fixed stub color.
+		var theme_void: Variant = load(THEME_SCRIPT).tokens().get("void", "")
+		_check(box.bg_color.is_equal_approx(Color(theme_void)), "theme file void token retints ink")
 	else:
 		_check(box.bg_color.is_equal_approx(Color("#1a1a1a")), "standalone fallback ink is void #1a1a1a")
 	chrome.queue_free()
