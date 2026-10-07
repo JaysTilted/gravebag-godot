@@ -14,7 +14,7 @@ test('close loot probe extends the shipped bot and requests inside 0.55 tiles', 
   assert.match(close, /nearest_distance >= 0\.55/);
   assert.doesNotMatch(close, /nearest_distance >= 1\.0/);
   assert.match(shipped, /nearest_distance >= 1\.0/);
-  assert.match(close, /FSOD LIVE LOOT APPROACH/);
-  assert.match(close, /FSOD LIVE LOOT WAIT/);
+  assert.match(close, /APPROACH bag=%d distance=%.2f/);
+  assert.match(close, /WAIT bag=%d distance=%.2f/);
   assert.match(close, /player_stats\.get\(wire/);
 });
