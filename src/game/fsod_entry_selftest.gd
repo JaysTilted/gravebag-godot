@@ -50,6 +50,8 @@ class Network extends Node:
 		return -1
 
 class Frontend extends Node:
+	var entities: Dictionary = {}
+	var tiles: Dictionary = {}
 	signal move_requested(position: Dictionary, records: Array)
 	signal shoot_requested(angle: float)
 	signal escape_requested
@@ -269,6 +271,18 @@ func _entry_buttons_via_real_events() -> void:
 	session.receive_packet(33, {"ObjectID": 777, "CharacterID": 21})
 	assert(session.state == "playing")
 	assert(button.visible == false, "no button while playing")
+	entry._frontend = view
+	entry._on_packet_readback(33, {})
+	assert(not entry._ready_reported, "CREATE_SUCCESS alone cannot report playable spawn")
+	session.player_stats = {1: 100}
+	entry._on_packet_readback(81, {})
+	assert(not entry._ready_reported, "HP without local rendered entity is not ready")
+	view.entities[777] = true
+	entry._on_packet_readback(81, {})
+	assert(not entry._ready_reported, "local entity without streamed map is not ready")
+	view.tiles["0,0"] = {"type": 72}
+	entry._on_packet_readback(81, {})
+	assert(entry._ready_reported, "only server HP, local entity and streamed tiles report ready")
 	# Normal portal reconnect never shows the failure button.
 	session.receive_packet(21, {"Host": "", "Port": -1, "GameId": -10, "KeyTime": 5, "Key": PackedByteArray([9])})
 	assert(session.state == "reconnecting")

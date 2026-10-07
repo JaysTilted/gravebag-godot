@@ -10,6 +10,8 @@ var _status: Label
 var _action: Button
 var _profile_path := ""
 var _profile: Dictionary = {}
+var _frontend: Node
+var _ready_reported := false
 
 
 func _ready() -> void:
@@ -55,6 +57,10 @@ func _ready() -> void:
 	add_child(session)
 	var metadata := Adapter.descriptors(_read_json(DATA + "objects.json"), _read_json(DATA + "object_descriptors.json"), _read_json(DATA + "projectiles.json"), _read_json(DATA + "grounds.json"))
 	session.bind(network, frontend, metadata, _read_json(DATA + "items.json"))
+	_frontend = frontend
+	# Observe after the session consumes packets. CREATE_SUCCESS alone is not
+	# a spawned player: the original constructor can fail after that packet.
+	network.connect("packet_received", _on_packet_readback)
 	session.class_type = int(_profile.get("class_type", 782))
 	session.skin_type = int(_profile.get("skin_type", 0))
 	session.state_changed.connect(_on_state)
@@ -72,17 +78,28 @@ func _read_json(path: String) -> Dictionary:
 
 
 func _on_state(state: String) -> void:
+	print("FSOD CLIENT STATE " + state)
 	_status.text = "GRAVEBAG — " + state.replace("_", " ")
+	if state != "playing": _ready_reported = false
 	if state == "playing":
 		_profile["character_id"] = session.character_id
 		_save_profile()
-		_status.text = "GRAVEBAG · original backend"
+		_status.text = "Entering the world…"
 		print("FSOD CLIENT PLAYING") # Server CREATE_SUCCESS, not a local simulated world.
 	elif state == "dead":
 		_profile["character_id"] = -1
 		_save_profile()
 		_status.text = "YOU DIED · character saved by server"
 	_refresh_action()
+
+
+func _on_packet_readback(_id: int, _fields: Dictionary) -> void:
+	if _ready_reported or not is_instance_valid(session) or session.state != "playing": return
+	if session.player_id < 0 or int(session.player_stats.get(1, 0)) <= 0: return
+	if not is_instance_valid(_frontend) or not _frontend.entities.has(session.player_id) or _frontend.tiles.is_empty(): return
+	_ready_reported = true
+	_status.text = "GRAVEBAG · original backend"
+	print("FSOD CLIENT READY player_id=%d character_id=%d hp=%d entities=%d tiles=%d" % [session.player_id, session.character_id, session.player_stats.get(1, 0), _frontend.entities.size(), _frontend.tiles.size()])
 
 
 ## Playable-entry recovery buttons. Same layer/aesthetic, real Button nodes.

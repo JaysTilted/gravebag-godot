@@ -36,7 +36,7 @@ def head():
 
 
 def source_hashes():
-    files = command('git', 'ls-files', 'src/client/fsod', 'src/game', 'src/net/fsod', 'src/net/fsod_inventory', 'project.godot', 'src/main.gd', 'scripts/fsod_backend/lifecycle.patch').splitlines()
+    files = command('git', 'ls-files', 'src/client/fsod', 'src/game', 'src/net/fsod', 'src/net/fsod_inventory', 'project.godot', 'src/main.gd', 'scripts/fsod_backend/lifecycle.patch', 'scripts/fsod_backend/linux-isolation.patch', 'scripts/fsod_play').splitlines()
     return {file: sha(ROOT / file) for file in files}
 
 
@@ -46,6 +46,17 @@ def check_staging(hashes):
             staged = STATE / 'client' / file
             if not staged.is_file() or sha(staged) != digest:
                 raise ValueError(f'staged client differs from tested source: {file}')
+
+
+def runtime_hashes():
+    manifest = json.loads((STATE / 'manifest.json').read_text())
+    if manifest.get('source_revision') != '6fd20aad4a7905b13f25389c68368a942a2b68cb':
+        raise ValueError('runtime is not the pinned whole original backend')
+    for patch, key in [('linux-isolation.patch', 'patch_sha256'), ('lifecycle.patch', 'lifecycle_patch_sha256')]:
+        if manifest.get(key) != sha(ROOT / 'scripts/fsod_backend' / patch):
+            raise ValueError(f'runtime has not built current infrastructure overlay: {patch}')
+    files = ['manifest.json', 'source/bin/Debug/autoId.cfg', 'source/bin/Debug/wServer.exe', 'source/bin/Debug/db.dll']
+    return {file: sha(STATE / file) for file in files}
 
 
 def png_dimensions(path):
@@ -82,7 +93,7 @@ def stage():
         if source.is_file(): shutil.copy2(source, STATE / 'client' / file)
     hashes = source_hashes()
     check_staging(hashes)
-    (STATE / 'play-stage.json').write_text(json.dumps({'head': head(), 'source_sha256': hashes, 'started_at': time.time()}, indent=2) + '\n')
+    (STATE / 'play-stage.json').write_text(json.dumps({'head': head(), 'source_sha256': hashes, 'runtime_sha256': runtime_hashes(), 'started_at': time.time()}, indent=2) + '\n')
     print('FSOD PLAY STAGED: original runtime metadata retained, tested client source pinned')
 
 
@@ -90,7 +101,7 @@ def collect(args):
     hashes = source_hashes()
     check_staging(hashes)
     staged = json.loads((STATE / 'play-stage.json').read_text())
-    if staged['head'] != head() or staged['source_sha256'] != hashes:
+    if staged['head'] != head() or staged['source_sha256'] != hashes or staged['runtime_sha256'] != runtime_hashes():
         raise ValueError('client changed since staging; replay the tested build')
     records = {}
     for kind in PATTERNS:
@@ -113,7 +124,7 @@ def collect(args):
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(frame, destination)
         records[kind] = {'id': identifier, 'log_sha256': sha(log_path), 'result_sha256': sha(result_path), 'frame': str(destination.relative_to(STATE)), 'frame_sha256': sha(destination)}
-    receipt = {'head': head(), 'source_sha256': hashes, 'runs': records}
+    receipt = {'head': head(), 'source_sha256': hashes, 'runtime_sha256': runtime_hashes(), 'runs': records}
     RECORD.write_text(json.dumps(receipt, indent=2) + '\n')
     print('FSOD PLAY RUNTIME RECORDED: real combat, damage, loot, death/new-character recovery and 4 rendered frames')
 
@@ -123,6 +134,8 @@ def verify(require_window=False):
     if receipt['head'] != head() or receipt['source_sha256'] != source_hashes():
         raise ValueError('runtime evidence is stale against current exact source/HEAD')
     check_staging(receipt['source_sha256'])
+    if receipt['runtime_sha256'] != runtime_hashes():
+        raise ValueError('runtime binaries/overlay/ID data changed since acceptance')
     if set(receipt['runs']) != set(PATTERNS):
         raise ValueError('missing runtime acceptance family')
     for kind, record in receipt['runs'].items():
@@ -143,8 +156,10 @@ def verify(require_window=False):
             raise ValueError('window launched from stale build')
         log = Path(launch['log'])
         text = log.read_text()
-        if 'FSOD CLIENT PLAYING' not in text or re.search(ERRORS, text, re.I):
-            raise ValueError('window did not reach server-authorized PLAYING')
+        states = re.findall(r'^FSOD CLIENT STATE (\w+)$', text, re.M)
+        ready = re.search(r'FSOD CLIENT READY player_id=\d+ character_id=\d+ hp=[1-9]\d* entities=[1-9]\d* tiles=[1-9]\d*', text)
+        if 'FSOD CLIENT PLAYING' not in text or not ready or not states or states[-1] != 'playing' or re.search(ERRORS, text, re.I):
+            raise ValueError('window has not reached current server-authorized local-player/tile readiness')
         pid = int(launch['pid'])
         argv = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
         if b'--fsod-client' not in argv or str(STATE / 'client').encode() not in argv:

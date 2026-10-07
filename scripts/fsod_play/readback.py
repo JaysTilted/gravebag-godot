@@ -21,7 +21,7 @@ def main():
         if launch['head'] != head(): raise ValueError('launch is stale')
         text = Path(launch['log']).read_text()
         if re.search(ERRORS, text, re.I): raise ValueError('client reported failure')
-        if 'FSOD CLIENT PLAYING' not in text: raise ValueError('still waiting for original server CREATE_SUCCESS')
+        if 'FSOD CLIENT READY ' not in text: raise ValueError('still waiting for original server local player and tiles')
         supervisor_namespace = Path(f'/proc/{backend_process()}/ns/net').readlink()
         lines = subprocess.check_output(['wmctrl', '-lp'], text=True, timeout=5).splitlines()
         for line in lines:
