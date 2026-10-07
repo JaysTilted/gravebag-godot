@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, rmSync, symlinkSync, lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -201,6 +201,152 @@ test('stop is idempotent after crash-cleaned socket, verify reports not ready, a
         fakeLaunch.kill('SIGKILL');
         await exited;
       }
+      rmSync(temp, { recursive: true, force: true });
+    }
+  });
+
+test('stop recovers a positively-dead owned stale control socket; verify never unlinks it',
+  { timeout: 15000 }, () => {
+    const { temp, runner } = fixture();
+    try {
+      const state = join(runner, '.state');
+      mkdirSync(state);
+      const invoke = command => spawnSync('python3', [join(runner, 'backend.py'), command], {
+        encoding: 'utf8', timeout: 5000,
+      });
+      const bindRefusedSocket = path => {
+        const bound = spawnSync('python3',
+          ['-c', 'import socket,sys; s=socket.socket(socket.AF_UNIX); s.bind(sys.argv[1])', path],
+          { encoding: 'utf8', timeout: 5000 });
+        assert.equal(bound.status, 0, bound.stderr);
+      };
+      // A freshly exited helper PID is positively dead: no /proc entry remains,
+      // so the backend classifies it by reading /proc only, never signaling it.
+      const deadPid = spawnSync('true').pid;
+      assert.ok(Number.isInteger(deadPid) && deadPid > 0);
+      const sock = join(state, 'control.sock');
+      writeFileSync(join(state, 'launch.json'), JSON.stringify({ pid: deadPid }));
+      // A bound-but-unlistened private socket refuses connections: the orphan.
+      bindRefusedSocket(sock);
+      // verify observes the refused orphan but must never unlink it.
+      const refused = invoke('verify');
+      assert.equal(refused.status, 1);
+      assert.deepEqual(JSON.parse(refused.stdout), {
+        ready: false, control: 'unavailable', supervisor_alive: false,
+      });
+      assert.ok(existsSync(sock), 'verify must not unlink the orphan socket');
+      // stop reclaims only the positively-dead owned socket, unblocking start.
+      const reclaimed = invoke('stop');
+      assert.equal(reclaimed.status, 0, reclaimed.stderr);
+      assert.deepEqual(JSON.parse(reclaimed.stdout), {
+        stop: 'already_stopped', control: 'unavailable', supervisor_alive: false, orphan_socket: 'recovered',
+      });
+      assert.ok(!existsSync(sock), 'recovered orphan unblocks a subsequent start');
+      // Absent control after recovery stays a sane cold stop.
+      const cold = invoke('stop');
+      assert.equal(cold.status, 0, cold.stderr);
+      assert.deepEqual(JSON.parse(cold.stdout), {
+        stop: 'already_stopped', control: 'unavailable', supervisor_alive: false,
+      });
+      console.log('orphan recovery: PASS; verify preserves, stop reclaims dead-owned socket, cold stop sane');
+    } finally { rmSync(temp, { recursive: true, force: true }); }
+  });
+
+test('alive, reused-PID, unknown, non-socket and symlink controls are never unlinked',
+  { timeout: 30000 }, async () => {
+    const { temp, runner } = fixture();
+    const invoke = command => spawnSync('python3', [join(runner, 'backend.py'), command], {
+      encoding: 'utf8', timeout: 5000,
+    });
+    const bindRefusedSocket = path => {
+      const bound = spawnSync('python3',
+        ['-c', 'import socket,sys; s=socket.socket(socket.AF_UNIX); s.bind(sys.argv[1])', path],
+        { encoding: 'utf8', timeout: 5000 });
+      assert.equal(bound.status, 0, bound.stderr);
+    };
+    let liveProc = null;
+    const killLive = async () => {
+      if (liveProc && liveProc.exitCode === null) {
+        const exited = new Promise(resolve => liveProc.once('exit', resolve));
+        liveProc.kill('SIGKILL');
+        await exited;
+      }
+      liveProc = null;
+    };
+    try {
+      const state = join(runner, '.state');
+      mkdirSync(state);
+      const sock = join(state, 'control.sock');
+      const deadPid = spawnSync('true').pid;
+      // Live state-bound supervisor behind refused control: preserved, stop unavailable.
+      bindRefusedSocket(sock);
+      liveProc = spawn('python3', ['-c', 'import sys; sys.stdin.read()', state, '/state/supervisor.py'],
+        { stdio: ['pipe', 'ignore', 'ignore'] });
+      await new Promise((resolve, reject) => { liveProc.once('spawn', resolve); liveProc.once('error', reject); });
+      writeFileSync(join(state, 'launch.json'), JSON.stringify({ pid: liveProc.pid }));
+      const live = invoke('stop');
+      assert.equal(live.status, 1);
+      assert.deepEqual(JSON.parse(live.stdout), {
+        stop: 'unavailable', control: 'unavailable', supervisor_alive: true,
+      });
+      assert.ok(existsSync(sock), 'live supervisor control is preserved');
+      assert.equal(JSON.parse(invoke('verify').stdout).supervisor_alive, true);
+      assert.ok(existsSync(sock), 'verify preserves live refused control');
+      await killLive();
+      // A canonical STATE alias (symlinked worktree path) in argv is still our identity.
+      rmSync(sock, { force: true });
+      const alias = join(temp, 'state-alias');
+      symlinkSync(state, alias);
+      liveProc = spawn('python3', ['-c', 'import sys; sys.stdin.read()', alias, '/state/supervisor.py'],
+        { stdio: ['pipe', 'ignore', 'ignore'] });
+      await new Promise((resolve, reject) => { liveProc.once('spawn', resolve); liveProc.once('error', reject); });
+      writeFileSync(join(state, 'launch.json'), JSON.stringify({ pid: liveProc.pid }));
+      const aliased = invoke('stop');
+      assert.equal(aliased.status, 1);
+      assert.deepEqual(JSON.parse(aliased.stdout), {
+        stop: 'unavailable', control: 'unavailable', supervisor_alive: true,
+      });
+      await killLive();
+      // Reused PID (this test process, argv mismatch) is unknown, never dead: preserved.
+      bindRefusedSocket(sock);
+      writeFileSync(join(state, 'launch.json'), JSON.stringify({ pid: process.pid }));
+      const reused = invoke('stop');
+      assert.equal(reused.status, 0, reused.stderr);
+      assert.deepEqual(JSON.parse(reused.stdout), {
+        stop: 'already_stopped', control: 'unavailable', supervisor_alive: false,
+      });
+      assert.ok(existsSync(sock), 'reused-PID control is preserved');
+      // Missing/invalid launch records fail closed: preserved.
+      rmSync(join(state, 'launch.json'), { force: true });
+      assert.deepEqual(JSON.parse(invoke('stop').stdout).stop, 'already_stopped');
+      assert.ok(existsSync(sock), 'unknown-launch control is preserved');
+      writeFileSync(join(state, 'launch.json'), JSON.stringify({ pid: 'not-a-pid' }));
+      assert.deepEqual(JSON.parse(invoke('stop').stdout).stop, 'already_stopped');
+      assert.ok(existsSync(sock), 'invalid-launch control is preserved');
+      // A regular file at the control path is not our socket: preserved.
+      writeFileSync(join(state, 'launch.json'), JSON.stringify({ pid: deadPid }));
+      rmSync(sock, { force: true });
+      writeFileSync(sock, 'not-a-socket');
+      const plain = invoke('stop');
+      assert.equal(plain.status, 0, plain.stderr);
+      assert.deepEqual(JSON.parse(plain.stdout), {
+        stop: 'already_stopped', control: 'unavailable', supervisor_alive: false,
+      });
+      assert.equal(readFileSync(sock, 'utf8'), 'not-a-socket', 'non-socket control file preserved');
+      // A symlinked control path is never unlinked, even when positively dead.
+      rmSync(sock, { force: true });
+      const real = join(state, 'control-real.sock');
+      bindRefusedSocket(real);
+      symlinkSync(real, sock);
+      const linked = invoke('stop');
+      assert.equal(linked.status, 0, linked.stderr);
+      assert.deepEqual(JSON.parse(linked.stdout), {
+        stop: 'already_stopped', control: 'unavailable', supervisor_alive: false,
+      });
+      assert.ok(lstatSync(sock).isSymbolicLink(), 'symlinked control is preserved');
+      console.log('orphan preservation: PASS; alive/reused/unknown/non-socket/symlink controls kept, alias identity holds');
+    } finally {
+      await killLive();
       rmSync(temp, { recursive: true, force: true });
     }
   });
