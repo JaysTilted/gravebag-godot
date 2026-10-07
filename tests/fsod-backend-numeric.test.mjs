@@ -116,6 +116,14 @@ test('original numeric death.accId breaks GetString; overlay converts invariantl
 });
 
 test('isolated full original build compiles the numeric overlay without touching parent state', { timeout: 240000 }, () => {
+  // Parent may already be serving actual play. Read only immutable build
+  // artifacts, never private profiles, DB files, sockets or changing exec logs.
+  const parentSnapshot = () => ({
+    controlSocketExists: existsSync(join(overlay, '.state/control.sock')),
+    build: ['manifest.json', 'source/bin/Debug/wServer.exe', 'source/bin/Debug/db.dll', 'source/bin/Debug/autoId.cfg']
+      .map(file => [file, existsSync(join(overlay, '.state', file)) ? hash(readFileSync(join(overlay, '.state', file))) : null]),
+  });
+  const before = parentSnapshot();
   const temp = mkdtempSync(join(tmpdir(), 'fsod-numeric-build-'));
   const runner = join(temp, 'backend');
   mkdirSync(runner);
@@ -142,7 +150,7 @@ test('isolated full original build compiles the numeric overlay without touching
     assert.equal(count(built, canonicalComparison), 3);
     for (const sql of windows) assert.ok(built.includes(sql), 'built leaderboard SQL unchanged');
     assert.ok(!existsSync(join(runner, '.state/control.sock')), 'build only: no DB or runtime launched');
-    assert.ok(!existsSync(join(root, 'scripts/fsod_backend/.state/control.sock')), 'parent runtime untouched');
+    assert.deepEqual(parentSnapshot(), before, 'parent runtime/build unchanged (whether running or stopped)');
     console.log('isolated original full build: PASS; numeric overlay compiled into wServer');
   } finally { rmSync(temp, { recursive: true, force: true }); }
 });
