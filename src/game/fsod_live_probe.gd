@@ -197,7 +197,9 @@ func _drive_bot() -> void:
 				target_id = id
 				target_dist = dist
 		if target_id >= 0:
-			if target_dist < 0.8:
+			# Match the real frontend's near-interaction affordance, rather than
+			# demand an extra0.2-tile approach to an obstructed portal sprite.
+			if target_dist < 1.0:
 				_release_keys()
 				_portal_used = true
 				frontend.interact_requested.emit(target_id, 0)
