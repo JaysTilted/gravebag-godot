@@ -173,7 +173,11 @@ func _on_connected() -> void:
 		_on_protocol_error("Unable to serialize encrypted local login")
 
 
-func _on_disconnected(_reason: String = "") -> void:
+func _on_disconnected(reason: String = "") -> void:
+	# Replacing a still-active death socket closes it synchronously before the
+	# next peer is installed. Do not turn that intentional close into offline.
+	if reason == "new connection" and state == "connecting":
+		return
 	if state not in ["reconnecting", "dead", "failed"]:
 		_set_state("offline")
 

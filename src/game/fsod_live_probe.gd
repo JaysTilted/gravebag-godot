@@ -151,6 +151,10 @@ func _process(_delta: float) -> bool:
 			_done = true
 			quit(0 if _visited_realm else 1)
 		return false
+	# Bot transitions must never fall through to the basic Nexus-only PASS,
+	# especially between DEATH and the next real CREATE_SUCCESS.
+	if _bot_realm:
+		return false
 	if playing_at >= 0 and ticks >= 3 and updates >= 1 and not session.player_stats.is_empty():
 		var elapsed := Time.get_ticks_msec() - playing_at
 		if capture_attempts == 0 and elapsed > 600:

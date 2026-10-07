@@ -18,6 +18,8 @@ class Network extends Node:
 		configured = fields.duplicate(true)
 	func connect_to_server(host: String, port: int) -> Error:
 		sent.append({"method": "connect", "host": host, "port": port})
+		# Match real client.connect_to_server replacing an active old peer.
+		disconnected.emit("new connection")
 		return OK
 	func send_hello() -> Error:
 		sent.append({"method": "hello"})
