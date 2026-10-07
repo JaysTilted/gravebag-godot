@@ -49,6 +49,17 @@ var _mouse_held: bool = false
 var _ground_contact_times: Dictionary = {}
 var _last_move: bool = false
 var _ready_built: bool = false
+# Display-only camera/world smoothing (original-FSoD "feels jagged" follow).
+# Physics records _camera_target framing from the displayed player center and
+# _process eases the visible _world.position toward it at render rate. Entity authority,
+# prediction, collision, MOVE/contact timing, and projectile trajectories are
+# untouched. No camera rounding: fractional display offsets are preserved so the
+# follow never reintroduces pixel judder.
+const CAMERA_SMOOTHING_RATE: float = 14.0
+const CAMERA_TELEPORT_TILES: float = 4.0
+var _camera_target: Vector2 = Vector2.ZERO
+var _camera_ready: bool = false
+var _camera_hold_auth: bool = false
 
 
 func _ready() -> void:
@@ -130,6 +141,8 @@ func set_player_id(id: int) -> void:
 		if _live(view): view.is_local_player = int(key) == id
 	var player: Variant = _player()
 	if player != null: _prediction = player.authoritative_position
+	_camera_ready = false # Player identity discontinuity: next camera target hard-snaps.
+	_camera_hold_auth = false
 	_refresh_rail()
 
 
@@ -148,12 +161,16 @@ func apply_map(packet: Dictionary) -> void:
 	_shoot_clock = 0.0
 	_last_move = false
 	interaction_target_id = -1
+	_camera_ready = false # Map reset: stale display offset must not slew into the new map.
+	_camera_target = Vector2.ZERO
+	_camera_hold_auth = false
 	_refresh_rail()
 	_redraw()
 
 
 func apply_update(packet: Dictionary) -> void:
 	_ensure_nodes()
+	var _previous_auth: Variant = _player_auth_snapshot()
 	var incoming_tiles: Variant = packet.get("tiles", [])
 	if incoming_tiles is Array:
 		for tile: Variant in incoming_tiles:
@@ -183,11 +200,13 @@ func apply_update(packet: Dictionary) -> void:
 	var removed: Variant = packet.get("removed_object_ids", [])
 	if removed is Array:
 		for id: Variant in removed: remove_entity(_integer(id, -1))
+	_snap_camera_on_discontinuity(_previous_auth)
 	_refresh_rail()
 	_redraw()
 
 
 func apply_tick(packet: Dictionary) -> void:
+	var _previous_tick_auth: Variant = _player_auth_snapshot()
 	var seconds: float = clampf(_number(packet.get("tick_time", 100)) / 1000.0, 0.001, 2.0)
 	var statuses: Variant = packet.get("update_statuses", [])
 	if not statuses is Array: return
@@ -200,6 +219,7 @@ func apply_tick(packet: Dictionary) -> void:
 			continue # Unknown tick IDs never invent entities/type metadata.
 		view.apply_status(status, seconds)
 		if id == player_id: _prediction = view.authoritative_position
+	_snap_camera_on_discontinuity(_previous_tick_auth)
 	_refresh_rail()
 	_redraw()
 
@@ -259,16 +279,138 @@ func _physics_process(delta: float) -> void:
 		float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))
 	).limit_length(1.0)
 	predict_motion(input_vector, delta)
-	var mouse: Vector2 = _world.to_local(get_global_mouse_position()) / TILE_PIXELS
-	var aim: Vector2 = mouse - _prediction
+	# Aim maps through the DISPLAYED world transform (smoothed _world.position),
+	# never the unsmoothed target, so the cursor stays aligned with rendered pixels.
+	# The angle is measured from the displayed player center; outbound packet
+	# trajectory origins still use _prediction (server-authored semantics).
+	var mouse: Vector2 = screen_to_world_tiles(get_global_mouse_position())
+	var aim: Vector2 = mouse - _display_player_pixels(player) / TILE_PIXELS
 	if aim.length_squared() > 0.000001: player.aim_angle = aim.angle() # No angle snap.
 	_shoot_clock = maxf(0.0, _shoot_clock - delta)
 	if _mouse_held and _shoot_clock <= 0.0 and is_finite(shot_request_interval) and shot_request_interval > 0.0:
 		shoot_requested.emit(player.aim_angle)
 		_shoot_clock = maxf(0.001, shot_request_interval)
 	_check_ground_contact()
-	var size: Vector2 = get_viewport_rect().size
-	_world.position = Vector2(maxf(0.0, size.x - RAIL_WIDTH) / 2.0, size.y / 2.0) - player.position
+	# Physics only records the desired framing; the smoothed display transform is
+	# presented in _process at render rate. Simulation, input, contact, and MOVE
+	# timing are unchanged: advance_visuals stays here (hit sampling reads the
+	# semantic Node positions, so it must not move to render rate).
+	_update_camera_target(player)
+	if not _camera_ready:
+		snap_camera_to_target()
+
+
+# Render-rate presentation only: entity render poses (parallel entity worker's
+# optional advance_presentation, _draw offsets) and the smoothed camera display.
+# Never advances simulation age, hit sampling, prediction, contact, or MOVE here.
+func _process(delta: float) -> void:
+	if not _ready_built or _world == null:
+		return
+	for id: Variant in entities.keys():
+		var view: Variant = entities[id]
+		if _live(view) and view.has_method("advance_presentation"):
+			view.call("advance_presentation", delta)
+	advance_camera_display(delta)
+
+
+func desired_camera_position(player_pixels: Vector2, viewport_size: Vector2) -> Vector2:
+	return Vector2(maxf(0.0, viewport_size.x - RAIL_WIDTH) / 2.0, viewport_size.y / 2.0) - player_pixels
+
+
+static func smooth_camera_step(display: Vector2, target: Vector2, delta: float, rate: float = 14.0) -> Vector2:
+	if not display.is_finite() or not target.is_finite():
+		return display
+	if not is_finite(delta) or delta <= 0.0 or not is_finite(rate) or rate <= 0.0:
+		return display
+	var blend: float = 1.0 - exp(-rate * minf(delta, 0.25))
+	if not is_finite(blend) or blend <= 0.0:
+		return display
+	if blend >= 1.0:
+		return target
+	return display.lerp(target, blend)
+
+
+# Displayed player center in _world-local pixels. Prefers the entity render pose
+# (display_position(), parallel entity lane) when provided; falls back to the
+# semantic Node position so the camera keeps working with or without that
+# optional interface (standalone baseline compat).
+func _display_player_pixels(player: Variant) -> Vector2:
+	if not _live(player):
+		return Vector2.ZERO
+	if player.has_method("display_position"):
+		var pose: Variant = player.call("display_position")
+		if pose is Vector2 and pose.is_finite():
+			return pose
+	return player.position
+
+
+func screen_to_world_tiles(screen_global: Vector2) -> Vector2:
+	if not _ready_built or _world == null:
+		return Vector2.ZERO
+	return _world.to_local(screen_global) / TILE_PIXELS
+
+
+func snap_camera_to_target() -> void:
+	if not _ready_built or _world == null:
+		return
+	_world.position = _camera_target
+	_camera_ready = true
+
+
+func _update_camera_target(player: Variant) -> void:
+	if not _ready_built or _world == null:
+		return
+	if not _live(player):
+		return
+	var viewport_size: Vector2 = get_viewport_rect().size
+	if _camera_hold_auth:
+		# Teleport/GOTO hold: stay snapped to the authoritative landing while the
+		# render pose catches up, so the camera never slews across the jump.
+		var landing: Vector2 = player.authoritative_position * TILE_PIXELS
+		if landing.is_finite():
+			_camera_target = desired_camera_position(landing, viewport_size)
+		var pose: Vector2 = _display_player_pixels(player)
+		if pose.is_finite() and pose.distance_to(landing) <= TILE_PIXELS:
+			_camera_hold_auth = false
+		return
+	_camera_target = desired_camera_position(_display_player_pixels(player), viewport_size)
+
+
+func advance_camera_display(delta: float) -> void:
+	if not _ready_built or _world == null:
+		return
+	var player: Variant = _player()
+	if player == null:
+		return
+	_update_camera_target(player)
+	if not _camera_ready:
+		snap_camera_to_target()
+		return
+	# Display-only ease toward the recorded target. No rounding: fractional
+	# offsets are preserved so the follow never reintroduces pixel judder.
+	_world.position = smooth_camera_step(_world.position, _camera_target, delta, CAMERA_SMOOTHING_RATE)
+
+
+func _player_auth_snapshot() -> Variant:
+	var player: Variant = _player()
+	return player.authoritative_position if player != null else null
+
+
+func _snap_camera_on_discontinuity(previous: Variant) -> void:
+	if not (previous is Vector2):
+		return
+	var player: Variant = _player()
+	if player == null:
+		return
+	if not previous.is_finite() or not player.authoritative_position.is_finite():
+		return
+	if previous.distance_to(player.authoritative_position) <= CAMERA_TELEPORT_TILES:
+		return
+	# Map/GOTO/teleport discontinuity: hard-snap so smoothing never slews across
+	# the jump. Packet trajectory origins stay _prediction (untouched).
+	_camera_hold_auth = true
+	_update_camera_target(player)
+	snap_camera_to_target()
 
 
 # Client prediction uses streamed source solid-tile flags; no backend mutation/damage/RNG.
@@ -365,7 +507,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode == KEY_R: escape_requested.emit()
 		if event.physical_keycode == KEY_SPACE:
-			ability_requested.emit(_world.to_local(get_global_mouse_position()) / TILE_PIXELS)
+			ability_requested.emit(screen_to_world_tiles(get_global_mouse_position()))
 		if event.physical_keycode == KEY_F: potion_requested.emit("health")
 		if event.physical_keycode == KEY_V: potion_requested.emit("magic")
 		if event.physical_keycode == KEY_E and interaction_target_id >= 0:
@@ -486,7 +628,7 @@ func _draw_ground() -> void:
 		var color: Color = _tile_color(tiles[cell])
 		_ground.draw_rect(rect, color)
 		_ground.draw_rect(Rect2(rect.position + Vector2(4, 7), Vector2(4, 3)), color.lightened(0.08))
-		_ground.draw_line(rect.position, rect.position + Vector2(TILE_PIXELS, 0), color.darkened(0.12), 1.0)
+		_ground.draw_line(rect.position, rect.position + Vector2(TILE_PIXELS, 0), color.darkened(0.12), 1.0, true)
 	for key: Variant in projectiles:
 		var bullet: Dictionary = projectiles[key]
 		var point: Vector2 = projectile_position(bullet) * TILE_PIXELS
