@@ -49,6 +49,107 @@ def sandbox(argv, cwd="/state"):
     return args + argv
 
 
+def _argv_binds_state(argv):
+    """True when argv carries the owned state-bound supervisor identity.
+
+    Requires the in-sandbox marker and a host STATE binding. Accepts the
+    canonical STATE bytes or a realpath-equivalent logical path (stable
+    accepted worktree may be symlinked); never infers death from a raw
+    string mismatch alone. Does not adjust any marker string.
+    """
+    if b"/state/supervisor.py" not in argv:
+        return False
+    try:
+        if os.fsencode(STATE) in argv:
+            return True
+    except (OSError, ValueError):
+        pass
+    try:
+        state_real = os.path.realpath(STATE)
+        for entry in argv:
+            try:
+                text = os.fsdecode(entry)
+            except (OSError, ValueError):
+                continue
+            if not text or not os.path.isabs(text):
+                continue
+            try:
+                if os.path.realpath(text) == state_real:
+                    return True
+            except (OSError, ValueError):
+                continue
+    except (OSError, ValueError):
+        pass
+    return False
+
+
+def _supervisor_status():
+    """Classify the recorded launch PID without signaling it.
+
+    Returns (alive, positively_dead). positively_dead is True only when
+    launch.json holds a valid positive PID whose /proc entry is absent
+    (FileNotFoundError). Alive-but-mismatched (reused), missing/invalid
+    launch, permission errors and other unknowns return (False, False)
+    so callers fail closed and never unlink.
+    """
+    try:
+        launch = json.loads((STATE / "launch.json").read_text())
+        pid = launch["pid"]
+        if not isinstance(pid, int) or pid <= 0:
+            return (False, False)
+        try:
+            argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        except FileNotFoundError:
+            return (False, True)
+        except (PermissionError, OSError):
+            return (False, False)
+        return (_argv_binds_state(argv), False)
+    except (OSError, ValueError, KeyError, TypeError):
+        return (False, False)
+
+
+def _is_owned_private_socket():
+    """True only for the owned private stale-socket candidate. Fail closed."""
+    try:
+        sock_path = STATE / "control.sock"
+        if sock_path.is_symlink():
+            return False
+        st_sock = sock_path.stat()
+        import stat as _stat
+        if not _stat.S_ISSOCK(st_sock.st_mode):
+            return False
+        st_state = STATE.stat()
+        if not _stat.S_ISDIR(st_state.st_mode):
+            return False
+        if st_sock.st_uid != st_state.st_uid:
+            return False
+        try:
+            euid = os.geteuid()
+        except AttributeError:
+            return False
+        if st_sock.st_uid != euid:
+            return False
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def _try_recover_orphan_socket(positively_dead):
+    """Unlink a positively-dead owned private socket. Never blind."""
+    if not positively_dead:
+        return False
+    if not _is_owned_private_socket():
+        return False
+    try:
+        sock_path = STATE / "control.sock"
+        if sock_path.is_symlink():
+            return False
+        sock_path.unlink()
+        return True
+    except (OSError, ValueError):
+        return False
+
+
 def lifecycle_control(command):
     """Absent crash-cleaned control is a state result, not a missing-file error.
 
@@ -58,16 +159,28 @@ def lifecycle_control(command):
     """
     try:
         return control(command)
-    except (FileNotFoundError, ConnectionRefusedError):
-        supervisor_alive = False
-        try:
-            launch = json.loads((STATE / "launch.json").read_text())
-            pid = launch["pid"]
-            if isinstance(pid, int) and pid > 0:
-                argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
-                supervisor_alive = os.fsencode(STATE) in argv and b"/state/supervisor.py" in argv
-        except (OSError, ValueError, KeyError, TypeError):
-            pass
+    except FileNotFoundError:
+        supervisor_alive, _ = _supervisor_status()
+        result = {"control": "unavailable", "supervisor_alive": supervisor_alive}
+        if command == "verify":
+            return {"ready": False, **result}
+        return {"stop": "unavailable" if supervisor_alive else "already_stopped", **result}
+    except ConnectionRefusedError:
+        supervisor_alive, positively_dead = _supervisor_status()
+        recovered = False
+        if command == "stop" and positively_dead and not supervisor_alive:
+            recovered = _try_recover_orphan_socket(positively_dead)
+        result = {"control": "unavailable", "supervisor_alive": supervisor_alive}
+        if recovered:
+            result["orphan_socket"] = "recovered"
+        if command == "verify":
+            return {"ready": False, **result}
+        if recovered:
+            return {"stop": "already_stopped", **result}
+        return {"stop": "unavailable" if supervisor_alive else "already_stopped", **result}
+    except OSError:
+        # Permission/unknown transport errors: fail closed, never unlink.
+        supervisor_alive, _ = _supervisor_status()
         result = {"control": "unavailable", "supervisor_alive": supervisor_alive}
         if command == "verify":
             return {"ready": False, **result}
